@@ -7,6 +7,7 @@ cd repo
 
 ## To install dependencies (creates/uses poetry-managed venv)
 
+cd chunking
 poetry install
 
 ## To run the server
