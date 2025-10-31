@@ -12,7 +12,7 @@ API_KEY = os.getenv('OPENAI_API_KEY')
 
 # Initialize BaseEvaluation
 evaluation = BaseEvaluation(
-    questions_csv_path='data/questions.csv',
+    questions_csv_path='data/sample_queries_references.csv',
     corpora_id_paths={'sample_document.txt': 'data/sample_document.txt'}
 )
 
@@ -28,31 +28,31 @@ lc_recursive_chunker = RecursiveCharacterTextSplitter(
     chunk_overlap=50
 )
 
+# Create a Chonkie recursive chunker
+ck_recursive_chunker = RecursiveChunker(
+    tokenizer="character",
+    chunk_size=200,
+    rules=RecursiveRules(),
+    min_characters_per_chunk=24,
+)
+
 # Create a LangChain token chunker
 lc_token_chunker = TokenTextSplitter(
     chunk_size=400,
     chunk_overlap=50
 )
 
-# # Create a Chonkie recursive chunker
-# ck_recursive_chunker = RecursiveChunker(
-#     tokenizer="character",
-#     chunk_size=400,
-#     rules=RecursiveRules(),
-#     min_characters_per_chunk=24,
-# )
-
-# # Create a Chonkie token chunker
-# ck_token_chunker = TokenChunker(
-#     chunk_size=400,
-#     chunk_overlap=50
-# )
+# Create a Chonkie token chunker
+ck_token_chunker = TokenChunker(
+    chunk_size=400,
+    chunk_overlap=50
+)
 
 chunkers = {
     'LangChain Recursive': lc_recursive_chunker,
+    'Chonkie Recursive': ck_recursive_chunker,
     'LangChain Token': lc_token_chunker,
-    # 'Chonkie Recursive': ck_recursive_chunker,
-    # 'Chonkie Token': ck_token_chunker
+    'Chonkie Token': ck_token_chunker
 }
 
 # Run evaluation
@@ -61,7 +61,7 @@ for name, chunker in chunkers.items():
 
     # Print results
     print("\n=== Evaluation Results ===")
-    print(f"Chunker: {name}:")
+    print(f"Chunker: {name}")
     print(f"IoU Mean: {results['iou_mean']:.3f}")
     print(f"Recall Mean: {results['recall_mean']:.3f}")
     print(f"Precision Mean: {results['precision_mean']:.3f}")
@@ -69,15 +69,29 @@ for name, chunker in chunkers.items():
 
 
 # === Evaluation Results ===
-# Chunker: LangChain Recursive:
+# Chunker: LangChain Recursive
 # IoU Mean: 0.210
 # Recall Mean: 0.773
 # Precision Mean: 0.229
 # Precision Omega Mean: 0.609
 
 # === Evaluation Results ===
-# Chunker: LangChain Token:
+# Chunker: Chonkie Recursive
+# IoU Mean: 0.211
+# Recall Mean: 0.784
+# Precision Mean: 0.229
+# Precision Omega Mean: 0.614
+
+# === Evaluation Results ===
+# Chunker: LangChain Token
 # IoU Mean: 0.270
 # Recall Mean: 1.000
 # Precision Mean: 0.270
 # Precision Omega Mean: 0.270
+
+# === Evaluation Results ===
+# Chunker: Chonkie Token
+# IoU Mean: 0.242
+# Recall Mean: 1.000
+# Precision Mean: 0.242
+# Precision Omega Mean: 0.541
