@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { Evals, ChunkStats } from "../types/types";
-import { getVisualizer } from "../services/gateway";
+import { getEvals, getVisualizer } from "../services/gateway";
+import { ChunkStatistics } from "./ChunkStatistics";
 
 export default function ChunkerForm() {
   const [chunker, setChunker] = useState<string>("");
@@ -34,15 +35,23 @@ export default function ChunkerForm() {
 
   async function onVisualize(event: React.SyntheticEvent<Element, Event>) {
     event.preventDefault();
-    await getVisualizer({
+    const result = await getVisualizer({
       chunker,
       maxSize: chunkMaxSize,
       overlap: chunkOverlap,
     });
+
+    setChunkStats(result.stats);
   }
 
   async function onEvaluate(event: React.SyntheticEvent<Element, Event>) {
     event.preventDefault();
+    const result = await getEvals({
+      chunker,
+      maxSize: chunkMaxSize,
+      overlap: chunkOverlap,
+    });
+    setEvals(result);
   }
 
   return (
@@ -98,6 +107,8 @@ export default function ChunkerForm() {
           <button onClick={onEvaluate}>Evaluate</button>
         </div>
       </form>
+      <ChunkStatistics {...chunkStats}></ChunkStatistics>
+      <div className="metrics"></div>
     </div>
   );
 }

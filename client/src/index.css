@@ -2,6 +2,8 @@
   margin: 0;
   padding: 0;
   border: 0;
+  text-decoration: none;
+  list-style-type: none;
 }
 
 body {
@@ -71,7 +73,8 @@ select {
   align-items: flex-start;
 }
 
-#chunking-configuration h1 {
+#chunking-configuration h1,
+h2 {
   color: blue;
 }
 
@@ -84,4 +87,12 @@ select {
 #chunking-configuration input[type="range"] {
   accent-color: blue;
   padding: 0;
+}
+
+.stats {
+  margin-top: 24px;
+}
+
+.stats li.unknown {
+  color: lightgrey;
 }
