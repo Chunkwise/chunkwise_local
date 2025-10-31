@@ -1,30 +1,17 @@
 import React, { useState } from "react";
-
-interface Evals {
-  precision: number;
-  recall: number;
-  iou: number;
-}
-
-interface ChunkStats {
-  total: number;
-  avgSize: number;
-  largestSize: number;
-  smallestSize: number;
-  largestText: string;
-  smallestText: string;
-}
+import type { Evals, ChunkStats } from "../types/types";
+import { getVisualizer } from "../services/gateway";
 
 export default function ChunkerForm() {
   const [chunker, setChunker] = useState<string>("");
   const [chunkMaxSize, setChunkMaxSize] = useState<number>(500);
   const [chunkOverlap, setChunkOverlap] = useState<number>(500);
-  const [chunkStats, setChunkStats] = useState<Evals>(() => ({
+  const [evals, setEvals] = useState<Evals>(() => ({
     precision: 0,
     recall: 0,
     iou: 0,
   }));
-  const [evals, setEvals] = useState<ChunkStats>(() => ({
+  const [chunkStats, setChunkStats] = useState<ChunkStats>(() => ({
     total: 0,
     avgSize: 0,
     largestSize: 0,
@@ -47,6 +34,11 @@ export default function ChunkerForm() {
 
   async function onVisualize(event: React.SyntheticEvent<Element, Event>) {
     event.preventDefault();
+    await getVisualizer({
+      chunker,
+      maxSize: chunkMaxSize,
+      overlap: chunkOverlap,
+    });
   }
 
   async function onEvaluate(event: React.SyntheticEvent<Element, Event>) {
