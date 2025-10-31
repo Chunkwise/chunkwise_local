@@ -1,9 +1,37 @@
 import React, { useState } from "react";
 
+interface Evals {
+  precision: number;
+  recall: number;
+  iou: number;
+}
+
+interface ChunkStats {
+  total: number;
+  avgSize: number;
+  largestSize: number;
+  smallestSize: number;
+  largestText: string;
+  smallestText: string;
+}
+
 export default function ChunkerForm() {
-  const [chunker, setChunker] = useState("");
-  const [chunkMaxSize, setChunkMaxSize] = useState(500);
-  const [chunkOverlap, setChunkOverlap] = useState(500);
+  const [chunker, setChunker] = useState<string>("");
+  const [chunkMaxSize, setChunkMaxSize] = useState<number>(500);
+  const [chunkOverlap, setChunkOverlap] = useState<number>(500);
+  const [chunkStats, setChunkStats] = useState<Evals>(() => ({
+    precision: 0,
+    recall: 0,
+    iou: 0,
+  }));
+  const [evals, setEvals] = useState<ChunkStats>(() => ({
+    total: 0,
+    avgSize: 0,
+    largestSize: 0,
+    smallestSize: 0,
+    largestText: "",
+    smallestText: "",
+  }));
 
   function onChangeChunker(event: React.ChangeEvent<HTMLSelectElement>) {
     setChunker(event.target.value);
@@ -15,6 +43,14 @@ export default function ChunkerForm() {
 
   function onChangeOverlap(event: React.ChangeEvent<HTMLInputElement>) {
     setChunkOverlap(Number(event.target.value));
+  }
+
+  async function onVisualize(event: React.SyntheticEvent<Element, Event>) {
+    event.preventDefault();
+  }
+
+  async function onEvaluate(event: React.SyntheticEvent<Element, Event>) {
+    event.preventDefault();
   }
 
   return (
@@ -66,8 +102,8 @@ export default function ChunkerForm() {
           onChange={onChangeOverlap}
         />
         <div id="buttons">
-          <button>Visualize</button>
-          <button>Evaluate</button>
+          <button onClick={onVisualize}>Visualize</button>
+          <button onClick={onEvaluate}>Evaluate</button>
         </div>
       </form>
     </div>
