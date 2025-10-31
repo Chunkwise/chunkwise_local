@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import type { Evals, ChunkStats } from "../types/types";
 import { getEvals, getVisualizer } from "../services/gateway";
 import { ChunkStatistics } from "./ChunkStatistics";
+import Evaluations from "./Evaluations";
 
 export default function ChunkerForm() {
   const [chunker, setChunker] = useState<string>("");
@@ -108,7 +109,7 @@ export default function ChunkerForm() {
         </div>
       </form>
       <ChunkStatistics {...chunkStats}></ChunkStatistics>
-      <div className="metrics"></div>
+      <Evaluations {...evals}></Evaluations>
     </div>
   );
 }

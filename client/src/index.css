@@ -89,10 +89,19 @@ h2 {
   padding: 0;
 }
 
-.stats {
+.stats,
+.evals {
   margin-top: 24px;
 }
 
-.stats li.unknown {
+.stats ul {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.stats li.unknown,
+.evals li.unknown {
   color: lightgrey;
 }
