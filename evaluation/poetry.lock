@@ -472,9 +472,9 @@ tqdm = "*"
 
 [package.source]
 type = "git"
-url = "https://github.com/xiranlu427/chunking_evaluation.git"
-reference = "b2791eecc599f14e2a4711495bebe70f3235c60d"
-resolved_reference = "b2791eecc599f14e2a4711495bebe70f3235c60d"
+url = "https://github.com/Chunkwise/chunking_evaluation.git"
+reference = "acb7aa609a2cc3443d5d79e60b8f02c8ec6e2283"
+resolved_reference = "acb7aa609a2cc3443d5d79e60b8f02c8ec6e2283"
 
 [[package]]
 name = "click"
@@ -3983,4 +3983,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4.0.0"
-content-hash = "1a4d80f26ea433cc0777fbf6893220af8f697ae6d4bda2b4be26df746977db59"
+content-hash = "113d49a28da7042c0c729570fae8c7a196b7dfab721b53abc1038daec202d361"
