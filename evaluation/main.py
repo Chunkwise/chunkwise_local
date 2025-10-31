@@ -1,5 +1,8 @@
 from dotenv import load_dotenv
 import os
+from fastapi import FastAPI, Body, HTTPException, UploadFile, File
+from typing import List, Dict, Any
+from pydantic import BaseModel
 from chunking_evaluation.evaluation_framework.base_evaluation import BaseEvaluation
 import chromadb.utils.embedding_functions as embedding_functions
 from chonkie.chunker.token import TokenChunker
@@ -8,15 +11,17 @@ from chonkie.types import RecursiveRules
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
 
 load_dotenv()
-API_KEY = os.getenv('OPENAI_API_KEY')
 
-# Initialize BaseEvaluation
-evaluation = BaseEvaluation(
-    questions_csv_path='data/sample_queries_references.csv',
-    corpora_id_paths={'sample_document.txt': 'data/sample_document.txt'}
-)
+app = FastAPI()
+
+# # Initialize BaseEvaluation
+# evaluation = BaseEvaluation(
+#     questions_csv_path='data/sample_queries_references.csv',
+#     corpora_id_paths={'sample_document.txt': 'data/sample_document.txt'}
+# )
 
 # Create an embedding function (using OpenAI as an example)
+API_KEY = os.getenv('OPENAI_API_KEY')
 embedding_func = embedding_functions.OpenAIEmbeddingFunction(
     api_key=API_KEY,
     model_name="text-embedding-3-large"
@@ -48,24 +53,23 @@ ck_token_chunker = TokenChunker(
     chunk_overlap=50
 )
 
-chunkers = {
+CHUNKERS: Dict[str, Any] = {
     'LangChain Recursive': lc_recursive_chunker,
     'Chonkie Recursive': ck_recursive_chunker,
     'LangChain Token': lc_token_chunker,
     'Chonkie Token': ck_token_chunker
 }
 
-# Run evaluation
-for name, chunker in chunkers.items():
-    results = evaluation.run(chunker, embedding_function=embedding_func)
-
-    # Print results
-    print("\n=== Evaluation Results ===")
-    print(f"Chunker: {name}")
-    print(f"IoU Mean: {results['iou_mean']:.3f}")
-    print(f"Recall Mean: {results['recall_mean']:.3f}")
-    print(f"Precision Mean: {results['precision_mean']:.3f}")
-    print(f"Precision Omega Mean: {results['precision_omega_mean']:.3f}")   
+# # Run evaluation
+# for name, chunker in CHUNKERS.items():
+#     results = evaluation.run(chunker, embedding_function=embedding_func)
+#     # Print results
+#     print("\n=== Evaluation Results ===")
+#     print(f"Chunker: {name}")
+#     print(f"IoU Mean: {results['iou_mean']:.3f}")
+#     print(f"Recall Mean: {results['recall_mean']:.3f}")
+#     print(f"Precision Mean: {results['precision_mean']:.3f}")
+#     print(f"Precision Omega Mean: {results['precision_omega_mean']:.3f}")   
 
 
 # === Evaluation Results ===
@@ -95,3 +99,59 @@ for name, chunker in chunkers.items():
 # Recall Mean: 1.000
 # Precision Mean: 0.242
 # Precision Omega Mean: 0.541
+
+class ChunkerResult(BaseModel):
+    iou_mean: float
+    recall_mean: float
+    precision_mean: float
+    precision_omega_mean: float
+
+class EvaluateResponse(BaseModel):
+    embedding_model: str
+    document_id: str
+    chunkers_evaluated: List[str]
+    results: Dict[str, ChunkerResult]
+
+@app.post("/evaluate")
+async def evaluate_chunking(
+    # document: UploadFile = File(),
+    # questions: UploadFile = File(),
+    chunkers: list[str] = ["LangChain Recursive", "Chonkie Recursive", "LangChain Token", "Chonkie Token"]
+):
+
+    invalid_chunkers = [c for c in chunkers if c not in CHUNKERS]
+    if invalid_chunkers:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid chunkers specified: {invalid_chunkers}"
+        )  
+    
+    try:
+        # Initialize BaseEvaluation
+        evaluation = BaseEvaluation(
+            questions_csv_path='data/sample_queries_references.csv',
+            corpora_id_paths={'sample_document.txt': 'data/sample_document.txt'}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error initializing BaseEvaluation: {str(e)}"
+        )
+    
+    results = {}
+    for name in chunkers:
+        try:
+            chunker = CHUNKERS[name]
+            metrics = evaluation.run(chunker, embedding_function=embedding_func)
+            results[name] = ChunkerResult(**metrics)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error evaluating chunker {name}: {str(e)}"
+            )   
+    return EvaluateResponse(
+        embedding_model="text-embedding-3-large",
+        document_id="sample_document.txt",
+        chunkers_evaluated=chunkers,
+        results=results
+    )

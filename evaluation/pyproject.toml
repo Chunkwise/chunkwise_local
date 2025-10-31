@@ -14,7 +14,9 @@ requires-python = ">=3.13,<4.0.0"
 dependencies = [
     "chonkie (>=1.4.0,<2.0.0)",
     "langchain-text-splitters (>=1.0.0,<2.0.0)",
-    "python-dotenv (>=1.2.1,<2.0.0)"
+    "python-dotenv (>=1.2.1,<2.0.0)",
+    "fastapi (>=0.120.3,<0.121.0)",
+    "uvicorn (>=0.38.0,<0.39.0)"
 ]
 
 
