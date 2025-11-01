@@ -15,11 +15,11 @@ load_dotenv()
 
 app = FastAPI()
 
-# Initialize BaseEvaluation
-evaluation = BaseEvaluation(
-    questions_csv_path='data/sample_queries_large.csv',
-    corpora_id_paths={'data/sample_document_large.txt': 'data/sample_document_large.txt'}
-)
+# # Initialize BaseEvaluation
+# evaluation = BaseEvaluation(
+#     questions_csv_path='data/sample_queries_large.csv',
+#     corpora_id_paths={'data/sample_document_large.txt': 'data/sample_document_large.txt'}
+# )
 
 # Create an embedding function (using OpenAI as an example)
 API_KEY = os.getenv('OPENAI_API_KEY')
@@ -54,16 +54,6 @@ ck_token_chunker = TokenChunker(
     chunk_overlap=50
 )
 
-# # Original text with multiple spaces and special chars
-# original = "  This  has   \n   multiple  � spaces and special—characters  "
-# chunks = lc_recursive_chunker.split_text(original)
-# print("Original:", repr(original))
-# print("Chunked:", repr(chunks[0]))
-
-# LC-recursive trims whitespaces from chunks
-# Original: '  This  has   \n   multiple  � spaces and special—characters  '
-# Chunked: 'This  has   \n   multiple  � spaces and special—characters'
-
 CHUNKERS: Dict[str, Any] = {
     'Chonkie Recursive': ck_recursive_chunker,
     'Chonkie Token': ck_token_chunker,
@@ -71,29 +61,29 @@ CHUNKERS: Dict[str, Any] = {
     'LangChain Token': lc_token_chunker,
 }
 
-all_results = []
+# all_results = []
 
-# Run evaluation
-for name, chunker in CHUNKERS.items():
-    print(f"\nEvaluating chunker: {name}")
+# # Run evaluation
+# for name, chunker in CHUNKERS.items():
+#     print(f"\nEvaluating chunker: {name}")
 
-    start_time = time.time()
-    results = evaluation.run(chunker, embedding_function=embedding_func)
-    end_time = time.time()
-    elapsed_time = end_time - start_time
+#     start_time = time.time()
+#     results = evaluation.run(chunker, embedding_function=embedding_func)
+#     end_time = time.time()
+#     elapsed_time = end_time - start_time
 
-    results['chunker'] = name
-    results['elapsed_time'] = elapsed_time
-    all_results.append(results)
+#     results['chunker'] = name
+#     results['elapsed_time'] = elapsed_time
+#     all_results.append(results)
 
-    # Print results
-    print("\n=== Evaluation Results ===")
-    print(f"Chunker: {name}")
-    print(f"Elapsed Time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
-    print(f"IoU Mean: {results['iou_mean']:.3f}")
-    print(f"Recall Mean: {results['recall_mean']:.3f}")
-    print(f"Precision Mean: {results['precision_mean']:.3f}")
-    print(f"Precision Omega Mean: {results['precision_omega_mean']:.3f}")   
+#     # Print results
+#     print("\n=== Evaluation Results ===")
+#     print(f"Chunker: {name}")
+#     print(f"Elapsed Time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
+#     print(f"IoU Mean: {results['iou_mean']:.3f}")
+#     print(f"Recall Mean: {results['recall_mean']:.3f}")
+#     print(f"Precision Mean: {results['precision_mean']:.3f}")
+#     print(f"Precision Omega Mean: {results['precision_omega_mean']:.3f}")   
 
 
 # ~~~~~~~~~~~~~~ small file 4kb ~~~~~~~~~~~~~~
@@ -196,8 +186,8 @@ async def evaluate_chunking(
     try:
         # Initialize BaseEvaluation
         evaluation = BaseEvaluation(
-            questions_csv_path='data/sample_queries_references.csv',
-            corpora_id_paths={'sample_document.txt': 'data/sample_document.txt'}
+            questions_csv_path='data/sample_queries.csv',
+            corpora_id_paths={'data/sample_document.txt': 'data/sample_document.txt'}
         )
     except Exception as e:
         raise HTTPException(
