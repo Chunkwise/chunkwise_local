@@ -15,11 +15,11 @@ load_dotenv()
 
 app = FastAPI()
 
-# # Initialize BaseEvaluation
-# evaluation = BaseEvaluation(
-#     questions_csv_path='data/sample_queries_large.csv',
-#     corpora_id_paths={'data/sample_document_large.txt': 'data/sample_document_large.txt'}
-# )
+# Initialize BaseEvaluation
+evaluation = BaseEvaluation(
+    questions_csv_path='data/sample_queries_large.csv',
+    corpora_id_paths={'data/sample_document_large.txt': 'data/sample_document_large.txt'}
+)
 
 # Create an embedding function (using OpenAI as an example)
 API_KEY = os.getenv('OPENAI_API_KEY')
@@ -55,35 +55,35 @@ ck_token_chunker = TokenChunker(
 )
 
 CHUNKERS: Dict[str, Any] = {
+    'LangChain Recursive': lc_recursive_chunker,
     'Chonkie Recursive': ck_recursive_chunker,
     'Chonkie Token': ck_token_chunker,
-    'LangChain Recursive': lc_recursive_chunker,
     'LangChain Token': lc_token_chunker,
 }
 
-# all_results = []
+all_results = []
 
-# # Run evaluation
-# for name, chunker in CHUNKERS.items():
-#     print(f"\nEvaluating chunker: {name}")
+# Run evaluation
+for name, chunker in CHUNKERS.items():
+    print(f"\nEvaluating chunker: {name}")
 
-#     start_time = time.time()
-#     results = evaluation.run(chunker, embedding_function=embedding_func)
-#     end_time = time.time()
-#     elapsed_time = end_time - start_time
+    start_time = time.time()
+    results = evaluation.run(chunker, embedding_function=embedding_func)
+    end_time = time.time()
+    elapsed_time = end_time - start_time
 
-#     results['chunker'] = name
-#     results['elapsed_time'] = elapsed_time
-#     all_results.append(results)
+    results['chunker'] = name
+    results['elapsed_time'] = elapsed_time
+    all_results.append(results)
 
-#     # Print results
-#     print("\n=== Evaluation Results ===")
-#     print(f"Chunker: {name}")
-#     print(f"Elapsed Time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
-#     print(f"IoU Mean: {results['iou_mean']:.3f}")
-#     print(f"Recall Mean: {results['recall_mean']:.3f}")
-#     print(f"Precision Mean: {results['precision_mean']:.3f}")
-#     print(f"Precision Omega Mean: {results['precision_omega_mean']:.3f}")   
+    # Print results
+    print("\n=== Evaluation Results ===")
+    print(f"Chunker: {name}")
+    print(f"Elapsed Time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
+    print(f"IoU Mean: {results['iou_mean']:.3f}")
+    print(f"Recall Mean: {results['recall_mean']:.3f}")
+    print(f"Precision Mean: {results['precision_mean']:.3f}")
+    print(f"Precision Omega Mean: {results['precision_omega_mean']:.3f}")   
 
 
 # ~~~~~~~~~~~~~~ small file 4kb ~~~~~~~~~~~~~~
@@ -117,45 +117,37 @@ CHUNKERS: Dict[str, Any] = {
 
 
 # ~~~~~~~~~~~~~~ large file 123kb ~~~~~~~~~~~~~~
-# Evaluating chunker: Chonkie Recursive
+# === Evaluation Results ===
+# Chunker: LangChain Recursive
+# Elapsed Time: 3.87 seconds (0.06 minutes)
+# IoU Mean: 0.166
+# Recall Mean: 0.397
+# Precision Mean: 0.193
+# Precision Omega Mean: 0.777
 
 # === Evaluation Results ===
 # Chunker: Chonkie Recursive
-# Elapsed Time: 3.59 seconds (0.06 minutes)
-# IoU Mean: 0.083
-# Recall Mean: 0.337
-# Precision Mean: 0.102
-# Precision Omega Mean: 0.588
-
-# Evaluating chunker: Chonkie Token
+# Elapsed Time: 5.10 seconds (0.08 minutes)
+# IoU Mean: 0.132
+# Recall Mean: 0.326
+# Precision Mean: 0.152
+# Precision Omega Mean: 0.697
 
 # === Evaluation Results ===
 # Chunker: Chonkie Token
-# Elapsed Time: 1.72 seconds (0.03 minutes)
-# IoU Mean: 0.098
-# Recall Mean: 0.614
-# Precision Mean: 0.111
-# Precision Omega Mean: 0.445
-
-# Evaluating chunker: LangChain Recursive
-
-# === Evaluation Results ===
-# Chunker: LangChain Recursive
-# Elapsed Time: 4.22 seconds (0.07 minutes)
-# IoU Mean: 0.049
-# Recall Mean: 0.188
-# Precision Mean: 0.066
-# Precision Omega Mean: 0.617
-
-# Evaluating chunker: LangChain Token
+# Elapsed Time: 1.61 seconds (0.03 minutes)
+# IoU Mean: 0.113
+# Recall Mean: 0.667
+# Precision Mean: 0.113
+# Precision Omega Mean: 0.437
 
 # === Evaluation Results ===
 # Chunker: LangChain Token
-# Elapsed Time: 1.70 seconds (0.03 minutes)
-# IoU Mean: 0.015
-# Recall Mean: 0.487
-# Precision Mean: 0.016
-# Precision Omega Mean: 0.205
+# Elapsed Time: 1.19 seconds (0.02 minutes)
+# IoU Mean: 0.039
+# Recall Mean: 1.000
+# Precision Mean: 0.039
+# Precision Omega Mean: 0.196
 
 class ChunkerResult(BaseModel):
     iou_mean: float
