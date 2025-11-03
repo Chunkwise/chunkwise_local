@@ -432,7 +432,8 @@ class Visualizer:
         )
 
         # --- 4. Return HTML ---
-        return html_content
+        # return html_content
+        return main_content
 
     def __repr__(self) -> str:
         """Return the string representation of the Visualizer."""
