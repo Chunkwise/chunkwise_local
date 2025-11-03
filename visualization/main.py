@@ -1,21 +1,23 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from utils.viz import Visualizer
+# from chonkie.types import Chunk
+from typing import List, Optional
 
 app = FastAPI()
 
-class ChonkieChunk(BaseModel):
-    text: str           # The chunk text
-    start_index: int    # Starting position in original text
-    end_index: int      # Ending position in original text
-    token_count: int    # Number of tokens in Chunk
+class Chunk(BaseModel):
+   text: str           # The chunk text
+   start_index: int    # Starting position in original text
+   end_index: int      # Ending position in original text
+   token_count: Optional[int | None] = None   # Number of tokens in Chunk
 
 
-class Item(BaseModel):
-    chunks: list[ChonkieChunk]   # List of Chonkie-formatted chunks
+#class Item(BaseModel):
+#    chunks: List[Chunk]   # List of Chonkie-formatted chunks
 
 
 @app.post("/visualization")
-def visualize(item: Item):
+def visualize(chunks: List[Chunk]) -> str:
     viz = Visualizer()
-    viz.save("test.html", item.chunks) # Save to file
+    return viz.get_HTML(chunks)

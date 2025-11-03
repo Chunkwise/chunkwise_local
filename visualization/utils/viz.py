@@ -7,11 +7,18 @@
 
 import base64
 import html
-import os
 import warnings
 from typing import List, Optional, Union
+from pydantic import BaseModel
 
-from chonkie.types import Chunk
+# from chonkie.types import Chunk
+
+class Chunk(BaseModel):
+   text: str           # The chunk text
+   start_index: int    # Starting position in original text
+   end_index: int      # Ending position in original text
+   token_count: int    # Number of tokens in Chunk
+
 
 # light themes
 LIGHT_THEMES = {
@@ -232,14 +239,13 @@ class Visualizer:
             print(f"Warning: Could not darken color {hex_color}: {e}")
             return "#808080"
 
-    def save(
+    def get_HTML(
         self,
-        filename: str,
         chunks: List[Chunk],
         full_text: Optional[str] = None,
         title: str = "Chunk Visualization"
         # Removed embed_hippo_favicon parameter
-    ) -> None:
+    ) -> str:
         """Save the chunk visualization as a standalone, minimal HTML file, always embedding a hippo emoji SVG favicon.
 
         Args:
@@ -253,20 +259,16 @@ class Visualizer:
         """
         # (Input validation and text reconstruction logic remains the same)
         if not chunks: 
-            print("No chunks to visualize. HTML file not saved.")
-            return
+            print("No chunks to visualize.")
+            raise AttributeError("No chunks to visualize")
         # If the full text is not provided, we'll try to reconstruct it (assuming the chunks are reconstructable)
         if full_text is None:
             try:
                 full_text = self._reconstruct_text_from_chunks(chunks)
             except AttributeError: 
-                raise AttributeError("Error: Chunks must have 'text', 'start_index', and 'end_index' attributes for automatic text reconstruction. HTML not saved.")
+                raise AttributeError("Error: Chunks must have 'text', 'start_index', and 'end_index' attributes for automatic text reconstruction.")
             except Exception as e: 
-                raise ValueError(f"Error reconstructing full text: {e}. HTML not saved.")
-
-        # If the filename doesn't end with ".html", add it
-        if not filename.endswith(".html"):
-            filename = f"{filename}.html"
+                raise ValueError(f"Error reconstructing full text: {e}.")
 
         # --- 1. Validate Spans and Prepare Data ---
         validated_spans = []
@@ -388,18 +390,8 @@ class Visualizer:
             footer_content=footer_content
         )
 
-        # --- 4. Write to file ---
-        # (Remains the same)
-        try:
-            filepath = os.path.abspath(filename)
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(html_content)
-            print(f"HTML visualization saved to: file://{filepath}")
-        except IOError as e:
-            raise IOError(f"Error: Could not write file '{filename}': {e}")
-        except Exception as e:
-            raise Exception(f"An unexpected error occurred during file saving: {e}")
-            
+        # --- 4. Return HTML ---
+        return html_content    
 
     def __repr__(self) -> str:
         """Return the string representation of the Visualizer."""
