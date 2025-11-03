@@ -19,5 +19,7 @@ export interface RequestBody {
   provider: string;
   chunk_size: number;
   chunk_overlap: number;
+  tokenizer?: string;
+  min_characters_per_chunk?: number;
   text: string;
 }
