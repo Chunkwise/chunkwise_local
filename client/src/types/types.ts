@@ -1,17 +1,17 @@
 export interface Evals {
   precision: number;
-  omegaPrecision: number;
+  omega_precision: number;
   recall: number;
   iou: number;
 }
 
 export interface ChunkStats {
-  total: number;
-  avgSize: number;
-  largestSize: number;
-  smallestSize: number;
-  largestText: string;
-  smallestText: string;
+  total_chunks: number;
+  avg_chars: number;
+  largest_chunk_chars: number;
+  smallest_chunk_chars: number;
+  largest_text: string;
+  smallest_text: string;
 }
 
 export interface RequestBody {

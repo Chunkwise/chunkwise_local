@@ -4,7 +4,7 @@ export default function Evaluations({
   recall,
   precision,
   iou,
-  omegaPrecision,
+  omega_precision,
 }: Evals) {
   return (
     <div className="evals">
@@ -15,7 +15,7 @@ export default function Evaluations({
           Precision: {precision}
         </li>
         <li className={precision > 0 ? "" : "unknown"}>
-          Ω Precision: {omegaPrecision}
+          Ω Precision: {omega_precision}
         </li>
         <li className={iou > 0 ? "" : "unknown"}>IoU: {iou}</li>
       </ul>
