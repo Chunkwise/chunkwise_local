@@ -1,5 +1,4 @@
-{
-  "chunks": [
+[
   {
     "text": "In addition to the figurines and other artifacts from the 1500 - 300 BCE era, human and animal remains have been found, some of which could be as much as 25,000 years old. [citation needed]\nThe most controversial findings in Tlapacoya are artifacts which have been dated by some researchers to as early as 25,000 BP. If verified, these would be some of the earliest dates for human habitation in the Americas and would discredit prevailing theories of the timing of settlement of the New World. [citation needed]\nThe evidence for these much-earlier dates consists of the bones of black bear and two species of deer which appeared in middens associated with 22,000-year-old hearths, as well as a curved obsidian blade which was found beneath a buried tree trunk. The bones were 24,000 years BP (± 4000 years) and 21,700 years BP (± 500 years).[2] The obsidian blade was found under a tree trunk which dated to 24,000 years BP (± 1000 years) and was itself dated, using the obsidian hydration method, to between 21,250 and 25,000 years BP.[citation needed]\n",
     "start_index": 0,
@@ -19,4 +18,3 @@
     "token_count": 544
   }
 ]
-}
