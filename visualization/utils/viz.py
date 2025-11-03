@@ -1,3 +1,8 @@
+# Adapted from:
+# Minhas, Bhavnick AND Nigam, Shreyash (2025)
+# "Chonkie: A no-nonsense fast, lightweight, and efficient text chunking library"
+# https://github.com/chonkie-inc/chonkie/blob/55edbad3457043573ed576c6be7e60ff64525a29/src/chonkie/__init__.py
+
 """Module for visualizing Chonkie."""
 
 import base64
