@@ -1,4 +1,4 @@
-import type { RequestBody } from "../types/types";
+import type { ChunkerSelection, RequestBody } from "../types/types";
 
 function isValidRequestBody(body: Partial<RequestBody>): body is RequestBody {
   if (
@@ -19,16 +19,27 @@ function isValidRequestBody(body: Partial<RequestBody>): body is RequestBody {
   }
 }
 
-export default function createRequestBody(
-  chunker: string,
-  size: number,
-  overlap: number,
-  text: string
-): RequestBody {
+export default function createRequestBody({
+  chunker,
+  size,
+  overlap,
+  text,
+  min_characters_per_chunk,
+  tokenizer,
+}: {
+  chunker: ChunkerSelection;
+  size: number;
+  overlap: number;
+  text: string;
+  min_characters_per_chunk?: number;
+  tokenizer?: string;
+}): RequestBody {
   const body: Partial<RequestBody> = {
     chunk_size: size,
     chunk_overlap: overlap,
-    text,
+    text: text,
+    min_characters_per_chunk: min_characters_per_chunk,
+    tokenizer: tokenizer,
   };
 
   // Don't know the exact naming format but this should make it easy to have whatever we like
@@ -56,6 +67,6 @@ export default function createRequestBody(
   if (isValidRequestBody(body)) {
     return body;
   } else {
-    throw new Error("Invalid reuest body created");
+    throw new Error("Invalid request body created");
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import type { Evals, ChunkStats } from "../types/types";
-import { getEvals, getVisualizer } from "../services/gateway";
+import { getEvals, getVisualization } from "../services/gateway";
 import { ChunkStatistics } from "./ChunkStatistics";
 import Evaluations from "./Evaluations";
 
@@ -37,7 +37,7 @@ export default function ChunkerForm() {
 
   async function onVisualize(event: React.SyntheticEvent<Element, Event>) {
     event.preventDefault();
-    const result = await getVisualizer({
+    const result = await getVisualization({
       chunker: chunker,
       size: chunkMaxSize,
       overlap: chunkOverlap,
