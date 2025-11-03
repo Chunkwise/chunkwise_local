@@ -1,19 +1,21 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from utils.viz import Visualizer
+
 # from chonkie.types import Chunk
 from typing import List, Optional
 
 app = FastAPI()
 
+
 class Chunk(BaseModel):
-   text: str           # The chunk text
-   start_index: int    # Starting position in original text
-   end_index: int      # Ending position in original text
-   token_count: Optional[int | None] = None   # Number of tokens in Chunk
+    text: str  # The chunk text
+    start_index: int  # Starting position in original text
+    end_index: int  # Ending position in original text
+    token_count: Optional[int] = None  # Number of tokens in Chunk
 
 
-#class Item(BaseModel):
+# class Item(BaseModel):
 #    chunks: List[Chunk]   # List of Chonkie-formatted chunks
 
 
