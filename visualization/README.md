@@ -12,4 +12,4 @@ poetry install
 
 ## To run the server
 
-poetry run uvicorn main:app --reload
+poetry run uvicorn main:app --reload --port 8002
