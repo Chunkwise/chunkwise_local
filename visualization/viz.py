@@ -332,7 +332,8 @@ class Visualizer:
                         if num_active == 1
                         else self._darken_color(base_color, 0.65)
                     )
-                    hover_title = f"Chunk {primary_chunk_data['id']} | Start: {primary_chunk_data['start']} | End: {primary_chunk_data['end']} | Tokens: {primary_chunk_data['tokens']}{' (Overlap)' if num_active > 1 else ''}"
+                    token_count = primary_chunk_data["tokens"]
+                    hover_title = f"Chunk {primary_chunk_data['id']} | Start: {primary_chunk_data['start']} | End: {primary_chunk_data['end']} | Tokens: {token_count if token_count else 'Token count not provided by chunker'}{' (Overlap)' if num_active > 1 else ''}"
             # Get the text segment to process
             text_segment = full_text[last_processed_idx:event_idx]
 
