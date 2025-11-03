@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Literal, Optional
 import requests
 import os
 
 app = FastAPI()
+router = APIRouter()
 
 
 class VisualizeRequest(BaseModel):
@@ -28,12 +29,12 @@ VISUALIZATION_SERVICE_URL = os.getenv(
 )
 
 
-@app.get("/health")
+@router.get("/health")
 def health_check():
     return {"status": "ok"}
 
 
-@app.post("/visualize")
+@router.post("/visualize")
 def visualize(request: VisualizeRequest):
     """
     Receives chunking parameters and text from client, sends them to the chunking service,
@@ -88,3 +89,6 @@ def visualize(request: VisualizeRequest):
 
     except Exception:
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+app.include_router(router, prefix="/api")
