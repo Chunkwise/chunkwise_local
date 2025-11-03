@@ -1,10 +1,11 @@
 import type { ChunkStats, Evals } from "../types/types";
 import createRequestBody from "../utils/createRequestBody";
 import axios from "axios";
+import { text } from "../dataset/rumpelstiltskin";
 
 type Args = {
   chunker: string;
-  maxSize: number;
+  size: number;
   overlap: number;
 };
 
@@ -15,11 +16,10 @@ interface VisualizerOutput {
 
 export async function getVisualizer({
   chunker,
-  maxSize,
+  size,
   overlap,
 }: Args): Promise<VisualizerOutput> {
-  const requestBody = createRequestBody(chunker, maxSize, overlap);
-
+  const requestBody = createRequestBody(chunker, size, overlap, text);
   const { data } = await axios.post(
     `http://localhost:8000/visualize`,
     requestBody
@@ -30,14 +30,14 @@ export async function getVisualizer({
 
 export async function getEvals({
   chunker,
-  maxSize,
+  size,
   overlap,
 }: Args): Promise<Evals> {
-  // get evals from backend
-  return {
-    precision: 0.1,
-    omegaPrecision: 1.5,
-    recall: 0.2,
-    iou: 0.3,
-  };
+  const requestBody = createRequestBody(chunker, size, overlap, text);
+  const { data } = await axios.post(
+    "http://localhost:8000/evaluate",
+    requestBody
+  );
+
+  return data;
 }

@@ -23,3 +23,9 @@ export interface RequestBody {
   min_characters_per_chunk?: number;
   text: string;
 }
+
+export type ChunkerSelection =
+  | "Chonkie Token"
+  | "Chonkie Recursive"
+  | "LangChain Token"
+  | "LangChain Recursive";

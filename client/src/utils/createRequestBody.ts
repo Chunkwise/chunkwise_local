@@ -9,7 +9,9 @@ function isValidRequestBody(body: Partial<RequestBody>): body is RequestBody {
     "chunk_size" in body &&
     typeof body.chunk_size === "number" &&
     "chunk_overlap" in body &&
-    typeof body.chunk_overlap === "number"
+    typeof body.chunk_overlap === "number" &&
+    "text" in body &&
+    typeof body.text === "string"
   ) {
     return true;
   } else {
@@ -20,11 +22,13 @@ function isValidRequestBody(body: Partial<RequestBody>): body is RequestBody {
 export default function createRequestBody(
   chunker: string,
   size: number,
-  overlap: number
+  overlap: number,
+  text: string
 ): RequestBody {
   const body: Partial<RequestBody> = {
     chunk_size: size,
     chunk_overlap: overlap,
+    text,
   };
 
   // Don't know the exact naming format but this should make it easy to have whatever we like
