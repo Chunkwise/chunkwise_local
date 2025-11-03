@@ -1,0 +1,244 @@
+>> sample request body 1 (using small sample_document.tx):
+[
+  {
+    "chunker_type": "recursive",
+    "provider": "langchain",
+    "chunk_size": 512,
+    "chunk_overlap": 50
+  },
+  {
+    "chunker_type": "token",
+    "provider": "chonkie",
+    "chunk_size": 400,
+    "chunk_overlap": 50
+  }
+]
+
+>> sample results 1:
+{"embedding_model":"text-embedding-3-large","document_id":"sample_document.txt","chunkers_evaluated":["langchain recursive","chonkie token"],"results":[{"iou_mean":0.2695165303945965,"recall_mean":0.9950980392156863,"precision_mean":0.27011494252873564,"precision_omega_mean":0.5506355173648407,"chunker_config":{"chunker_type":"recursive","provider":"langchain","chunk_size":512,"chunk_overlap":50,"tokenizer":"character","min_characters_per_chunk":24}},{"iou_mean":0.2420675537359263,"recall_mean":1.0,"precision_mean":0.2420675537359263,"precision_omega_mean":0.5409440227703985,"chunker_config":{"chunker_type":"token","provider":"chonkie","chunk_size":400,"chunk_overlap":50,"tokenizer":"character","min_characters_per_chunk":24}}]}
+
+------------------------
+
+>> sample request body 2:
+[
+  {
+    "chunker_type": "recursive",
+    "provider": "langchain",
+    "chunk_size": 400,
+    "chunk_overlap": 20,
+    "separators": ["\n\n", "\n", ".", "?", "!", " ", ""]
+  }
+]
+
+>> sample results 2:
+{
+    "embedding_model": "text-embedding-3-large",
+    "document_id": "sample_document.txt",
+    "chunkers_evaluated": [
+        "langchain recursive"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.2695165303945965,
+            "recall_mean": 0.9950980392156863,
+            "precision_mean": 0.27011494252873564,
+            "precision_omega_mean": 0.5506355173648407,
+            "chunker_config": {
+                "provider": "langchain",
+                "chunk_size": 400,
+                "length_function": null,
+                "keep_separator": false,
+                "add_start_index": false,
+                "strip_whitespace": true,
+                "chunker_type": "recursive",
+                "chunk_overlap": 20,
+                "separators": [
+                    "\n\n",
+                    "\n",
+                    ".",
+                    "?",
+                    "!",
+                    " ",
+                    ""
+                ],
+                "is_separator_regex": false,
+                "tokenizer": "character",
+                "rules": {
+                    "levels": [
+                        {
+                            "delimiters": [
+                                "\n\n",
+                                "\r\n",
+                                "\n",
+                                "\r"
+                            ],
+                            "whitespace": false,
+                            "include_delim": "prev",
+                            "pattern": null,
+                            "pattern_mode": "split"
+                        },
+                        {
+                            "delimiters": [
+                                ". ",
+                                "! ",
+                                "? "
+                            ],
+                            "whitespace": false,
+                            "include_delim": "prev",
+                            "pattern": null,
+                            "pattern_mode": "split"
+                        },
+                        {
+                            "delimiters": [
+                                "{",
+                                "}",
+                                "\"",
+                                "[",
+                                "]",
+                                "<",
+                                ">",
+                                "(",
+                                ")",
+                                ":",
+                                ";",
+                                ",",
+                                "—",
+                                "|",
+                                "~",
+                                "-",
+                                "...",
+                                "`",
+                                "'"
+                            ],
+                            "whitespace": false,
+                            "include_delim": "prev",
+                            "pattern": null,
+                            "pattern_mode": "split"
+                        },
+                        {
+                            "delimiters": null,
+                            "whitespace": true,
+                            "include_delim": "prev",
+                            "pattern": null,
+                            "pattern_mode": "split"
+                        },
+                        {
+                            "delimiters": null,
+                            "whitespace": false,
+                            "include_delim": "prev",
+                            "pattern": null,
+                            "pattern_mode": "split"
+                        }
+                    ]
+                },
+                "min_characters_per_chunk": 24
+            }
+        }
+    ]
+}
+
+------------------------
+
+>> sample request body 3:
+[
+  {
+    "chunker_type": "token",
+    "provider": "chonkie",
+    "tokenizer": "gpt2",
+    "chunk_size": 400,
+    "chunk_overlap": 50
+  }
+]
+
+>> sample results 3:
+{
+    "embedding_model": "text-embedding-3-large",
+    "document_id": "sample_document.txt",
+    "chunkers_evaluated": [
+        "chonkie token"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.2420675537359263,
+            "recall_mean": 1.0,
+            "precision_mean": 0.2420675537359263,
+            "precision_omega_mean": 0.5409440227703985,
+            "chunker_config": {
+                "chunker_type": "token",
+                "provider": "chonkie",
+                "chunk_size": 400,
+                "chunk_overlap": 50,
+                "tokenizer": "gpt2",
+                "rules": {
+                    "levels": [
+                        {
+                            "delimiters": [
+                                "\n\n",
+                                "\r\n",
+                                "\n",
+                                "\r"
+                            ],
+                            "whitespace": false,
+                            "include_delim": "prev",
+                            "pattern": null,
+                            "pattern_mode": "split"
+                        },
+                        {
+                            "delimiters": [
+                                ". ",
+                                "! ",
+                                "? "
+                            ],
+                            "whitespace": false,
+                            "include_delim": "prev",
+                            "pattern": null,
+                            "pattern_mode": "split"
+                        },
+                        {
+                            "delimiters": [
+                                "{",
+                                "}",
+                                "\"",
+                                "[",
+                                "]",
+                                "<",
+                                ">",
+                                "(",
+                                ")",
+                                ":",
+                                ";",
+                                ",",
+                                "—",
+                                "|",
+                                "~",
+                                "-",
+                                "...",
+                                "`",
+                                "'"
+                            ],
+                            "whitespace": false,
+                            "include_delim": "prev",
+                            "pattern": null,
+                            "pattern_mode": "split"
+                        },
+                        {
+                            "delimiters": null,
+                            "whitespace": true,
+                            "include_delim": "prev",
+                            "pattern": null,
+                            "pattern_mode": "split"
+                        },
+                        {
+                            "delimiters": null,
+                            "whitespace": false,
+                            "include_delim": "prev",
+                            "pattern": null,
+                            "pattern_mode": "split"
+                        }
+                    ]
+                },
+                "min_characters_per_chunk": 24
+            }
+        }
+    ]
+}
