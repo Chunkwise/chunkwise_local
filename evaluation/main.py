@@ -20,39 +20,39 @@ embedding_func = embedding_functions.OpenAIEmbeddingFunction(
     api_key=API_KEY, model_name="text-embedding-3-large"
 )
 
+
 # only considering 4 chunkers for now
 class BaseChunkerConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)  # Required for Callable
     # For both LangChain and Chonkie chunkers
     provider: Literal["langchain", "chonkie"]
     chunk_size: int = Field(default=512, ge=1)
+    # For Chonkie chunkers
+    tokenizer: Union[Literal["character", "word", "gpt2"], Any] = "character"
     # For both LangChain chunkers
     length_function: Optional[Callable[[str], int]] = None
-    keep_separator: Optional[Union[bool, Literal["start", "end"]]] = False
+    keep_separator: Union[bool, Literal["start", "end"]] = False
     add_start_index: Optional[bool] = False
     strip_whitespace: Optional[bool] = True
-    
+
 
 class RecursiveChunkerConfig(BaseChunkerConfig):
     chunker_type: Literal["recursive"] = "recursive"
     # For LangChain recursive chunker (not exhaustive)
-    chunk_overlap: Optional[int] = Field(default=0, ge=0)
-    separators: Optional[List[str]] = ["\n\n", "\n", " ", ""]
-    is_separator_regex: Optional[bool] = False
+    chunk_overlap: int = Field(default=0, ge=0)
+    separators: List[str] = ["\n\n", "\n", " ", ""]
+    is_separator_regex: bool = False
     # For Chonkie recursive chunker
-    tokenizer: Optional[Union[Literal["character", "word"], Any]] = "character"
-    rules: Optional[RecursiveRules] = RecursiveRules() 
-    min_characters_per_chunk: Optional[int] = 24
+    rules: RecursiveRules = RecursiveRules()
+    min_characters_per_chunk: int = 24
 
 
 class TokenChunkerConfig(BaseChunkerConfig):
     chunker_type: Literal["token"] = "token"
     chunk_overlap: int = Field(default=0, ge=0)
     # For LangChain token chunker
-    lang: Optional[str] = "en"
-    # For Chonkie token chunker
-    tokenizer: Optional[Union[Literal["character", "word", "gpt2"], Any]] = "character"
-    
+    lang: str = "en"
+
 
 class ChunkingResult(BaseModel):
     iou_mean: float
@@ -69,7 +69,9 @@ class EvaluateResponse(BaseModel):
     results: List[ChunkingResult]
 
 
-def create_chunker_from_config(config: Union[RecursiveChunkerConfig, TokenChunkerConfig]) -> Any:
+def create_chunker_from_config(
+    config: Union[RecursiveChunkerConfig, TokenChunkerConfig],
+) -> Any:
     if config.provider == "langchain":
         match config.chunker_type:
             case "recursive":
