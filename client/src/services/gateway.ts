@@ -1,4 +1,6 @@
 import type { ChunkStats, Evals } from "../types/types";
+import createRequestBody from "../utils/createRequestBody";
+import axios from "axios";
 
 type Args = {
   chunker: string;
@@ -6,26 +8,24 @@ type Args = {
   overlap: number;
 };
 
+interface VisualizerOutput {
+  stats: ChunkStats;
+  html: string;
+}
+
 export async function getVisualizer({
   chunker,
   maxSize,
   overlap,
-}: Args): Promise<{
-  stats: ChunkStats;
-  html: string;
-}> {
-  //  Get visualizer and/or stats
-  return {
-    stats: {
-      total: 100,
-      avgSize: 10,
-      largestSize: 20,
-      smallestSize: 1,
-      largestText: "example of largest",
-      smallestText: "examples of smallest",
-    },
-    html: '<p style="color=green">example html<p>',
-  };
+}: Args): Promise<VisualizerOutput> {
+  const requestBody = createRequestBody(chunker, maxSize, overlap);
+
+  const { data } = await axios.post(
+    `http://localhost:8000/visualize`,
+    requestBody
+  );
+
+  return data;
 }
 
 export async function getEvals({
@@ -36,6 +36,7 @@ export async function getEvals({
   // get evals from backend
   return {
     precision: 0.1,
+    omegaPrecision: 1.5,
     recall: 0.2,
     iou: 0.3,
   };
