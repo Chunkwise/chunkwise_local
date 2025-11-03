@@ -10,22 +10,16 @@ import html
 import warnings
 from typing import List, Optional, Union
 from pydantic import BaseModel
+from models import Chunk
 
 # from chonkie.types import Chunk
-
-class Chunk(BaseModel):
-   text: str           # The chunk text
-   start_index: int    # Starting position in original text
-   end_index: int      # Ending position in original text
-   token_count: int    # Number of tokens in Chunk
-
 
 # light themes
 LIGHT_THEMES = {
     # Pastel colored rainbow theme
     "pastel": [
         "#FFADAD",
-        "#FFD6A5",  
+        "#FFD6A5",
         "#FDFFB6",
         "#CAFFBF",
         "#9BF6FF",
@@ -47,12 +41,12 @@ LIGHT_THEMES = {
     ],
     # New example light theme
     "ocean_breeze": [
-        "#E0FFFF", # Light Cyan
-        "#B0E0E6", # Powder Blue
-        "#ADD8E6", # Light Blue
-        "#87CEEB", # Sky Blue
-        "#4682B4", # Steel Blue
-    ]
+        "#E0FFFF",  # Light Cyan
+        "#B0E0E6",  # Powder Blue
+        "#ADD8E6",  # Light Blue
+        "#87CEEB",  # Sky Blue
+        "#4682B4",  # Steel Blue
+    ],
 }
 
 # dark themes
@@ -60,38 +54,38 @@ DARK_THEMES = {
     # Tiktokenizer but with darker colors
     "tiktokenizer_dark": [
         "#2A4E66",
-        "#80662A", 
-        "#2A6648", 
-        "#66422A", 
-        "#2A4A66", 
-        "#3A3D40", 
-        "#55386E", 
-        "#3A6640", 
-        "#66353B", 
+        "#80662A",
+        "#2A6648",
+        "#66422A",
+        "#2A4A66",
+        "#3A3D40",
+        "#55386E",
+        "#3A6640",
+        "#66353B",
     ],
     # Pastel but with darker colors
     "pastel_dark": [
-        "#5C2E2E", 
-        "#5C492E",  
-        "#4F5C2E",  
-        "#2E5C4F",  
-        "#2E3F5C",  
-        "#3A3A3A",  
-        "#4F2E5C",  
-        "#2E5C3F"   
+        "#5C2E2E",
+        "#5C492E",
+        "#4F5C2E",
+        "#2E5C4F",
+        "#2E3F5C",
+        "#3A3A3A",
+        "#4F2E5C",
+        "#2E5C3F",
     ],
     # New example dark theme
     "midnight": [
-        "#00008B", # DarkBlue
-        "#483D8B", # DarkSlateBlue
-        "#2F4F4F", # DarkSlateGray
-        "#191970", # MidnightBlue
-    ]
+        "#00008B",  # DarkBlue
+        "#483D8B",  # DarkSlateBlue
+        "#2F4F4F",  # DarkSlateGray
+        "#191970",  # MidnightBlue
+    ],
 }
 
 # light mode colors
 BODY_BACKGROUND_COLOR_LIGHT = "#F0F2F5"
-CONTENT_BACKGROUND_COLOR_LIGHT = "#FFFFFF"      
+CONTENT_BACKGROUND_COLOR_LIGHT = "#FFFFFF"
 TEXT_COLOR_LIGHT = "#333333"
 # dark mode colors
 BODY_BACKGROUND_COLOR_DARK = "#121212"
@@ -143,8 +137,8 @@ FOOTER_TEMPLATE = """
 
 class Visualizer:
     """Visualizer class for Chonkie.
-    
-    This class can take in Chonkie Chunks and visualize them on the terminal 
+
+    This class can take in Chonkie Chunks and visualize them on the terminal
     or save them as a standalone HTML file.
 
     Attributes:
@@ -155,20 +149,20 @@ class Visualizer:
             Print the chunks to the terminal, with rich highlights!
         save(filename: str, chunks: List[Chunk], full_text: Optional[str] = None, title: str = "Chunk Visualization") -> None:
             Save the chunks as a standalone HTML file, always embedding a hippo emoji SVG favicon.
-    
+
     """
-    
+
     # Store the hippo SVG content as a class attribute
     HIPPO_SVG_CONTENT = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><text x="50" y="55" font-size="90" text-anchor="middle" dominant-baseline="middle">🦛</text></svg>"""
 
     def __init__(self, theme: Union[str, List[str]] = "pastel") -> None:
         """Initialize the Visualizer.
-        
+
         Args:
             theme (Union[str, List[str]]): The theme to use for the visualizer (default is PASTEL_THEME)
-        
+
         """
-        
+
         # We want the editor's text color to apply by default for custom themes
         # If the theme is a string, get the theme
         if isinstance(theme, str):
@@ -197,30 +191,36 @@ class Visualizer:
         """Reconstruct the full text from a list of chunks, handling overlaps."""
         # Sort chunks by start_index to handle overlaps correctly
         sorted_chunks = sorted(chunks, key=lambda x: x.start_index)
-        
+
         # Check if chunks have the required attributes
         for chunk in sorted_chunks:
-            if not hasattr(chunk, 'text') or not hasattr(chunk, 'start_index') or not hasattr(chunk, 'end_index'):
-                raise AttributeError("Chunks must have 'text', 'start_index', and 'end_index' attributes for automatic text reconstruction.")
-        
-        # Reconstruct full text by merging chunks 
+            if (
+                not hasattr(chunk, "text")
+                or not hasattr(chunk, "start_index")
+                or not hasattr(chunk, "end_index")
+            ):
+                raise AttributeError(
+                    "Chunks must have 'text', 'start_index', and 'end_index' attributes for automatic text reconstruction."
+                )
+
+        # Reconstruct full text by merging chunks
         reconstructed_text = ""
         last_end = 0
-        
+
         for chunk in sorted_chunks:
             start_idx = chunk.start_index
-            
+
             if start_idx >= last_end:
                 # No overlap, append chunk text directly
                 reconstructed_text += chunk.text
-                last_end = len(reconstructed_text) # fix for overlapped chunks
+                last_end = len(reconstructed_text)  # fix for overlapped chunks
             else:
                 # Handle overlap by taking only the non-overlapping part
                 overlap_offset = last_end - start_idx
                 if overlap_offset < len(chunk.text):
                     reconstructed_text += chunk.text[overlap_offset:]
-                    last_end = len(reconstructed_text) # fix for overlapped chunks
-        
+                    last_end = len(reconstructed_text)  # fix for overlapped chunks
+
         return reconstructed_text
 
     # NOTE: This is a helper function to manage overlapping chunk visualizations
@@ -228,11 +228,13 @@ class Visualizer:
     def _darken_color(self, hex_color: str, amount: float = 0.7) -> str:
         """Darkens a hex color by a multiplier (0 to 1)."""
         try:
-            hex_color = hex_color.lstrip('#')
+            hex_color = hex_color.lstrip("#")
             if len(hex_color) != 6:
-                if len(hex_color) == 3: hex_color = "".join([c*2 for c in hex_color])
-                else: raise ValueError("Invalid hex color format")
-            rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+                if len(hex_color) == 3:
+                    hex_color = "".join([c * 2 for c in hex_color])
+                else:
+                    raise ValueError("Invalid hex color format")
+            rgb = tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
             darker_rgb = tuple(max(0, int(c * amount)) for c in rgb)
             return "#{:02x}{:02x}{:02x}".format(*darker_rgb)
         except Exception as e:
@@ -243,7 +245,7 @@ class Visualizer:
         self,
         chunks: List[Chunk],
         full_text: Optional[str] = None,
-        title: str = "Chunk Visualization"
+        title: str = "Chunk Visualization",
         # Removed embed_hippo_favicon parameter
     ) -> str:
         """Save the chunk visualization as a standalone, minimal HTML file, always embedding a hippo emoji SVG favicon.
@@ -258,16 +260,18 @@ class Visualizer:
 
         """
         # (Input validation and text reconstruction logic remains the same)
-        if not chunks: 
+        if not chunks:
             print("No chunks to visualize.")
             raise AttributeError("No chunks to visualize")
         # If the full text is not provided, we'll try to reconstruct it (assuming the chunks are reconstructable)
         if full_text is None:
             try:
                 full_text = self._reconstruct_text_from_chunks(chunks)
-            except AttributeError: 
-                raise AttributeError("Error: Chunks must have 'text', 'start_index', and 'end_index' attributes for automatic text reconstruction.")
-            except Exception as e: 
+            except AttributeError:
+                raise AttributeError(
+                    "Error: Chunks must have 'text', 'start_index', and 'end_index' attributes for automatic text reconstruction."
+                )
+            except Exception as e:
                 raise ValueError(f"Error reconstructing full text: {e}.")
 
         # --- 1. Validate Spans and Prepare Data ---
@@ -276,26 +280,36 @@ class Visualizer:
         for i, chunk in enumerate(chunks):
             try:
                 start, end = int(chunk.start_index), int(chunk.end_index)
-                start = max(0, start); end = max(0, end)
+                start = max(0, start)
+                end = max(0, end)
                 if start < end and start < text_length:
                     effective_end = min(end, text_length)
                     token_count = chunk.token_count
-                    validated_spans.append({"id": i, "start": start, "end": effective_end, "tokens": token_count})
+                    validated_spans.append(
+                        {
+                            "id": i,
+                            "start": start,
+                            "end": effective_end,
+                            "tokens": token_count,
+                        }
+                    )
             except (AttributeError, TypeError, ValueError):
-                warnings.warn(f"Warning: Skipping chunk with invalid start/end index: {chunk}")
+                warnings.warn(
+                    f"Warning: Skipping chunk with invalid start/end index: {chunk}"
+                )
                 continue
 
         # --- 2. Generate HTML Parts (Event-based with Overlap Detection) ---
         html_parts = []
         last_processed_idx = 0
         events = []
-        
+
         # Create events for each span
         for span_data in validated_spans:
             events.append((span_data["start"], 1, span_data["id"]))
             events.append((span_data["end"], -1, span_data["id"]))
         events.sort()
-        
+
         # Initialize the active chunk IDs set
         active_chunk_ids: set[int] = set()
 
@@ -308,11 +322,17 @@ class Visualizer:
             hover_title = ""
             if num_active > 0:
                 min_active_chunk_id = min(active_chunk_ids)
-                primary_chunk_data = next((s for s in validated_spans if s["id"] == min_active_chunk_id), None)
+                primary_chunk_data = next(
+                    (s for s in validated_spans if s["id"] == min_active_chunk_id), None
+                )
                 if primary_chunk_data:
                     base_color = self._get_color(primary_chunk_data["id"])
-                    current_bg_color = base_color if num_active == 1 else self._darken_color(base_color, 0.65)
-                    hover_title = (f"Chunk {primary_chunk_data['id']} | Start: {primary_chunk_data['start']} | End: {primary_chunk_data['end']} | Tokens: {primary_chunk_data['tokens']}{' (Overlap)' if num_active > 1 else ''}")
+                    current_bg_color = (
+                        base_color
+                        if num_active == 1
+                        else self._darken_color(base_color, 0.65)
+                    )
+                    hover_title = f"Chunk {primary_chunk_data['id']} | Start: {primary_chunk_data['start']} | End: {primary_chunk_data['end']} | Tokens: {primary_chunk_data['tokens']}{' (Overlap)' if num_active > 1 else ''}"
             # Get the text segment to process
             text_segment = full_text[last_processed_idx:event_idx]
 
@@ -321,45 +341,65 @@ class Visualizer:
                 escaped_segment = html.escape(text_segment).replace("\n", "<br>")
                 # If there is a background color, add the title attribute and the span tags
                 if current_bg_color != "transparent":
-                    title_attr = f' title="{html.escape(hover_title)}"' if hover_title else ''
-                    html_parts.append(f'<span style="background-color: {current_bg_color};"{title_attr}>')
+                    title_attr = (
+                        f' title="{html.escape(hover_title)}"' if hover_title else ""
+                    )
+                    html_parts.append(
+                        f'<span style="background-color: {current_bg_color};"{title_attr}>'
+                    )
                     html_parts.append(escaped_segment)
-                    html_parts.append('</span>')
-                else: html_parts.append(escaped_segment)
+                    html_parts.append("</span>")
+                else:
+                    html_parts.append(escaped_segment)
             last_processed_idx = event_idx
-            if event_type == 1: active_chunk_ids.add(chunk_id)
-            elif event_type == -1: active_chunk_ids.discard(chunk_id)
+            if event_type == 1:
+                active_chunk_ids.add(chunk_id)
+            elif event_type == -1:
+                active_chunk_ids.discard(chunk_id)
         # Process final segment
         if last_processed_idx < text_length:
             text_segment = full_text[last_processed_idx:]
             escaped_segment = html.escape(text_segment).replace("\n", "<br>")
             num_active = len(active_chunk_ids)
-            current_bg_color = "transparent"; hover_title = ""
+            current_bg_color = "transparent"
+            hover_title = ""
             if num_active > 0:
                 min_active_chunk_id = min(active_chunk_ids)
-                primary_chunk_data = next((s for s in validated_spans if s["id"] == min_active_chunk_id), None)
+                primary_chunk_data = next(
+                    (s for s in validated_spans if s["id"] == min_active_chunk_id), None
+                )
                 if primary_chunk_data:
                     base_color = self._get_color(primary_chunk_data["id"])
-                    current_bg_color = base_color if num_active == 1 else self._darken_color(base_color, 0.65)
-                    hover_title = (f"Chunk {primary_chunk_data['id']} | Start: {primary_chunk_data['start']} | End: {primary_chunk_data['end']} | Tokens: {primary_chunk_data['tokens']}{' (Overlap)' if num_active > 1 else ''}")
+                    current_bg_color = (
+                        base_color
+                        if num_active == 1
+                        else self._darken_color(base_color, 0.65)
+                    )
+                    hover_title = f"Chunk {primary_chunk_data['id']} | Start: {primary_chunk_data['start']} | End: {primary_chunk_data['end']} | Tokens: {primary_chunk_data['tokens']}{' (Overlap)' if num_active > 1 else ''}"
             if current_bg_color != "transparent":
-                title_attr = f' title="{html.escape(hover_title)}"' if hover_title else ''
-                html_parts.append(f'<span style="background-color: {current_bg_color};"{title_attr}>')
+                title_attr = (
+                    f' title="{html.escape(hover_title)}"' if hover_title else ""
+                )
+                html_parts.append(
+                    f'<span style="background-color: {current_bg_color};"{title_attr}>'
+                )
                 html_parts.append(escaped_segment)
-                html_parts.append('</span>')
-            else: html_parts.append(escaped_segment)
-
+                html_parts.append("</span>")
+            else:
+                html_parts.append(escaped_segment)
 
         # --- 3. Assemble the final HTML page ---
 
         # --- Always Generate Hippo Favicon ---
-        favicon_link_tag = "" # Default to empty in case of error
+        favicon_link_tag = ""  # Default to empty in case of error
         try:
             encoded_svg = base64.b64encode(
-                self.HIPPO_SVG_CONTENT.encode('utf-8')
-            ).decode('utf-8')
+                self.HIPPO_SVG_CONTENT.encode("utf-8")
+            ).decode("utf-8")
             favicon_data_uri = f"data:image/svg+xml;base64,{encoded_svg}"
-            favicon_link_tag = f'<link rel="icon" type="image/svg+xml" href="{favicon_data_uri}">'
+            favicon_link_tag = (
+                f'<link rel="icon" type="image/svg+xml" href="{favicon_data_uri}">'
+            )
         except Exception as e:
             print(f"Warning: Could not encode embedded hippo favicon: {e}")
 
@@ -368,7 +408,7 @@ class Visualizer:
         main_content = MAIN_TEMPLATE.format(html_parts="".join(html_parts))
 
         # Set the background colors and the text color
-        if (self.theme_name != "custom" and self.theme_name in DARK_THEMES):
+        if self.theme_name != "custom" and self.theme_name in DARK_THEMES:
             # Set the dark mode colors
             body_bg_color = BODY_BACKGROUND_COLOR_DARK
             content_bg_color = CONTENT_BACKGROUND_COLOR_DARK
@@ -387,11 +427,11 @@ class Visualizer:
             content_bg_color=content_bg_color,
             text_color=text_color,
             main_content=main_content,
-            footer_content=footer_content
+            footer_content=footer_content,
         )
 
         # --- 4. Return HTML ---
-        return html_content    
+        return html_content
 
     def __repr__(self) -> str:
         """Return the string representation of the Visualizer."""
