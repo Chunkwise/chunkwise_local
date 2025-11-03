@@ -1,8 +1,8 @@
 from dotenv import load_dotenv
 import os
 from fastapi import FastAPI, Body, HTTPException, UploadFile, File
-from typing import List, Literal, Optional, Union, Any
-from pydantic import BaseModel, Field
+from typing import List, Literal, Optional, Union, Callable, Any
+from pydantic import BaseModel, Field, ConfigDict
 from chunking_evaluation.evaluation_framework.base_evaluation import BaseEvaluation
 import chromadb.utils.embedding_functions as embedding_functions
 from chonkie.chunker.token import TokenChunker
@@ -20,24 +20,46 @@ embedding_func = embedding_functions.OpenAIEmbeddingFunction(
     api_key=API_KEY, model_name="text-embedding-3-large"
 )
 
-
-class ChunkingConfig(BaseModel):
-    chunker_type: Literal["recursive", "token"]
+# only considering 4 chunkers for now
+class BaseChunkerConfig(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)  # Required for Callable
+    # For both LangChain and Chonkie chunkers
     provider: Literal["langchain", "chonkie"]
     chunk_size: int = Field(default=512, ge=1)
-    chunk_overlap: int = Field(default=0, ge=0)
-    # Options for Chonkie's token chunker's `tokenizer` parameter: “gpt2”, “character”, “word”, or any Hugging Face tokenizer.
-    tokenizer: Optional[Union[Literal["character", "word", "gpt2"], Any]] = "character"
-    rules: Optional[RecursiveRules] = RecursiveRules()
+    # For both LangChain chunkers
+    length_function: Optional[Callable[[str], int]] = None
+    keep_separator: Optional[Union[bool, Literal["start", "end"]]] = False
+    add_start_index: Optional[bool] = False
+    strip_whitespace: Optional[bool] = True
+    
+
+class RecursiveChunkerConfig(BaseChunkerConfig):
+    chunker_type: Literal["recursive"] = "recursive"
+    # For LangChain recursive chunker (not exhaustive)
+    chunk_overlap: Optional[int] = Field(default=0, ge=0)
+    separators: Optional[List[str]] = ["\n\n", "\n", " ", ""]
+    is_separator_regex: Optional[bool] = False
+    # For Chonkie recursive chunker
+    tokenizer: Optional[Union[Literal["character", "word"], Any]] = "character"
+    rules: Optional[RecursiveRules] = RecursiveRules() 
     min_characters_per_chunk: Optional[int] = 24
 
+
+class TokenChunkerConfig(BaseChunkerConfig):
+    chunker_type: Literal["token"] = "token"
+    chunk_overlap: int = Field(default=0, ge=0)
+    # For LangChain token chunker
+    lang: Optional[str] = "en"
+    # For Chonkie token chunker
+    tokenizer: Optional[Union[Literal["character", "word", "gpt2"], Any]] = "character"
+    
 
 class ChunkingResult(BaseModel):
     iou_mean: float
     recall_mean: float
     precision_mean: float
     precision_omega_mean: float
-    chunker_config: ChunkingConfig
+    chunker_config: Union[RecursiveChunkerConfig, TokenChunkerConfig]
 
 
 class EvaluateResponse(BaseModel):
@@ -47,7 +69,7 @@ class EvaluateResponse(BaseModel):
     results: List[ChunkingResult]
 
 
-def create_chunker_from_config(config: ChunkingConfig) -> Any:
+def create_chunker_from_config(config: Union[RecursiveChunkerConfig, TokenChunkerConfig]) -> Any:
     if config.provider == "langchain":
         match config.chunker_type:
             case "recursive":
@@ -78,9 +100,9 @@ def create_chunker_from_config(config: ChunkingConfig) -> Any:
 async def evaluate_chunking(
     # document: UploadFile = File(),
     # questions: UploadFile = File(),
-    configs: List[ChunkingConfig] = Body(
+    configs: List[Union[RecursiveChunkerConfig, TokenChunkerConfig]] = Body(
         default=[
-            ChunkingConfig(
+            RecursiveChunkerConfig(
                 chunker_type="recursive",
                 provider="langchain",
                 chunk_size=512,
@@ -122,5 +144,3 @@ async def evaluate_chunking(
         chunkers_evaluated=chunker_names,
         results=results,
     )
-
-
