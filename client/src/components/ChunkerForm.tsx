@@ -10,6 +10,7 @@ export default function ChunkerForm() {
   const [chunkOverlap, setChunkOverlap] = useState<number>(500);
   const [evals, setEvals] = useState<Evals>(() => ({
     precision: 0,
+    omegaPrecision: 0,
     recall: 0,
     iou: 0,
   }));
@@ -37,8 +38,8 @@ export default function ChunkerForm() {
   async function onVisualize(event: React.SyntheticEvent<Element, Event>) {
     event.preventDefault();
     const result = await getVisualizer({
-      chunker,
-      maxSize: chunkMaxSize,
+      chunker: chunker,
+      size: chunkMaxSize,
       overlap: chunkOverlap,
     });
 
@@ -49,7 +50,7 @@ export default function ChunkerForm() {
     event.preventDefault();
     const result = await getEvals({
       chunker,
-      maxSize: chunkMaxSize,
+      size: chunkMaxSize,
       overlap: chunkOverlap,
     });
     setEvals(result);
@@ -62,10 +63,10 @@ export default function ChunkerForm() {
         <label htmlFor="chunker">Chunker:</label>
         <select id="chunker" onChange={onChangeChunker} value={chunker}>
           <option value="">--Choose a chunker!--</option>
-          <option value="example1">example1</option>
-          <option value="example2">example2</option>
-          <option value="example3">example3</option>
-          <option value="example4">example4</option>
+          <option value="Chonkie Token">Chonkie Token</option>
+          <option value="Chonkie Recursive">Chonkie Recursive</option>
+          <option value="LangChain Token">LangChain Token</option>
+          <option value="LangChain Recursive">LangChain Recursive</option>
         </select>
         <label htmlFor="chunk-max-size">Maximum chunk size:</label>
         <input
