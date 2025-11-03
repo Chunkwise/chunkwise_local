@@ -17,4 +17,20 @@ def visualize(chunks: List[Chunk]) -> str:
     Sends visualization (HTML) to server
     """
     viz = Visualizer()
-    return viz.get_HTML(chunks)
+    html_content = viz.get_HTML(chunks)
+    save_to_file(html_content)
+    return html_content
+
+
+def save_to_file(html_content):
+    try:
+        import os
+
+        filepath = os.path.abspath("visualization.html")
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(html_content)
+        print(f"HTML visualization saved to: file://{filepath}")
+    except IOError as e:
+        raise IOError(f"Error: Could not write file '{filename}': {e}")
+    except Exception as e:
+        raise Exception(f"An unexpected error occurred during file saving: {e}")
