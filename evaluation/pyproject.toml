@@ -2,7 +2,6 @@
 package-mode = false
 
 [project]
-
 name = "evaluation"
 version = "0.1.0"
 description = ""
@@ -17,7 +16,7 @@ dependencies = [
     "python-dotenv (>=1.2.1,<2.0.0)",
     "fastapi (>=0.120.3,<0.121.0)",
     "uvicorn (>=0.38.0,<0.39.0)",
-    "chunking-evaluation @ git+https://github.com/xiranlu427/chunking_evaluation.git@b2791eecc599f14e2a4711495bebe70f3235c60d"
+    "chunking-evaluation @ git+https://github.com/Chunkwise/chunking_evaluation_refactored.git",
 ]
 
 

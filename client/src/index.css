@@ -2,15 +2,17 @@
   margin: 0;
   padding: 0;
   border: 0;
+  text-decoration: none;
+  list-style-type: none;
 }
 
 body {
-  font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: rgb(233, 233, 233);
 }
 
 #root {
-  margin-top: 12%;
+  margin-top: 12vh;
 }
 
 h1 {
@@ -71,7 +73,8 @@ select {
   align-items: flex-start;
 }
 
-#chunking-configuration h1 {
+#chunking-configuration h1,
+h2 {
   color: blue;
 }
 
@@ -84,4 +87,21 @@ select {
 #chunking-configuration input[type="range"] {
   accent-color: blue;
   padding: 0;
+}
+
+.stats,
+.evals {
+  margin-top: 24px;
+}
+
+.stats ul {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.stats li.unknown,
+.evals li.unknown {
+  color: lightgrey;
 }
