@@ -15,11 +15,11 @@ class Chunk(BaseModel):
     token_count: Optional[int] = None  # Number of tokens in Chunk
 
 
-# class Item(BaseModel):
-#    chunks: List[Chunk]   # List of Chonkie-formatted chunks
-
-
 @app.post("/visualization")
 def visualize(chunks: List[Chunk]) -> str:
+    """
+    Receives chunks from server
+    Sends visualization (HTML) to server
+    """
     viz = Visualizer()
     return viz.get_HTML(chunks)
