@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from chonkie import Visualizer
+from utils.viz import Visualizer
 
 app = FastAPI()
 
@@ -18,5 +18,4 @@ class Item(BaseModel):
 @app.post("/visualization")
 def visualize(item: Item):
     viz = Visualizer()
-    viz.print(item.chunks)                      # Print to console
-    viz.save("visualization.html", item.chunks) # Save to file
+    viz.save("test.html", item.chunks) # Save to file
