@@ -32,8 +32,8 @@ class BaseChunkerConfig(BaseModel):
     # For both LangChain chunkers
     length_function: Optional[Callable[[str], int]] = None
     keep_separator: Union[bool, Literal["start", "end"]] = False
-    add_start_index: Optional[bool] = False
-    strip_whitespace: Optional[bool] = True
+    add_start_index: bool = False
+    strip_whitespace: bool = True
 
 
 class RecursiveChunkerConfig(BaseChunkerConfig):
