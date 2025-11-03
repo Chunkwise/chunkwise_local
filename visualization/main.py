@@ -1,22 +1,20 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
-from chonkie import Visualizer
+from typing import List
+from viz import Visualizer
+from models import Chunk
+
+# I am using the same Chunk type as used in server and evaluation as opposed to Chonkie's Chunk type which has more properties
+# If we switch to Chonkie's make sure to change this file and viz.py
+# from chonkie.types import Chunk
 
 app = FastAPI()
 
-class ChonkieChunk(BaseModel):
-    text: str           # The chunk text
-    start_index: int    # Starting position in original text
-    end_index: int      # Ending position in original text
-    token_count: int    # Number of tokens in Chunk
-
-
-class Item(BaseModel):
-    chunks: list[ChonkieChunk]   # List of Chonkie-formatted chunks
-
 
 @app.post("/visualization")
-def visualize(item: Item):
+def visualize(chunks: List[Chunk]) -> str:
+    """
+    Receives chunks from server
+    Sends visualization (HTML) to server
+    """
     viz = Visualizer()
-    viz.print(item.chunks)                      # Print to console
-    viz.save("visualization.html", item.chunks) # Save to file
+    return viz.get_HTML(chunks)
