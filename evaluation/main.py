@@ -27,7 +27,8 @@ class ChunkingConfig(BaseModel):
     chunk_size: int = Field(default=512, ge=1)
     chunk_overlap: int = Field(default=0, ge=0)
     # Options for Chonkie's token chunker's `tokenizer` parameter: “gpt2”, “character”, “word”, or any Hugging Face tokenizer.
-    tokenizer: Optional[Union[Literal["character", "word", "gpt2"], str]] = "character"
+    tokenizer: Optional[Union[Literal["character", "word", "gpt2"], Any]] = "character"
+    rules: Optional[RecursiveRules] = RecursiveRules()
     min_characters_per_chunk: Optional[int] = 24
 
 
@@ -123,21 +124,3 @@ async def evaluate_chunking(
     )
 
 
-# sample request body - using small sample_document:
-# [
-#   {
-#     "chunker_type": "recursive",
-#     "provider": "langchain",
-#     "chunk_size": 512,
-#     "chunk_overlap": 50
-#   },
-#   {
-#     "chunker_type": "token",
-#     "provider": "chonkie",
-#     "chunk_size": 400,
-#     "chunk_overlap": 50
-#   }
-# ]
-
-# sample results:
-# {"embedding_model":"text-embedding-3-large","document_id":"sample_document.txt","chunkers_evaluated":["langchain recursive","chonkie token"],"results":[{"iou_mean":0.2695165303945965,"recall_mean":0.9950980392156863,"precision_mean":0.27011494252873564,"precision_omega_mean":0.5506355173648407,"chunker_config":{"chunker_type":"recursive","provider":"langchain","chunk_size":512,"chunk_overlap":50,"tokenizer":"character","min_characters_per_chunk":24}},{"iou_mean":0.2420675537359263,"recall_mean":1.0,"precision_mean":0.2420675537359263,"precision_omega_mean":0.5409440227703985,"chunker_config":{"chunker_type":"token","provider":"chonkie","chunk_size":400,"chunk_overlap":50,"tokenizer":"character","min_characters_per_chunk":24}}]}
