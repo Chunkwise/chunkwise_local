@@ -12,8 +12,6 @@ from typing import List, Optional, Union
 from pydantic import BaseModel
 from models import Chunk
 
-# from chonkie.types import Chunk
-
 # light themes
 LIGHT_THEMES = {
     # Pastel colored rainbow theme
@@ -102,7 +100,6 @@ HTML_TEMPLATE = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
-    {favicon_link_tag}
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; line-height: 1.6; padding: 0; margin: 0; background-color: {body_bg_color}; color: {text_color}; display: flex; flex-direction: column; min-height: 100vh; }}
         .content-box {{ max-width: 900px; width: 100%; margin: 30px auto; padding: 30px 20px 20px 20px; background-color: {content_bg_color}; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); box-sizing: border-box; }}
@@ -117,7 +114,6 @@ HTML_TEMPLATE = """
 </head>
 <body>
     {main_content}
-    {footer_content}
 </body>
 </html>
 """
@@ -126,12 +122,6 @@ MAIN_TEMPLATE = """
 <div class="content-box">
     <div class="text-display">{html_parts}</div>
 </div>
-"""
-
-FOOTER_TEMPLATE = """
-<footer>
-    Made with <span class="heart">🤎</span> by <a href="https://github.com/chonkie-inc/chonkie" target="_blank" rel="noopener noreferrer">🦛 Chonkie</a>
-</footer>
 """
 
 
@@ -148,12 +138,8 @@ class Visualizer:
         print(chunks: List[Chunk], full_text: Optional[str] = None) -> None:
             Print the chunks to the terminal, with rich highlights!
         save(filename: str, chunks: List[Chunk], full_text: Optional[str] = None, title: str = "Chunk Visualization") -> None:
-            Save the chunks as a standalone HTML file, always embedding a hippo emoji SVG favicon.
 
     """
-
-    # Store the hippo SVG content as a class attribute
-    HIPPO_SVG_CONTENT = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><text x="50" y="55" font-size="90" text-anchor="middle" dominant-baseline="middle">🦛</text></svg>"""
 
     def __init__(self, theme: Union[str, List[str]] = "pastel") -> None:
         """Initialize the Visualizer.
@@ -246,16 +232,13 @@ class Visualizer:
         chunks: List[Chunk],
         full_text: Optional[str] = None,
         title: str = "Chunk Visualization",
-        # Removed embed_hippo_favicon parameter
     ) -> str:
-        """Save the chunk visualization as a standalone, minimal HTML file, always embedding a hippo emoji SVG favicon.
+        """
+        Returns HTML visualization of chunks as a string
 
         Args:
-            filename (str): The path to save the HTML file.
-            chunks (List[Chunk]): A list of chunk objects with 'start_index'
-                                     and 'end_index'.
-            full_text (Optional[str]): The complete original text. If None, it
-                                       attempts reconstruction.
+            chunks (List[Chunk]): A list of chunk objects with 'start_index' and 'end_index'.
+            full_text (Optional[str]): The complete original text. If None, it attempts reconstruction.
             title (str): The title for the browser tab.
 
         """
@@ -332,7 +315,8 @@ class Visualizer:
                         if num_active == 1
                         else self._darken_color(base_color, 0.65)
                     )
-                    hover_title = f"Chunk {primary_chunk_data['id']} | Start: {primary_chunk_data['start']} | End: {primary_chunk_data['end']} | Tokens: {primary_chunk_data['tokens']}{' (Overlap)' if num_active > 1 else ''}"
+                    token_count = primary_chunk_data["tokens"]
+                    hover_title = f"Chunk {primary_chunk_data['id']} | Start: {primary_chunk_data['start']} | End: {primary_chunk_data['end']} | Tokens: {token_count if token_count else 'Token count not provided by chunker'}{' (Overlap)' if num_active > 1 else ''}"
             # Get the text segment to process
             text_segment = full_text[last_processed_idx:event_idx]
 
@@ -390,21 +374,7 @@ class Visualizer:
 
         # --- 3. Assemble the final HTML page ---
 
-        # --- Always Generate Hippo Favicon ---
-        favicon_link_tag = ""  # Default to empty in case of error
-        try:
-            encoded_svg = base64.b64encode(
-                self.HIPPO_SVG_CONTENT.encode("utf-8")
-            ).decode("utf-8")
-            favicon_data_uri = f"data:image/svg+xml;base64,{encoded_svg}"
-            favicon_link_tag = (
-                f'<link rel="icon" type="image/svg+xml" href="{favicon_data_uri}">'
-            )
-        except Exception as e:
-            print(f"Warning: Could not encode embedded hippo favicon: {e}")
-
-        # Footer and Main Content (remain the same)
-        footer_content = FOOTER_TEMPLATE
+        # Main Content (remain the same)
         main_content = MAIN_TEMPLATE.format(html_parts="".join(html_parts))
 
         # Set the background colors and the text color
@@ -419,19 +389,19 @@ class Visualizer:
             content_bg_color = CONTENT_BACKGROUND_COLOR_LIGHT
             text_color = TEXT_COLOR_LIGHT
 
-        # Assemble HTML, including the favicon tag
+        # Assemble HTML
         html_content = HTML_TEMPLATE.format(
             title=html.escape(title),
-            favicon_link_tag=favicon_link_tag,
             body_bg_color=body_bg_color,
             content_bg_color=content_bg_color,
             text_color=text_color,
             main_content=main_content,
-            footer_content=footer_content,
         )
 
         # --- 4. Return HTML ---
-        return html_content
+        # First line returns full HTML page, second line returns HTML body
+        # return html_content
+        return main_content
 
     def __repr__(self) -> str:
         """Return the string representation of the Visualizer."""
