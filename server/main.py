@@ -36,7 +36,7 @@ def calculateChunkStats(chunks):
     total_chars = 0
 
     for chunk in chunks:
-        if len(chunk["text"]) > 0:
+        if chunk.get("text") and len(chunk["text"]) > 0:
             total_chars += len(chunk["text"])
             if (not stats.get("largest_char_count")) or (
                 len(chunk["text"]) > stats["largest_char_count"]
