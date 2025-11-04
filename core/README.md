@@ -8,7 +8,7 @@ poetry install
 
 - Run `poetry add ../core`
 - Run `poetry install`
-- Import to your file. Ex. `from chunkwise_core.types import Chunk`
+- Import to your file. Ex. `from chunkwise_core import Chunk`
 
 ## Packages available to import
 
