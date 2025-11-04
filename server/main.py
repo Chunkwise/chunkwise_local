@@ -57,17 +57,34 @@ def visualize(request: VisualizeRequest):
         chunking_response.raise_for_status()
         chunks = chunking_response.json()
 
-        # Prepare the request for the visualization service
-        visualization_payload = {"chunks": chunks}
+        stats = {
+            "total_chunks": len(chunks),
+            "avg_chars": len(chunking_payload["text"]) / len(chunks),
+        }
 
-        # Send chunks to visualization service
-        visualization_response = requests.post(
-            f"{VISUALIZATION_SERVICE_URL}/visualization", json=visualization_payload
-        )
-        visualization_response.raise_for_status()
+        for chunk in chunks:
+            if (not stats.get("largest_char_count")) or (
+                len(chunk["text"]) > stats["largest_char_count"]
+            ):
+                stats["largest_char_count"] = len(chunk["text"])
+                stats["largest_text"] = chunk["text"]
+            if (not stats.get("smallest_char_count")) or (
+                len(chunk["text"]) < stats["smallest_char_count"]
+            ):
+                stats["smallest_char_count"] = len(chunk["text"])
+                stats["smallest_text"] = chunk["text"]
+
+        # # Prepare the request for the visualization service
+        # visualization_payload = {"chunks": chunks}
+
+        # # Send chunks to visualization service
+        # visualization_response = requests.post(
+        #     f"{VISUALIZATION_SERVICE_URL}/visualization", json=visualization_payload
+        # )
+        # visualization_response.raise_for_status()
 
         # Return a success message to client, return HTML content in real implementation
-        return {"message": "This works"}
+        return {"stats": stats, "html": "<><>"}
 
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid input")
