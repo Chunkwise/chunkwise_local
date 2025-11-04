@@ -3,10 +3,6 @@ from typing import List
 from viz import Visualizer
 from models import Chunk
 
-# I am using the same Chunk type as used in server and evaluation as opposed to Chonkie's Chunk type which has more properties
-# If we switch to Chonkie's make sure to change this file and viz.py
-# from chonkie.types import Chunk
-
 app = FastAPI()
 
 
