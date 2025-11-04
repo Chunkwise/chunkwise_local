@@ -118,14 +118,14 @@ async def evaluate_chunking(
     ),  # Embedding model to use (default: openai.text-embedding-3-large)
     openai_api_key: Optional[str] = Body(
         default=None
-    ),  # Optional: OpenAI API key. If not provided, queries will be generated using LLM (requires OPENAI_API_KEY).
+    ),  # Optional: OpenAI API key, requried if queries path not provided.
     queries_output_dir: str = Body(
         default="data"
     ),  # Where to save generated queries (only used when generating queries)
     chroma_db_path: Optional[str] = Body(default=None),  # Optional: path to ChromaDB
     num_rounds: int = Body(
         default=1, ge=1, le=3
-    ),  # Number of rounds to generate queries (-1 for infinite)
+    ),  # Number of rounds to generate queries
     queries_per_corpus: int = Body(
         default=5, ge=3, le=10
     ),  # Number of queries to generate per document
