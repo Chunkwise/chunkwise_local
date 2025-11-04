@@ -26,7 +26,7 @@ def save_to_file(html_content):
     try:
         import os
 
-        filepath = os.path.abspath("visualization.html")
+        filepath = os.path.abspath("example_visualizations/visualization.html")
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(html_content)
         print(f"HTML visualization saved to: file://{filepath}")
