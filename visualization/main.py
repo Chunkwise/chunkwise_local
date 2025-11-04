@@ -18,11 +18,17 @@ def visualize(chunks: List[Chunk]) -> str:
     """
     viz = Visualizer()
     html_content = viz.get_HTML(chunks)
-    save_to_file(html_content)
+    # For testing purposes only
+    # save_to_file(html_content)
     return html_content
 
 
-def save_to_file(html_content):
+def save_to_file(html_content: str) -> None:
+    """
+    For testing purposes only
+    Receives HTML as a string
+    Saves an html file
+    """
     try:
         import os
 
