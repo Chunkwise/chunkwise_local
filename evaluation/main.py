@@ -331,7 +331,7 @@ async def evaluate_chunking(request: EvaluationRequest):
                 )
 
         try:
-            # Initialize BaseEvaluation using normalized document and provided queries path
+            # Initialize BaseEvaluation using normalized document and final queries path
             evaluation = BaseEvaluation(
                 questions_csv_path=final_queries_path,
                 corpora_id_paths={normalized_doc_path: normalized_doc_path},
