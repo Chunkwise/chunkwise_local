@@ -68,6 +68,7 @@ class ChunkingResult(BaseModel):
 
 class EvaluateResponse(BaseModel):
     embedding_model: str
+    document_id: str
     document_path: str
     queries_path: str
     queries_generated: bool
@@ -173,7 +174,7 @@ async def evaluate_chunking(
         document_name = os.path.splitext(document_id)[0]
 
         # Normalize the document
-        os.makedirs(queries_output_dir, exist_ok=True)
+        os.makedirs(queries_output_dir, exist_ok=True) # Make sure output dir exists
         normalized_doc_path = normalize_document(
             document_path,
             os.path.join(queries_output_dir, f"{document_name}_normalized.txt"),
@@ -257,6 +258,7 @@ async def evaluate_chunking(
 
         return EvaluateResponse(
             embedding_model="text-embedding-3-large",
+            document_id=document_id,
             document_path=document_path,
             queries_path=final_queries_path,
             queries_generated=queries_generated,
