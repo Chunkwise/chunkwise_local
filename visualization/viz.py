@@ -12,8 +12,6 @@ from typing import List, Optional, Union
 from pydantic import BaseModel
 from models import Chunk
 
-# from chonkie.types import Chunk
-
 # light themes
 LIGHT_THEMES = {
     # Pastel colored rainbow theme
