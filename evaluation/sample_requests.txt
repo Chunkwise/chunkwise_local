@@ -1,244 +1,100 @@
->> sample request body 1 (using small sample_document.tx):
-[
-  {
-    "chunker_type": "recursive",
-    "provider": "langchain",
-    "chunk_size": 512,
-    "chunk_overlap": 50
-  },
-  {
-    "chunker_type": "token",
-    "provider": "chonkie",
-    "chunk_size": 400,
-    "chunk_overlap": 50
-  }
-]
-
->> sample results 1:
-{"embedding_model":"text-embedding-3-large","document_id":"sample_document.txt","chunkers_evaluated":["langchain recursive","chonkie token"],"results":[{"iou_mean":0.2695165303945965,"recall_mean":0.9950980392156863,"precision_mean":0.27011494252873564,"precision_omega_mean":0.5506355173648407,"chunker_config":{"chunker_type":"recursive","provider":"langchain","chunk_size":512,"chunk_overlap":50,"tokenizer":"character","min_characters_per_chunk":24}},{"iou_mean":0.2420675537359263,"recall_mean":1.0,"precision_mean":0.2420675537359263,"precision_omega_mean":0.5409440227703985,"chunker_config":{"chunker_type":"token","provider":"chonkie","chunk_size":400,"chunk_overlap":50,"tokenizer":"character","min_characters_per_chunk":24}}]}
-
-------------------------
-
->> sample request body 2:
-[
-  {
-    "chunker_type": "recursive",
-    "provider": "langchain",
-    "chunk_size": 400,
-    "chunk_overlap": 20,
-    "separators": ["\n\n", "\n", ".", "?", "!", " ", ""]
-  }
-]
-
->> sample results 2:
+>> sample request body 1 (using sample_document_large.tx + LLM query generation):
 {
-    "embedding_model": "text-embedding-3-large",
-    "document_id": "sample_document.txt",
-    "chunkers_evaluated": [
-        "langchain recursive"
-    ],
-    "results": [
-        {
-            "iou_mean": 0.2695165303945965,
-            "recall_mean": 0.9950980392156863,
-            "precision_mean": 0.27011494252873564,
-            "precision_omega_mean": 0.5506355173648407,
-            "chunker_config": {
-                "provider": "langchain",
-                "chunk_size": 400,
-                "length_function": null,
-                "keep_separator": false,
-                "add_start_index": false,
-                "strip_whitespace": true,
-                "chunker_type": "recursive",
-                "chunk_overlap": 20,
-                "separators": [
-                    "\n\n",
-                    "\n",
-                    ".",
-                    "?",
-                    "!",
-                    " ",
-                    ""
-                ],
-                "is_separator_regex": false,
-                "tokenizer": "character",
-                "rules": {
-                    "levels": [
-                        {
-                            "delimiters": [
-                                "\n\n",
-                                "\r\n",
-                                "\n",
-                                "\r"
-                            ],
-                            "whitespace": false,
-                            "include_delim": "prev",
-                            "pattern": null,
-                            "pattern_mode": "split"
-                        },
-                        {
-                            "delimiters": [
-                                ". ",
-                                "! ",
-                                "? "
-                            ],
-                            "whitespace": false,
-                            "include_delim": "prev",
-                            "pattern": null,
-                            "pattern_mode": "split"
-                        },
-                        {
-                            "delimiters": [
-                                "{",
-                                "}",
-                                "\"",
-                                "[",
-                                "]",
-                                "<",
-                                ">",
-                                "(",
-                                ")",
-                                ":",
-                                ";",
-                                ",",
-                                "—",
-                                "|",
-                                "~",
-                                "-",
-                                "...",
-                                "`",
-                                "'"
-                            ],
-                            "whitespace": false,
-                            "include_delim": "prev",
-                            "pattern": null,
-                            "pattern_mode": "split"
-                        },
-                        {
-                            "delimiters": null,
-                            "whitespace": true,
-                            "include_delim": "prev",
-                            "pattern": null,
-                            "pattern_mode": "split"
-                        },
-                        {
-                            "delimiters": null,
-                            "whitespace": false,
-                            "include_delim": "prev",
-                            "pattern": null,
-                            "pattern_mode": "split"
-                        }
-                    ]
-                },
-                "min_characters_per_chunk": 24
-            }
-        }
-    ]
+  "document_path": "data/sample_document_large.txt",
+  "chunking_configs": [
+    {
+      "chunker_type": "recursive",
+      "provider": "langchain",
+      "chunk_size": 512,
+      "chunk_overlap": 0
+    }
+  ]
 }
 
+>> sample results 1 (33.37s):
+{"embedding_model":"text-embedding-3-large","document_path":"data/sample_document_large.txt","queries_path":"data/llm_queries_sample_document_large.csv","chunkers_evaluated":["langchain recursive"],"results":[{"iou_mean":0.044961487520993965,"recall_mean":0.4554406850459482,"precision_mean":0.04698560677498118,"precision_omega_mean":0.38313926788329056,"chunker_config":{"provider":"langchain","chunk_size":512,"tokenizer":"character","length_function":null,"keep_separator":false,"add_start_index":false,"strip_whitespace":true,"chunker_type":"recursive","chunk_overlap":0,"separators":["\n\n","\n"," ",""],"is_separator_regex":false,"rules":{"levels":[{"delimiters":["\n\n","\r\n","\n","\r"],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":[". ","! ","? "],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":["{","}","\"","[","]","<",">","(",")",":",";",",","—","|","~","-","...","`","'"],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":null,"whitespace":true,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":null,"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"}]},"min_characters_per_chunk":24}}],"queries_generated":true,"num_queries":4}
+
 ------------------------
 
->> sample request body 3:
-[
-  {
-    "chunker_type": "token",
-    "provider": "chonkie",
-    "tokenizer": "gpt2",
-    "chunk_size": 400,
-    "chunk_overlap": 50
-  }
-]
+>> sample request body 2 (using sample_document_large.txt + provided queries):
+{
+  "document_path": "data/sample_document_large.txt",
+  "queries_path": "data/llm_queries_sample_document_large.csv",
+  "chunking_configs": [
+    {
+      "chunker_type": "token",
+      "provider": "chonkie",
+      "chunk_size": 400,
+      "chunk_overlap": 20
+    }
+  ]
+}
 
->> sample results 3:
+>> sample results 2 (2.07s):
 {
     "embedding_model": "text-embedding-3-large",
-    "document_id": "sample_document.txt",
+    "document_path": "data/sample_document_large.txt",
+    "queries_path": "data/llm_queries_sample_document_large.csv",
     "chunkers_evaluated": [
         "chonkie token"
     ],
     "results": [
         {
-            "iou_mean": 0.2420675537359263,
-            "recall_mean": 1.0,
-            "precision_mean": 0.2420675537359263,
-            "precision_omega_mean": 0.5409440227703985,
+            "iou_mean": 0.064,
+            "recall_mean": 0.5,
+            "precision_mean": 0.064,
+            "precision_omega_mean": 0.3848773209549071,
             "chunker_config": {
-                "chunker_type": "token",
                 "provider": "chonkie",
                 "chunk_size": 400,
-                "chunk_overlap": 50,
-                "tokenizer": "gpt2",
-                "rules": {
-                    "levels": [
-                        {
-                            "delimiters": [
-                                "\n\n",
-                                "\r\n",
-                                "\n",
-                                "\r"
-                            ],
-                            "whitespace": false,
-                            "include_delim": "prev",
-                            "pattern": null,
-                            "pattern_mode": "split"
-                        },
-                        {
-                            "delimiters": [
-                                ". ",
-                                "! ",
-                                "? "
-                            ],
-                            "whitespace": false,
-                            "include_delim": "prev",
-                            "pattern": null,
-                            "pattern_mode": "split"
-                        },
-                        {
-                            "delimiters": [
-                                "{",
-                                "}",
-                                "\"",
-                                "[",
-                                "]",
-                                "<",
-                                ">",
-                                "(",
-                                ")",
-                                ":",
-                                ";",
-                                ",",
-                                "—",
-                                "|",
-                                "~",
-                                "-",
-                                "...",
-                                "`",
-                                "'"
-                            ],
-                            "whitespace": false,
-                            "include_delim": "prev",
-                            "pattern": null,
-                            "pattern_mode": "split"
-                        },
-                        {
-                            "delimiters": null,
-                            "whitespace": true,
-                            "include_delim": "prev",
-                            "pattern": null,
-                            "pattern_mode": "split"
-                        },
-                        {
-                            "delimiters": null,
-                            "whitespace": false,
-                            "include_delim": "prev",
-                            "pattern": null,
-                            "pattern_mode": "split"
-                        }
-                    ]
-                },
-                "min_characters_per_chunk": 24
+                "tokenizer": "character",
+                "length_function": null,
+                "keep_separator": false,
+                "add_start_index": false,
+                "strip_whitespace": true,
+                "chunker_type": "token",
+                "chunk_overlap": 20,
+                "lang": "en"
             }
         }
-    ]
+    ],
+    "queries_generated": false,
+    "num_queries": null
 }
+
+------------------------
+
+>> sample request body 3 (using sample_document_medium.txt + LLM query generation):
+{
+  "document_path": "data/sample_document_medium.txt",
+  "chunking_configs": [
+    {
+      "chunker_type": "recursive",
+      "provider": "langchain",
+      "chunk_size": 512,
+      "chunk_overlap": 0
+    }
+  ]
+}
+
+>> sample results 3 (33.92s):
+{"embedding_model":"text-embedding-3-large","document_path":"data/sample_document_medium.txt","queries_path":"data/llm_queries_sample_document_medium.csv","queries_generated":true,"num_queries":3,"chunkers_evaluated":["langchain recursive"],"results":[{"iou_mean":0.12255659978857882,"recall_mean":0.6294911266301219,"precision_mean":0.14807769162131781,"precision_omega_mean":0.39003842400857297,"chunker_config":{"provider":"langchain","chunk_size":512,"tokenizer":"character","length_function":null,"keep_separator":false,"add_start_index":false,"strip_whitespace":true,"chunker_type":"recursive","chunk_overlap":0,"separators":["\n\n","\n"," ",""],"is_separator_regex":false,"rules":{"levels":[{"delimiters":["\n\n","\r\n","\n","\r"],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":[". ","! ","? "],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":["{","}","\"","[","]","<",">","(",")",":",";",",","—","|","~","-","...","`","'"],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":null,"whitespace":true,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":null,"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"}]},"min_characters_per_chunk":24}}]}
+
+------------------------
+
+>> sample request body 4 (using sample_document_medium.txt + provided queries):
+{
+  "document_path": "data/sample_document_medium.txt",
+  "queries_path": "data/llm_queries_sample_document_medium.csv",
+  "chunking_configs": [
+    {
+      "chunker_type": "token",
+      "provider": "chonkie",
+      "chunk_size": 400,
+      "chunk_overlap": 20
+    }
+  ]
+}
+
+>> sample results 3 (1081ms):
+{"embedding_model":"text-embedding-3-large","document_path":"data/sample_document_medium.txt","queries_path":"data/llm_queries_sample_document_medium.csv","queries_generated":false,"num_queries":null,"chunkers_evaluated":["chonkie token"],"results":[{"iou_mean":0.09759045641504743,"recall_mean":0.600826011864534,"precision_mean":0.11833333333333335,"precision_omega_mean":0.3011739067450195,"chunker_config":{"provider":"chonkie","chunk_size":400,"tokenizer":"character","length_function":null,"keep_separator":false,"add_start_index":false,"strip_whitespace":true,"chunker_type":"token","chunk_overlap":20,"lang":"en"}}]}
