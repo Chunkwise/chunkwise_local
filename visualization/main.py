@@ -1,13 +1,8 @@
 from fastapi import FastAPI
 from typing import List
 from viz import Visualizer
-
-<<<<<<< Updated upstream
-=======
-# from models import Chunk
 from chunkwise_core import Chunk
 
->>>>>>> Stashed changes
 app = FastAPI()
 
 
