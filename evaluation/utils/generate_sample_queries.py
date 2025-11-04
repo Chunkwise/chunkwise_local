@@ -6,9 +6,6 @@ from chunking_evaluation.evaluation_framework.synthetic_evaluation import (
     SyntheticEvaluation,
 )
 
-# dotenv.load_dotenv()
-# API_KEY = os.getenv("OPENAI_API_KEY")
-
 
 def generate_sample_queries(
     openai_api_key: str,  # Your OpenAI API key
@@ -53,6 +50,3 @@ def generate_sample_queries(
         raise HTTPException(
             status_code=500, detail=f"Error generating queries: {str(e)}"
         )
-
-
-# generate_sample_queries(openai_api_key=API_KEY)
