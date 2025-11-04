@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from typing import List
 from viz import Visualizer
-from models import Chunk
+from chunkwise_core import Chunk
 
 app = FastAPI()
 

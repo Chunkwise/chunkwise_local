@@ -10,7 +10,7 @@ import html
 import warnings
 from typing import List, Optional, Union
 from pydantic import BaseModel
-from models import Chunk
+from chunkwise_core import Chunk
 
 # light themes
 LIGHT_THEMES = {

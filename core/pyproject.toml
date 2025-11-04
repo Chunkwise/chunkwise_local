@@ -1,19 +1,22 @@
 [project]
-name = "visualization"
+name = "chunkwise-core"
 version = "0.1.0"
-description = ""
+description = "Shared types, constants, and helpers for Chunkwise services"
 authors = [
     {name = "Your Name",email = "you@example.com"}
 ]
+packages = [{ include = "chunkwise_core" }]
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "fastapi (>=0.120.3,<0.121.0)",
-    "uvicorn (>=0.38.0,<0.39.0)",
-    "chunkwise-core @ file:///Users/tylermcgraw/code/capstone/Chunkwise/chunkwise_local/core",
+    "pydantic (>=2.12.3,<3.0.0)"
 ]
-
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^4.0.2"
+black = "^25.9.0"
+
