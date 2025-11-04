@@ -74,17 +74,17 @@ def visualize(request: VisualizeRequest):
                 stats["smallest_char_count"] = len(chunk["text"])
                 stats["smallest_text"] = chunk["text"]
 
-        # Prepare the request for the visualization service
-        visualization_payload = {"chunks": chunks}
+        # # Prepare the request for the visualization service
+        # visualization_payload = {"chunks": chunks}
 
-        # Send chunks to visualization service
-        visualization_response = requests.post(
-            f"{VISUALIZATION_SERVICE_URL}/visualization", json=visualization_payload
-        )
-        visualization_response.raise_for_status()
+        # # Send chunks to visualization service
+        # visualization_response = requests.post(
+        #     f"{VISUALIZATION_SERVICE_URL}/visualization", json=visualization_payload
+        # )
+        # visualization_response.raise_for_status()
 
         # Return a success message to client, return HTML content in real implementation
-        return {"stats": stats}
+        return {"stats": stats, "html": "<><>"}
 
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid input")
