@@ -1,42 +1,39 @@
-import type { ChunkStats, Evals } from "../types/types";
+import type { ChunkerSelection, ChunkStats, Evals } from "../types/types";
+import createRequestBody from "../utils/createRequestBody";
+import axios from "axios";
+import { text } from "../dataset/rumpelstiltskin";
 
 type Args = {
-  chunker: string;
-  maxSize: number;
+  chunker: ChunkerSelection;
+  size: number;
   overlap: number;
+  min_characters_per_chunk?: number;
+  tokenizer?: string;
 };
 
-export async function getVisualizer({
-  chunker,
-  maxSize,
-  overlap,
-}: Args): Promise<{
+interface VisualizationOutput {
   stats: ChunkStats;
   html: string;
-}> {
-  //  Get visualizer and/or stats
-  return {
-    stats: {
-      total: 100,
-      avgSize: 10,
-      largestSize: 20,
-      smallestSize: 1,
-      largestText: "example of largest",
-      smallestText: "examples of smallest",
-    },
-    html: '<p style="color=green">example html<p>',
-  };
 }
 
-export async function getEvals({
-  chunker,
-  maxSize,
-  overlap,
-}: Args): Promise<Evals> {
-  // get evals from backend
-  return {
-    precision: 0.1,
-    recall: 0.2,
-    iou: 0.3,
-  };
+export async function getVisualization(
+  configuration: Args
+): Promise<VisualizationOutput> {
+  const requestBody = createRequestBody({ ...configuration, text });
+  const { data } = await axios.post(
+    `http://localhost:8000/visualize`,
+    requestBody
+  );
+
+  return data;
+}
+
+export async function getEvals(configuration: Args): Promise<Evals> {
+  const requestBody = createRequestBody({ ...configuration, text });
+  const { data } = await axios.post(
+    "http://localhost:8000/evaluate",
+    requestBody
+  );
+
+  return data;
 }
