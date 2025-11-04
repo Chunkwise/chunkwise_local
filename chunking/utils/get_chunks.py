@@ -1,36 +1,12 @@
+# Adapted from:
+# Smith, Brandon and Troynikov, Anton. (2024).
+# "Evaluating Chunking Strategies for Retrieval."
+# Chroma Research. https://research.trychroma.com/evaluating-chunking
+# https://github.com/brandonstarxel/chunking_evaluation/blob/main/chunking_evaluation/utils.py
 import re
-from typing import Any, Tuple
-from chonkie import TokenChunker, RecursiveChunker
-from langchain_text_splitters import TokenTextSplitter, RecursiveCharacterTextSplitter
+from typing import Tuple, Any
 from fuzzywuzzy import fuzz, process
-from chunkwise_core import Chunk, RecursiveRules, GeneralChunkerConfig
-
-
-def create_chunker_from_config(config: GeneralChunkerConfig) -> Any:
-    if config.provider == "langchain":
-        match config.chunker_type:
-            case "recursive":
-                return RecursiveCharacterTextSplitter(
-                    chunk_size=config.chunk_size, chunk_overlap=config.chunk_overlap
-                )
-            case "token":
-                return TokenTextSplitter(
-                    chunk_size=config.chunk_size, chunk_overlap=config.chunk_overlap
-                )
-    elif config.provider == "chonkie":
-        match config.chunker_type:
-            case "recursive":
-                return RecursiveChunker(
-                    tokenizer=config.tokenizer,
-                    chunk_size=config.chunk_size,
-                    rules=RecursiveRules(),
-                    min_characters_per_chunk=config.min_characters_per_chunk,
-                )
-            case "token":
-                return TokenChunker(
-                    chunk_size=config.chunk_size, chunk_overlap=config.chunk_overlap
-                )
-    raise ValueError("Invalid chunker configuration")
+from chunkwise_core import Chunk
 
 
 def find_query_despite_whitespace(document: str, query: str) -> Tuple[int, int] | None:
