@@ -1,5 +1,3 @@
-import dotenv
-import os
 from typing import List, Optional
 from fastapi import HTTPException
 from chunking_evaluation.evaluation_framework.synthetic_evaluation import (
@@ -41,9 +39,6 @@ def generate_sample_queries(
 
         # Removes questions that are too similar to each other
         evaluator.filter_duplicates(threshold=duplicate_question_threshold)
-
-        # print("Query generation and filtering complete!")
-        # print(f"Results saved to: {queries_output_path}")
 
         return queries_output_path
     except Exception as e:

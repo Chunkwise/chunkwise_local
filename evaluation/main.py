@@ -1,12 +1,10 @@
 from dotenv import load_dotenv
 import os
-import tempfile
-import shutil
 from fastapi import FastAPI, Body, HTTPException
 from typing import List, Literal, Optional, Union, Callable, Any
 from pydantic import BaseModel, Field, ConfigDict
 from chunking_evaluation.evaluation_framework.base_evaluation import BaseEvaluation
-import chromadb.utils.embedding_functions as embedding_functions
+from chromadb.utils import embedding_functions
 from chonkie.chunker.token import TokenChunker
 from chonkie.chunker.recursive import RecursiveChunker
 from chonkie.types import RecursiveRules
