@@ -1,19 +1,9 @@
-# Adapted from:
-# Smith, Brandon and Troynikov, Anton. (2024).
-# "Evaluating Chunking Strategies for Retrieval."
-# Chroma Research. https://research.trychroma.com/evaluating-chunking
-# https://github.com/brandonstarxel/chunking_evaluation/blob/main/chunking_evaluation/utils.py
-
-from fastapi import FastAPI, Body
+import re
+from typing import Any, Tuple
 from chonkie import TokenChunker, RecursiveChunker
 from langchain_text_splitters import TokenTextSplitter, RecursiveCharacterTextSplitter
-from pydantic import BaseModel
-from typing import Any, Tuple
 from fuzzywuzzy import fuzz, process
-import re
 from chunkwise_core import Chunk, RecursiveRules, GeneralChunkerConfig
-
-app = FastAPI()
 
 
 def create_chunker_from_config(config: GeneralChunkerConfig) -> Any:
@@ -107,6 +97,11 @@ def rigorous_document_search(document: str, target: str) -> Tuple[int, int] | No
 
 
 def get_chunks(text: str, chunker: GeneralChunkerConfig) -> list[Chunk]:
+    """
+    Receives text as a string and a chunker
+    Adds metadata to chunks if it is a LangChain chunker
+    Returns list of chunks
+    """
     chunks: list[Chunk] = []
 
     # LangChain chunkers are called with `split_text`
@@ -134,11 +129,3 @@ def get_chunks(text: str, chunker: GeneralChunkerConfig) -> list[Chunk]:
         chunks = chunker(text)
 
     return chunks
-
-
-@app.post("/chunks")
-def chunk(
-    chunker_config: GeneralChunkerConfig = Body(...), text: str = Body(...)
-) -> list[Chunk]:
-    chunker = create_chunker_from_config(chunker_config)
-    return get_chunks(text, chunker)
