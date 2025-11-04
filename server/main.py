@@ -29,6 +29,31 @@ VISUALIZATION_SERVICE_URL = os.getenv(
 )
 
 
+def calculateChunkStats(chunks):
+    stats = {
+        "total_chunks": len(chunks),
+    }
+    total_chars = 0
+
+    for chunk in chunks:
+        if chunk.get("text") and len(chunk["text"]) > 0:
+            total_chars += len(chunk["text"])
+            if (not stats.get("largest_char_count")) or (
+                len(chunk["text"]) > stats["largest_char_count"]
+            ):
+                stats["largest_char_count"] = len(chunk["text"])
+                stats["largest_text"] = chunk["text"]
+            if (not stats.get("smallest_char_count")) or (
+                len(chunk["text"]) < stats["smallest_char_count"]
+            ):
+                stats["smallest_char_count"] = len(chunk["text"])
+                stats["smallest_text"] = chunk["text"]
+
+    stats["avg_chars"] = total_chars / stats["total_chunks"]
+
+    return stats
+
+
 @router.get("/health")
 def health_check():
     return {"status": "ok"}
@@ -57,22 +82,7 @@ def visualize(request: VisualizeRequest):
         chunking_response.raise_for_status()
         chunks = chunking_response.json()
 
-        stats = {
-            "total_chunks": len(chunks),
-            "avg_chars": len(chunking_payload["text"]) / len(chunks),
-        }
-
-        for chunk in chunks:
-            if (not stats.get("largest_char_count")) or (
-                len(chunk["text"]) > stats["largest_char_count"]
-            ):
-                stats["largest_char_count"] = len(chunk["text"])
-                stats["largest_text"] = chunk["text"]
-            if (not stats.get("smallest_char_count")) or (
-                len(chunk["text"]) < stats["smallest_char_count"]
-            ):
-                stats["smallest_char_count"] = len(chunk["text"])
-                stats["smallest_text"] = chunk["text"]
+        stats = calculateChunkStats(chunks)
 
         # # Prepare the request for the visualization service
         # visualization_payload = {"chunks": chunks}
