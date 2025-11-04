@@ -99,19 +99,20 @@ def visualize(request: VisualizeRequest):
         chunking_response.raise_for_status()
         chunks = chunking_response.json()
 
+        # Get chunk related stats
         stats = calculateChunkStats(chunks)
 
-        # # Prepare the request for the visualization service
-        # visualization_payload = {"chunks": chunks}
+        # Send chunks to visualization service
+        visualization_response = requests.post(
+            f"{VISUALIZATION_SERVICE_URL}/visualization", json=chunks
+        )
+        visualization_response.raise_for_status()
 
-        # # Send chunks to visualization service
-        # visualization_response = requests.post(
-        #     f"{VISUALIZATION_SERVICE_URL}/visualization", json=visualization_payload
-        # )
-        # visualization_response.raise_for_status()
+        # Get the text from the response
+        visualization_html = visualization_response.text
 
-        # Return a success message to client, return HTML content in real implementation
-        return {"stats": stats, "html": "<><>"}
+        # Return dict with stats and HTML
+        return {"stats": stats, "html": visualization_html}
 
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid input")
