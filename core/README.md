@@ -6,11 +6,11 @@ poetry install
 
 ## To import to a service
 
-- Run `poetry add ../core`
+- Run `poetry add --editable ../core` (for production remove --editable)
 - Run `poetry install`
 - Import to your file. Ex. `from chunkwise_core import Chunk`
 
-## Packages available to import
+## Classes available to import
 
 - types
   - Chunk

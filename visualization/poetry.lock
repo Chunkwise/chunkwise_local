@@ -44,6 +44,23 @@ sniffio = ">=1.1"
 trio = ["trio (>=0.31.0)"]
 
 [[package]]
+name = "chunkwise-core"
+version = "0.1.0"
+description = "Shared types, constants, and helpers for Chunkwise services"
+optional = false
+python-versions = ">=3.13"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+pydantic = ">=2.12.3,<3.0.0"
+
+[package.source]
+type = "directory"
+url = "../core"
+
+[[package]]
 name = "click"
 version = "8.3.0"
 description = "Composable command line interface toolkit"
@@ -352,4 +369,4 @@ standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.6.3)
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "a7cd0eaf288d5732c8b5cf105aab7cb5515871c0b047b6cdcc2715a92fccbc18"
+content-hash = "dc9106137eabb47dc92bc1e227ff8b05cd507775cc80f28a5610dc2bc02d8132"

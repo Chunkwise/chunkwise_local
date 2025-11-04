@@ -10,6 +10,7 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi (>=0.120.3,<0.121.0)",
     "uvicorn (>=0.38.0,<0.39.0)",
+    "chunkwise-core @ file:///Users/tylermcgraw/code/capstone/Chunkwise/chunkwise_local/core",
 ]
 
 
