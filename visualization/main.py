@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from typing import List
-from utils import Visualizer, save_to_file
+from utils import Visualizer
 from chunkwise_core import Chunk
 
 app = FastAPI()
@@ -14,6 +14,4 @@ def visualize(chunks: List[Chunk]) -> str:
     """
     viz = Visualizer()
     html_content = viz.get_HTML(chunks)
-    # For testing purposes only. Saves to ./example_visualizations/visualization.html
-    # save_to_file(html_content)
     return html_content
