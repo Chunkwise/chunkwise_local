@@ -12,6 +12,6 @@ def save_to_file(html_content: str) -> None:
             f.write(html_content)
         print(f"HTML visualization saved to: file://{filepath}")
     except IOError as e:
-        raise IOError(f"Error: Could not write file '{filename}': {e}")
+        raise IOError(f"Error: Could not write file: {e}")
     except Exception as e:
         raise Exception(f"An unexpected error occurred during file saving: {e}")
