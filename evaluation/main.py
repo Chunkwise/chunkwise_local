@@ -184,13 +184,19 @@ def create_chunker_from_config(
 
 class EvaluationRequest(BaseModel):
     # Document and queries
-    document_path: str = Field(
-        ...,
+    # Teporarily optional for MVP testing - remove `None` option after document storage is setup
+    document_path: str | None = Field(
+        default=None,
         description="Path to the document to evaluate. Can be absolute or relative path",
+    )
+    # `document` field is temporary for MVP testing
+    document: str = Field(
+        ...,
+        description="Document content as a string. Use this for MVP testing. ",
     )
     queries_path: str | None = Field(
         default=None,
-        description="Optional: path to queries CSV. If not provided, queries will " \
+        description="Optional: path to queries CSV. If not provided, queries will "
         "be generated using LLM (requires OPENAI_API_KEY)",
     )
 
@@ -251,30 +257,57 @@ async def evaluate_chunking(request: EvaluationRequest):
     num_queries_generated = None
 
     try:
-        # Validate the document path
-        if not os.path.exists(request.document_path):
+        # Handle document input - either from path or content string (MVP mode)
+        if request.document:
+            # This IF block will be deleted after the backend sets up document storage:
+            # Create temporary file from document content
+            document_name = f"temp_doc_{os.urandom(4).hex()}"
+            document_id = f"{document_name}.txt"
+
+            # Create temporary file
+            os.makedirs(request.queries_output_dir, exist_ok=True)
+            # Track temporary file (created from the input `document` string) for cleanup
+            temp_doc_path = os.path.join(request.queries_output_dir, document_id)
+
+            with open(temp_doc_path, "w", encoding="utf-8") as f:
+                f.write(request.document)
+
+            document_path = temp_doc_path
+
+        # Beyond MVP: Use provided document path directly
+        elif request.document_path:
+            # Validate the document path
+            if not os.path.exists(request.document_path):
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Document not found at path: {request.document_path}",
+                )
+
+            # Check if file is readable
+            if not os.path.isfile(request.document_path):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Path is not a file: {request.document_path}",
+                )
+
+            document_path = request.document_path
+            # Extract document ID from path
+            document_id = os.path.basename(request.document_path)
+            # Remove file extension for document name
+            document_name = os.path.splitext(document_id)[0]
+
+        else:
             raise HTTPException(
-                status_code=404,
-                detail=f"Document not found at path: {request.document_path}",
+                status_code=400,
+                detail="Either 'document' or 'document_path' must be provided",
             )
 
-        # Check if file is readable
-        if not os.path.isfile(request.document_path):
-            raise HTTPException(
-                status_code=400, detail=f"Path is not a file: {request.document_path}"
-            )
-
-        # Extract document ID from path
-        document_id = os.path.basename(request.document_path)
-        # Remove file extension for document name
-        document_name = os.path.splitext(document_id)[0]
-
-        # Normalize the document
+        # Normalize the document (decided to keep it here for extra validation in production)
         os.makedirs(
             request.queries_output_dir, exist_ok=True
         )  # Make sure output dir exists
         normalized_doc_path = normalize_document(
-            request.document_path,
+            document_path,  # using generated document path created for the input string
             os.path.join(request.queries_output_dir, f"{document_name}_normalized.txt"),
         )
 
@@ -360,7 +393,7 @@ async def evaluate_chunking(request: EvaluationRequest):
         return EvaluationResponse(
             embedding_model="text-embedding-3-large",
             document_id=document_id,
-            document_path=request.document_path,
+            document_path=document_path,
             queries_path=final_queries_path,
             queries_generated=queries_generated,
             num_queries=num_queries_generated,
