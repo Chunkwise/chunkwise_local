@@ -5,11 +5,9 @@
 
 """Module for visualizing Chonkie."""
 
-import base64
 import html
 import warnings
 from typing import List, Optional, Union
-from pydantic import BaseModel
 from chunkwise_core import Chunk
 
 # light themes
@@ -89,34 +87,6 @@ TEXT_COLOR_LIGHT = "#333333"
 BODY_BACKGROUND_COLOR_DARK = "#121212"
 CONTENT_BACKGROUND_COLOR_DARK = "#1E1E1E"
 TEXT_COLOR_DARK = "#FFFFFF"
-
-# Add all the HTML template content here
-# TODO: Make this prettier in the future — I'm not a fan of the current design
-# But to keep it simple and minimal, I'm keeping it like this for now
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title}</title>
-    <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; line-height: 1.6; padding: 0; margin: 0; background-color: {body_bg_color}; color: {text_color}; display: flex; flex-direction: column; min-height: 100vh; }}
-        .content-box {{ max-width: 900px; width: 100%; margin: 30px auto; padding: 30px 20px 20px 20px; background-color: {content_bg_color}; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); box-sizing: border-box; }}
-        .text-display {{ white-space: pre-wrap; word-wrap: break-word; font-family: "Consolas", "Monaco", "Courier New", monospace; font-size: 0.95em; padding: 0; }}
-        .text-display span[style*="background-color"] {{ border-radius: 3px; padding: 0.1em 0; cursor: help; }}
-        .text-display br {{ display: block; content: ""; margin-top: 0.6em; }}
-        footer {{ text-align: center; margin-top: auto; padding: 15px 0; font-size: 0.8em; color: #888; border-top: 1px solid #eee; background-color: #f0f2f5; width: 100%; }}
-        footer a {{ color: #666; text-decoration: none; }}
-        footer a:hover {{ text-decoration: underline; }}
-        footer .heart {{ color: #d63384; display: inline-block; }}
-    </style>
-</head>
-<body>
-    {main_content}
-</body>
-</html>
-"""
 
 MAIN_TEMPLATE = """
 <div class="content-box">
@@ -210,7 +180,6 @@ class Visualizer:
         return reconstructed_text
 
     # NOTE: This is a helper function to manage overlapping chunk visualizations
-    # At the moment, it doesn't work as expected, so we're not using it.
     def _darken_color(self, hex_color: str, amount: float = 0.7) -> str:
         """Darkens a hex color by a multiplier (0 to 1)."""
         try:
@@ -231,7 +200,6 @@ class Visualizer:
         self,
         chunks: List[Chunk],
         full_text: Optional[str] = None,
-        title: str = "Chunk Visualization",
     ) -> str:
         """
         Returns HTML visualization of chunks as a string
@@ -372,35 +340,12 @@ class Visualizer:
             else:
                 html_parts.append(escaped_segment)
 
-        # --- 3. Assemble the final HTML page ---
+        # --- 3. Assemble the final HTML ---
 
         # Main Content (remain the same)
         main_content = MAIN_TEMPLATE.format(html_parts="".join(html_parts))
 
-        # Set the background colors and the text color
-        if self.theme_name != "custom" and self.theme_name in DARK_THEMES:
-            # Set the dark mode colors
-            body_bg_color = BODY_BACKGROUND_COLOR_DARK
-            content_bg_color = CONTENT_BACKGROUND_COLOR_DARK
-            text_color = TEXT_COLOR_DARK
-        # The light mode is default to both light mode and custom themes
-        else:
-            body_bg_color = BODY_BACKGROUND_COLOR_LIGHT
-            content_bg_color = CONTENT_BACKGROUND_COLOR_LIGHT
-            text_color = TEXT_COLOR_LIGHT
-
-        # Assemble HTML
-        html_content = HTML_TEMPLATE.format(
-            title=html.escape(title),
-            body_bg_color=body_bg_color,
-            content_bg_color=content_bg_color,
-            text_color=text_color,
-            main_content=main_content,
-        )
-
         # --- 4. Return HTML ---
-        # First line returns full HTML page, second line returns HTML body
-        # return html_content
         return main_content
 
     def __repr__(self) -> str:
