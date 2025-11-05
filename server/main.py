@@ -28,6 +28,7 @@ CHUNKING_SERVICE_URL = os.getenv("CHUNKING_SERVICE_URL", "http://localhost:8001"
 VISUALIZATION_SERVICE_URL = os.getenv(
     "VISUALIZATION_SERVICE_URL", "http://localhost:8002"
 )
+EVALUATION_SERVICE_URL = os.getenv("EVALUATION_SERVICE_URL", "http://localhost:8003")
 
 
 @router.get("/health")
@@ -98,16 +99,24 @@ def visualize(request: EitherRequest):
 @router.post("/evaluate")
 def evaluate(request: EitherRequest):
     try:
-        print(request.text)
-        normalized_text = normalize_document(request.text)
-        print(normalized_text)
-
-        return {
-            "precision": "precision_mean",
-            "omega_precision": "precision_omega_mean",
-            "recall": "recall_mean",
-            "iou": "iou_mean",
+        request_body = {
+            "chunking_configs": {
+                "chunker_type": request.chunker_type,
+                "provider": request.provider,
+                "chunk_size": request.chunk_size,
+                "chunk_overlap": request.chunk_overlap,
+            },
+            "document": normalize_document(request.text),
         }
+
+        # Send request to chunking service
+        evaluation_response = requests.post(
+            f"{EVALUATION_SERVICE_URL}/evaluate", json=request_body
+        )
+        evaluation_response.raise_for_status()
+        metrics = evaluation_response.json()
+
+        return metrics
 
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid input")
