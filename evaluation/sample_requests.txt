@@ -1,94 +1,56 @@
->> sample request body 1 (using sample_document_large.tx + LLM query generation):
-{
-  "document_path": "data/sample_document_large.txt",
-  "chunking_configs": [
-    {
-      "chunker_type": "recursive",
-      "provider": "langchain",
-      "chunk_size": 512,
-      "chunk_overlap": 0
-    }
-  ]
-}
-
->> sample results 1 (33.37s):
-{"embedding_model":"text-embedding-3-large","document_id":"sample_document_large.txt","document_path":"data/sample_document_large.txt","queries_path":"data/llm_queries_sample_document_large.csv","queries_generated":true,"num_queries":8,"chunkers_evaluated":["langchain recursive"],"results":[{"iou_mean":0.04739260273485596,"recall_mean":0.47772034252297413,"precision_mean":0.048404662361849565,"precision_omega_mean":0.4669151372307604,"chunker_config":{"provider":"langchain","chunk_size":512,"tokenizer":"character","length_function":null,"keep_separator":false,"add_start_index":false,"strip_whitespace":true,"chunker_type":"recursive","chunk_overlap":0,"separators":["\n\n","\n"," ",""],"is_separator_regex":false,"rules":{"levels":[{"delimiters":["\n\n","\r\n","\n","\r"],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":[". ","! ","? "],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":["{","}","\"","[","]","<",">","(",")",":",";",",","—","|","~","-","...","`","'"],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":null,"whitespace":true,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":null,"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"}]},"min_characters_per_chunk":24}}]}
-
-------------------------
-
->> sample request body 2 (using sample_document_large.txt + provided queries):
-{
-  "document_path": "data/sample_document_large.txt",
-  "queries_path": "data/llm_queries_sample_document_large.csv",
-  "chunking_configs": [
-    {
-      "chunker_type": "token",
-      "provider": "chonkie",
-      "chunk_size": 400,
-      "chunk_overlap": 20
-    }
-  ]
-}
-
->> sample results 2 (2.07s):
-{
-    "embedding_model": "text-embedding-3-large",
-    "document_path": "data/sample_document_large.txt",
-    "queries_path": "data/llm_queries_sample_document_large.csv",
-    "chunkers_evaluated": [
-        "chonkie token"
-    ],
-    "results": [
-        {
-            "iou_mean": 0.064,
-            "recall_mean": 0.5,
-            "precision_mean": 0.064,
-            "precision_omega_mean": 0.3848773209549071,
-            "chunker_config": {
-                "provider": "chonkie",
-                "chunk_size": 400,
-                "tokenizer": "character",
-                "length_function": null,
-                "keep_separator": false,
-                "add_start_index": false,
-                "strip_whitespace": true,
-                "chunker_type": "token",
-                "chunk_overlap": 20,
-                "lang": "en"
-            }
-        }
-    ],
-    "queries_generated": false,
-    "num_queries": null
-}
-
-------------------------
-
->> sample request body 3 (using sample_document_medium.txt + LLM query generation):
+>> sample request body 1 (using sample_document_medium.txt + LLM query generation):
 {
   "document_path": "data/sample_document_medium.txt",
   "chunking_configs": [
     {
-      "chunker_type": "recursive",
       "provider": "langchain",
+      "chunker_type": "langchain_token",
       "chunk_size": 512,
       "chunk_overlap": 0
     }
   ]
 }
 
->> sample results 3 (33.92s):
-{"embedding_model":"text-embedding-3-large","document_path":"data/sample_document_medium.txt","queries_path":"data/llm_queries_sample_document_medium.csv","queries_generated":true,"num_queries":3,"chunkers_evaluated":["langchain recursive"],"results":[{"iou_mean":0.12255659978857882,"recall_mean":0.6294911266301219,"precision_mean":0.14807769162131781,"precision_omega_mean":0.39003842400857297,"chunker_config":{"provider":"langchain","chunk_size":512,"tokenizer":"character","length_function":null,"keep_separator":false,"add_start_index":false,"strip_whitespace":true,"chunker_type":"recursive","chunk_overlap":0,"separators":["\n\n","\n"," ",""],"is_separator_regex":false,"rules":{"levels":[{"delimiters":["\n\n","\r\n","\n","\r"],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":[". ","! ","? "],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":["{","}","\"","[","]","<",">","(",")",":",";",",","—","|","~","-","...","`","'"],"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":null,"whitespace":true,"include_delim":"prev","pattern":null,"pattern_mode":"split"},{"delimiters":null,"whitespace":false,"include_delim":"prev","pattern":null,"pattern_mode":"split"}]},"min_characters_per_chunk":24}}]}
+>> sample results 1 (48.73s - continous generation on existing csv, hence taking longer):
+{
+    "embedding_model": "text-embedding-3-large",
+    "document_id": "sample_document_medium.txt",
+    "document_path": "data/sample_document_medium.txt",
+    "queries_path": "data/llm_queries_sample_document_medium.csv",
+    "queries_generated": true,
+    "num_queries": 8,
+    "chunkers_evaluated": [
+        "langchain_token"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.030520086862803164,
+            "recall_mean": 1.0,
+            "precision_mean": 0.030520086862803164,
+            "precision_omega_mean": 0.10372841587025362,
+            "chunker_config": {
+                "provider": "langchain",
+                "chunker_type": "langchain_token",
+                "chunk_size": 512,
+                "chunk_overlap": 0,
+                "encoding_name": "gpt2",
+                "model_name": null,
+                "allowed_special": [],
+                "disallowed_special": "all"
+            }
+        }
+    ]
+}
 
 ------------------------
 
->> sample request body 4 (using sample_document_medium.txt + provided queries):
+>> sample request body 2 (using sample_document_medium.txt + existing queries):
 {
   "document_path": "data/sample_document_medium.txt",
   "queries_path": "data/llm_queries_sample_document_medium.csv",
   "chunking_configs": [
     {
-      "chunker_type": "token",
+      "chunker_type": "chonkie_token",
       "provider": "chonkie",
       "chunk_size": 400,
       "chunk_overlap": 20
@@ -96,5 +58,78 @@
   ]
 }
 
->> sample results 3 (1081ms):
-{"embedding_model":"text-embedding-3-large","document_path":"data/sample_document_medium.txt","queries_path":"data/llm_queries_sample_document_medium.csv","queries_generated":false,"num_queries":null,"chunkers_evaluated":["chonkie token"],"results":[{"iou_mean":0.09759045641504743,"recall_mean":0.600826011864534,"precision_mean":0.11833333333333335,"precision_omega_mean":0.3011739067450195,"chunker_config":{"provider":"chonkie","chunk_size":400,"tokenizer":"character","length_function":null,"keep_separator":false,"add_start_index":false,"strip_whitespace":true,"chunker_type":"token","chunk_overlap":20,"lang":"en"}}]}
+>> sample results 2 (2.17s):
+{
+    "embedding_model": "text-embedding-3-large",
+    "document_id": "sample_document_medium.txt",
+    "document_path": "data/sample_document_medium.txt",
+    "queries_path": "data/llm_queries_sample_document_medium.csv",
+    "queries_generated": false,
+    "num_queries": null,
+    "chunkers_evaluated": [
+        "chonkie_token"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.08565892115564278,
+            "recall_mean": 0.8503097544492002,
+            "precision_mean": 0.0934375,
+            "precision_omega_mean": 0.30374950990117716,
+            "chunker_config": {
+                "provider": "chonkie",
+                "tokenizer": "character",
+                "chunker_type": "chonkie_token",
+                "chunk_size": 400,
+                "chunk_overlap": 20
+            }
+        }
+    ]
+}
+------------------
+
+>> sample request body 3 (using sample_document_large.tx + existing queries):
+{
+  "document_path": "data/sample_document_large.txt",
+  "queries_path": "data/llm_queries_sample_document_large.csv",
+  "chunking_configs": [
+    {
+      "chunker_type": "langchain_recursive",
+      "provider": "langchain",
+      "chunk_size": 512,
+      "chunk_overlap": 0
+    }
+  ]
+}
+
+>> sample results 3 (1857ms):
+{
+    "embedding_model": "text-embedding-3-large",
+    "document_id": "sample_document_large.txt",
+    "document_path": "data/sample_document_large.txt",
+    "queries_path": "data/llm_queries_sample_document_large.csv",
+    "queries_generated": false,
+    "num_queries": null,
+    "chunkers_evaluated": [
+        "langchain_recursive"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.06658228268349324,
+            "recall_mean": 0.5855245753272069,
+            "precision_mean": 0.06722162922271713,
+            "precision_omega_mean": 0.4669151372307604,
+            "chunker_config": {
+                "provider": "langchain",
+                "chunk_size": 512,
+                "chunk_overlap": 0,
+                "length_function": "len",
+                "keep_separator": true,
+                "add_start_index": false,
+                "strip_whitespace": true,
+                "chunker_type": "langchain_recursive",
+                "separators": null,
+                "is_separator_regex": false
+            }
+        }
+    ]
+}
