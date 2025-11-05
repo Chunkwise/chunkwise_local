@@ -2,7 +2,7 @@ from typing import Any
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
 from chonkie.chunker.token import TokenChunker
 from chonkie.chunker.recursive import RecursiveChunker
-from .types import (
+from ..types.chunker_config import (
     ChunkerConfig,
     LangChainRecursiveConfig,
     LangChainTokenConfig,
