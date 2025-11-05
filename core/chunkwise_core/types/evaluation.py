@@ -14,8 +14,12 @@ class Evaluation(BaseModel):
 class EvaluationResponse(BaseModel):
     embedding_model: str
     document_id: str
-    chunkers_evaluated: List[str]
-    results: List[Evaluation]
+    document_path: str
+    queries_path: str
+    queries_generated: bool
+    num_queries: int | None = None
+    chunkers_evaluated: list[str]
+    results: list[Evaluation]
 
 
 class EvaluationRequest(BaseModel):
