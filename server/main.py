@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Literal, Optional
 import requests
@@ -8,12 +9,24 @@ from utils import calculate_chunk_stats, normalize_document
 app = FastAPI()
 router = APIRouter()
 
+origins = [
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["POST"],
+    allow_headers=["*"],
+)
+
 
 class EitherRequest(BaseModel):
     chunker_type: Literal["recursive", "token"]
     provider: Literal["langchain", "chonkie"]
-    chunk_size: str
-    chunk_overlap: str
+    chunk_size: int
+    chunk_overlap: int
     text: str
 
 

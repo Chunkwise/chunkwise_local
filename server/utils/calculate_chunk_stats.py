@@ -1,3 +1,6 @@
+from fastapi import HTTPException
+
+
 def calculate_chunk_stats(chunks):
     try:
         if not isinstance(chunks, list):
@@ -18,16 +21,16 @@ def calculate_chunk_stats(chunks):
             text_len = len(chunk["text"])
             total_chars += text_len
 
-            if (not stats.get("largest_char_count")) or (
-                text_len > stats["largest_char_count"]
+            if (not stats.get("largest_chunk_chars")) or (
+                text_len > stats["largest_chunk_chars"]
             ):
-                stats["largest_char_count"] = text_len
+                stats["largest_chunk_chars"] = text_len
                 stats["largest_text"] = chunk["text"]
 
-            if (not stats.get("smallest_char_count")) or (
-                text_len < stats["smallest_char_count"]
+            if (not stats.get("smallest_chunk_chars")) or (
+                text_len < stats["smallest_chunk_chars"]
             ):
-                stats["smallest_char_count"] = text_len
+                stats["smallest_chunk_chars"] = text_len
                 stats["smallest_text"] = chunk["text"]
 
         stats["avg_chars"] = (
