@@ -8,7 +8,7 @@ from .chunker_config import (
     ChonkieTokenConfig,
     ChunkerConfig,
 )
-from .evaluation import Evaluation, EvaluationResponse
+from .evaluation import Evaluation, EvaluationResponse, EvaluationRequest
 
 __all__ = [
     "Chunk",
@@ -21,4 +21,5 @@ __all__ = [
     "ChunkerConfig",
     "Evaluation",
     "EvaluationResponse",
+    "EvaluationRequest",
 ]
