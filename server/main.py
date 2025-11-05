@@ -53,7 +53,7 @@ def health_check():
 def visualize(request: EitherRequest):
     """
     Receives chunking parameters and text from client, sends them to the chunking service,
-    then sends the chunks to the visualization service and returns the HTML.
+    then sends the chunks to the visualization service and returns the HTML and statistics.
     """
     try:
         # Prepare the request for the chunking service
@@ -62,7 +62,7 @@ def visualize(request: EitherRequest):
             "provider": request.provider,
             "chunk_size": int(request.chunk_size),
             "chunk_overlap": int(request.chunk_overlap),
-            "text": request.text,
+            "text": normalize_document(request.text),
         }
 
         # Send request to chunking service
@@ -113,12 +113,14 @@ def visualize(request: EitherRequest):
 def evaluate(request: EitherRequest):
     try:
         request_body = {
-            "chunking_configs": {
-                "chunker_type": request.chunker_type,
-                "provider": request.provider,
-                "chunk_size": request.chunk_size,
-                "chunk_overlap": request.chunk_overlap,
-            },
+            "chunking_configs": [
+                {
+                    "chunker_type": request.chunker_type,
+                    "provider": request.provider,
+                    "chunk_size": request.chunk_size,
+                    "chunk_overlap": request.chunk_overlap,
+                }
+            ],
             "document": normalize_document(request.text),
         }
 
