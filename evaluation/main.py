@@ -1,14 +1,13 @@
-from dotenv import load_dotenv
 import os
-from fastapi import FastAPI, Body, HTTPException
-from typing import List, Literal, Optional, Union, Callable, Any, Annotated
+from typing import Literal, Union, Callable, Any, Annotated
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict, model_validator, field_serializer
 from chunking_evaluation.evaluation_framework.base_evaluation import BaseEvaluation
 from chromadb.utils import embedding_functions
 from chonkie.chunker.token import TokenChunker
 from chonkie.chunker.recursive import RecursiveChunker
 from chonkie.types import RecursiveRules
-from chonkie.tokenizer import TokenizerProtocol
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
 from utils import normalize_document, generate_sample_queries
 
@@ -191,7 +190,8 @@ class EvaluationRequest(BaseModel):
     )
     queries_path: str | None = Field(
         default=None,
-        description="Optional: path to queries CSV. If not provided, queries will be generated using LLM (requires OPENAI_API_KEY)",
+        description="Optional: path to queries CSV. If not provided, queries will " \
+        "be generated using LLM (requires OPENAI_API_KEY)",
     )
 
     # Models and API
@@ -290,8 +290,8 @@ async def evaluate_chunking(request: EvaluationRequest):
             num_queries_generated = None
         else:
             # Generate queries using LLM
-            LLM_API_KEY = os.getenv("OPENAI_API_KEY")
-            if not LLM_API_KEY:
+            llm_api_key = os.getenv("OPENAI_API_KEY")
+            if not llm_api_key:
                 raise HTTPException(
                     status_code=500,
                     detail="OPENAI_API_KEY environment variable is required for query generation",
@@ -305,7 +305,7 @@ async def evaluate_chunking(request: EvaluationRequest):
 
             try:
                 final_queries_path = generate_sample_queries(
-                    openai_api_key=LLM_API_KEY,
+                    openai_api_key=llm_api_key,
                     document_paths=[normalized_doc_path],
                     queries_output_path=queries_output_path,
                     num_rounds=request.num_rounds,
@@ -317,7 +317,7 @@ async def evaluate_chunking(request: EvaluationRequest):
                 queries_generated = True
                 # Count number of queries generated
                 try:
-                    with open(final_queries_path, "r") as f:
+                    with open(final_queries_path, "r", encoding="utf-8") as f:
                         num_queries_generated = sum(1 for _ in f) - 1  # Exclude header
                 except Exception:
                     num_queries_generated = (
