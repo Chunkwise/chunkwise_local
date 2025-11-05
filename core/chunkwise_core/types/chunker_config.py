@@ -6,7 +6,7 @@ import re
 from typing import Literal, Callable, Annotated
 from dataclasses import dataclass
 from pydantic import BaseModel, Field, ConfigDict, model_validator, field_serializer
-from typing import Dict, Iterator, List, Literal, Optional, Union
+from typing import Iterator, Literal
 
 
 @dataclass
@@ -22,10 +22,10 @@ class RecursiveLevel:
 
     """
 
-    delimiters: Optional[Union[str, List[str]]] = None
+    delimiters: str | list[str] | None = None
     whitespace: bool = False
-    include_delim: Optional[Literal["prev", "next"]] = "prev"
-    pattern: Optional[str] = None
+    include_delim: Literal["prev", "next"] | None = "prev"
+    pattern: str | None = None
     pattern_mode: Literal["split", "extract"] = "split"
 
     def _validate_fields(self) -> None:
@@ -91,7 +91,7 @@ class RecursiveLevel:
 class RecursiveRules:
     """Expression rules for recursive chunking."""
 
-    levels: Optional[List[RecursiveLevel]] = None
+    levels: list[RecursiveLevel] | None = None
 
     def __post_init__(self) -> None:
         """Validate attributes."""
@@ -140,11 +140,11 @@ class RecursiveRules:
         """Return the number of levels."""
         return len(self.levels) if self.levels is not None else 0
 
-    def __getitem__(self, index: int) -> Optional[RecursiveLevel]:
+    def __getitem__(self, index: int) -> RecursiveLevel | None:
         """Return the RecursiveLevel at the specified index."""
         return self.levels[index] if self.levels is not None else None
 
-    def __iter__(self) -> Optional[Iterator[RecursiveLevel]]:
+    def __iter__(self) -> Iterator[RecursiveLevel] | None:
         """Return an iterator over the RecursiveLevels."""
         return iter(self.levels) if self.levels is not None else None
 
@@ -152,7 +152,7 @@ class RecursiveRules:
     def from_dict(cls, data: dict) -> "RecursiveRules":
         """Create a RecursiveRules object from a dictionary."""
         dict_levels = data.get("levels", None)
-        object_levels: Optional[List[RecursiveLevel]] = None
+        object_levels: list[RecursiveLevel] | None = None
         if dict_levels is not None:
             if isinstance(dict_levels, dict):
                 object_levels = [RecursiveLevel.from_dict(dict_levels)]
@@ -162,9 +162,9 @@ class RecursiveRules:
                 ]
         return cls(levels=object_levels)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Return the RecursiveRules as a dictionary."""
-        result: Dict[str, Optional[List[Dict]]] = dict()
+        result: {str, List[Dict] | None} = dict()
         result["levels"] = (
             [level.to_dict() for level in self.levels]
             if self.levels is not None
