@@ -10,14 +10,14 @@ app = FastAPI()
 router = APIRouter()
 
 origins = [
-    "http://localhost:5173",
+    "*",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["POST"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -115,7 +115,7 @@ def evaluate(request: EitherRequest):
         request_body = {
             "chunking_configs": [
                 {
-                    "chunker_type": request.chunker_type,
+                    "chunker_type": request.provider + "_" + request.chunker_type,
                     "provider": request.provider,
                     "chunk_size": request.chunk_size,
                     "chunk_overlap": request.chunk_overlap,
@@ -131,10 +131,10 @@ def evaluate(request: EitherRequest):
         evaluation_response.raise_for_status()
         evaluation_json = evaluation_response.json()
         metrics = {
-            "omega_precision": evaluation_json.results[0].precision_omega_mean,
-            "precision": evaluation_json.results[0].precision_mean,
-            "recall": evaluation_json.results[0].recall_mean,
-            "iou": evaluation_json.results[0].iou_mean,
+            "omega_precision": evaluation_json["results"][0]["precision_omega_mean"],
+            "precision": evaluation_json["results"][0]["precision_mean"],
+            "recall": evaluation_json["results"][0]["recall_mean"],
+            "iou": evaluation_json["results"][0]["iou_mean"],
         }
 
         return metrics
