@@ -30,8 +30,8 @@ class EvaluationRequest(BaseModel):
         description="Path to the document to evaluate. Can be absolute or relative path",
     )
     # `document` field is temporary for MVP testing
-    document: str = Field(
-        ...,
+    document: str | None = Field(
+        default=None,
         description="Document content as a string. Use this for MVP testing. ",
     )
     queries_path: str | None = Field(
