@@ -58,9 +58,33 @@
   ]
 }
 
->> sample results 2 (1539s):
-{"embedding_model":"text-embedding-3-large","document_id":"sample_document_medium.txt","document_path":"data/sample_document_medium.txt","queries_path":"data/llm_queries_sample_document_medium.csv","queries_generated":false,"num_queries":null,"chunkers_evaluated":["chonkie chonkie_token"],"results":[{"iou_mean":0.08565892115564278,"recall_mean":0.8503097544492002,"precision_mean":0.0934375,"precision_omega_mean":0.30374950990117716,"chunker_config":{"provider":"chonkie","tokenizer":"character","chunker_type":"chonkie_token","chunk_size":400,"chunk_overlap":20}}]}
-
+>> sample results 2 (2.17s):
+{
+    "embedding_model": "text-embedding-3-large",
+    "document_id": "sample_document_medium.txt",
+    "document_path": "data/sample_document_medium.txt",
+    "queries_path": "data/llm_queries_sample_document_medium.csv",
+    "queries_generated": false,
+    "num_queries": null,
+    "chunkers_evaluated": [
+        "chonkie_token"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.08565892115564278,
+            "recall_mean": 0.8503097544492002,
+            "precision_mean": 0.0934375,
+            "precision_omega_mean": 0.30374950990117716,
+            "chunker_config": {
+                "provider": "chonkie",
+                "tokenizer": "character",
+                "chunker_type": "chonkie_token",
+                "chunk_size": 400,
+                "chunk_overlap": 20
+            }
+        }
+    ]
+}
 ------------------
 
 >> sample request body 3 (using sample_document_large.tx + existing queries):
