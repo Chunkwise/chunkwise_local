@@ -101,7 +101,7 @@
   ]
 }
 
->> sample results 1 (1857ms):
+>> sample results 3 (1857ms):
 {
     "embedding_model": "text-embedding-3-large",
     "document_id": "sample_document_large.txt",
