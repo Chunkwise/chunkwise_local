@@ -11,7 +11,7 @@ from .types import (
 )
 
 
-def create_chunker_from_config(
+def create_chunker(
     config: ChunkerConfig,
 ) -> Any:
     match config:
