@@ -58,10 +58,12 @@ def visualize(request: EitherRequest):
     try:
         # Prepare the request for the chunking service
         chunking_payload = {
-            "chunker_type": request.chunker_type,
-            "provider": request.provider,
-            "chunk_size": int(request.chunk_size),
-            "chunk_overlap": int(request.chunk_overlap),
+            "chunker_config": {
+                "chunker_type": request.chunker_type,
+                "provider": request.provider,
+                "chunk_size": int(request.chunk_size),
+                "chunk_overlap": int(request.chunk_overlap),
+            },
             "text": normalize_document(request.text),
         }
 
