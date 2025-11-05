@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Literal, Optional
 import requests
 import os
+from utils import calculate_chunk_stats, normalize_document
 
 app = FastAPI()
 router = APIRouter()
@@ -27,48 +28,6 @@ CHUNKING_SERVICE_URL = os.getenv("CHUNKING_SERVICE_URL", "http://localhost:8001"
 VISUALIZATION_SERVICE_URL = os.getenv(
     "VISUALIZATION_SERVICE_URL", "http://localhost:8002"
 )
-
-
-def calculateChunkStats(chunks):
-    try:
-        if not isinstance(chunks, list):
-            raise ValueError("chunks must be a list")
-
-        stats = {
-            "total_chunks": len(chunks),
-        }
-        total_chars = 0
-
-        for i, chunk in enumerate(chunks):
-            # Validate chunk has a non-empty text field
-            if not isinstance(chunk, dict) or "text" not in chunk:
-                raise ValueError(f"Chunk at index {i} is missing the 'text' property")
-            if not isinstance(chunk["text"], str) or len(chunk["text"]) == 0:
-                raise ValueError(f"Chunk at index {i} has empty 'text'")
-
-            text_len = len(chunk["text"])
-            total_chars += text_len
-
-            if (not stats.get("largest_char_count")) or (
-                text_len > stats["largest_char_count"]
-            ):
-                stats["largest_char_count"] = text_len
-                stats["largest_text"] = chunk["text"]
-
-            if (not stats.get("smallest_char_count")) or (
-                text_len < stats["smallest_char_count"]
-            ):
-                stats["smallest_char_count"] = text_len
-                stats["smallest_text"] = chunk["text"]
-
-        stats["avg_chars"] = (
-            total_chars / stats["total_chunks"] if stats["total_chunks"] > 0 else 0
-        )
-
-        return stats
-
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid input")
 
 
 @router.get("/health")
@@ -100,7 +59,7 @@ def visualize(request: VisualizeRequest):
         chunks = chunking_response.json()
 
         # Get chunk related stats
-        stats = calculateChunkStats(chunks)
+        stats = calculate_chunk_stats(chunks)
 
         # Send chunks to visualization service
         visualization_response = requests.post(
@@ -113,6 +72,38 @@ def visualize(request: VisualizeRequest):
 
         # Return dict with stats and HTML
         return {"stats": stats, "html": visualization_html}
+
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid input")
+
+    except requests.RequestException as e:
+        response = getattr(e, "response", None)
+        if response is not None:
+            if response.status_code in (400, 401, 403, 404):
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail="Upstream service returned a client error",
+                )
+            else:
+                raise HTTPException(status_code=502, detail="Upstream service error")
+        else:
+            raise HTTPException(
+                status_code=503, detail="Unable to reach upstream service"
+            )
+
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/evaluate")
+def evaluate(request: VisualizeRequest):
+    try:
+        return {
+            "precision": "precision_mean",
+            "omega_precision": "precision_omega_mean",
+            "recall": "recall_mean",
+            "iou": "iou_mean",
+        }
 
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid input")
