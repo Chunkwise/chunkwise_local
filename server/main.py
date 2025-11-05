@@ -9,7 +9,7 @@ app = FastAPI()
 router = APIRouter()
 
 
-class VisualizeRequest(BaseModel):
+class EitherRequest(BaseModel):
     chunker_type: Literal["recursive", "token"]
     provider: Literal["langchain", "chonkie"]
     chunk_size: str
@@ -36,7 +36,7 @@ def health_check():
 
 
 @router.post("/visualize")
-def visualize(request: VisualizeRequest):
+def visualize(request: EitherRequest):
     """
     Receives chunking parameters and text from client, sends them to the chunking service,
     then sends the chunks to the visualization service and returns the HTML.
@@ -96,8 +96,12 @@ def visualize(request: VisualizeRequest):
 
 
 @router.post("/evaluate")
-def evaluate(request: VisualizeRequest):
+def evaluate(request: EitherRequest):
     try:
+        print(request.text)
+        normalized_text = normalize_document(request.text)
+        print(normalized_text)
+
         return {
             "precision": "precision_mean",
             "omega_precision": "precision_omega_mean",
