@@ -24,40 +24,8 @@ embedding_func = embedding_functions.OpenAIEmbeddingFunction(
 )
 
 
-# # only considering 4 chunkers for now
-# class BaseChunkerConfig(BaseModel):
-#     model_config = ConfigDict(arbitrary_types_allowed=True)  # Required for Callable
-#     # For both LangChain and Chonkie chunkers
-#     provider: Literal["langchain", "chonkie"]
-#     chunk_size: int = Field(default=512, ge=1)
-#     # For Chonkie chunkers
-#     tokenizer: Union[Literal["character", "word", "gpt2"], Any] = "character"
-#     # For both LangChain chunkers
-#     length_function: Optional[Callable[[str], int]] = None
-#     keep_separator: Union[bool, Literal["start", "end"]] = False
-#     add_start_index: bool = False
-#     strip_whitespace: bool = True
-
-
-# class RecursiveChunkerConfig(BaseChunkerConfig):
-#     chunker_type: Literal["recursive"] = "recursive"
-#     # For LangChain recursive chunker (not exhaustive)
-#     chunk_overlap: int = Field(default=0, ge=0)
-#     separators: List[str] = ["\n\n", "\n", " ", ""]
-#     is_separator_regex: bool = False
-#     # For Chonkie recursive chunker
-#     rules: RecursiveRules = RecursiveRules()
-#     min_characters_per_chunk: int = 24
-
-
-# class TokenChunkerConfig(BaseChunkerConfig):
-#     chunker_type: Literal["token"] = "token"
-#     chunk_overlap: int = Field(default=0, ge=0)
-#     # For LangChain token chunker
-#     lang: str = "en"
-
-
 # ChunkerConfig models using Pydantic v2
+# Only considering 4 chunkers for now
 class LangChainBaseChunkerConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
     provider: Literal["langchain"] = "langchain"
