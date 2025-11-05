@@ -1,3 +1,47 @@
+>> sample request body for MVP testing - only accepting a document as a string:
+{
+  "document": "In addition to the figurines and other artifacts from the 1500 - 300 BCE era, human and animal remains have been found, some of which could be as much as 25,000 years old. [citation needed]\nThe most controversial findings in Tlapacoya are artifacts which have been dated by some researchers to as early as 25,000 BP. If verified, these would be some of the earliest dates for human habitation in the Americas and would discredit prevailing theories of the timing of settlement of the New World. [citation needed]\nThe evidence for these much-earlier dates consists of the bones of black bear and two species of deer which appeared in middens associated with 22,000-year-old hearths, as well as a curved obsidian blade which was found beneath a buried tree trunk. The bones were 24,000 years BP (± 4000 years) and 21,700 years BP (± 500 years).[2] The obsidian blade was found under a tree trunk which dated to 24,000 years BP (± 1000 years) and was itself dated, using the obsidian hydration method, to between 21,250 and 25,000 years BP.[citation needed]\nThe site was uncovered during the construction of a Mexico City-Puebla freeway and has since been almost obliterated by freeway construction.[citation needed] In 1955, Beatriz Barba, 'the first Mexican woman to obtain the title of archaeologist', earned her master's degree with a study of the site. Her thesis, Tlapacoya: un sitio preclásico de transición (Tlapacoya: a pre-classic transitional site) evaluated the social development and religious practices of the Tlatilco culture.[3] Barba's evaluation of the site was one of the first to evaluate the socio-economic and political life of the inhabitants of Tlapacoya within the context of the history of the region, as well as their trade relationships and the influence of other groups upon the development of the Tlatilco people.[4]The company was founded in London in 1946 as Ove N. Arup Consulting Engineers by Sir Ove Arup. Arup had established himself in the 1930s as an expert in reinforced concrete, known for projects such as the Penguin Pool at London Zoo.[10] According to the architectural author Ian Volner, Arup's vision when establishing the company came out of a combination of his wartime experiences and a progressive-minded philosophy broadly aligning with early modernism, was for the organisation to be a force for peace and social betterment in the postwar world.[6] To this end, it would employ professionals of diverse disciplines that could work together to produce projects of greater quality than was achievable by them working in isolation, a concept known as 'Total Design'.[6][11][12]1970 was a particularly transformative year for the firm; 24 years after founding the company, Arup opted to retire from actively leading the company. At the time, the firm (then Ove Arup & Partners) was made up of several independent practices spread across the globe, so prior to his departure, Arup delivered his 'Key Speech' on 9 July in Winchester to all his partners from the various practices.[21] The speech set out the aims of the firm and identified the principles of governance by which they might be achieved. These included quality of work, total architecture, humane organisation, straight and honorable dealings, social usefulness, and the reasonable prosperity of its members.[6]",
+  "chunking_configs": [
+    {
+      "chunker_type": "chonkie_token",
+      "provider": "chonkie",
+      "chunk_size": 400,
+      "chunk_overlap": 20
+    }
+  ]
+}
+
+
+>> sample response (37.55s):
+{
+    "embedding_model": "text-embedding-3-large",
+    "document_id": "temp_doc_eabbf35a.txt",
+    "document_path": "data/temp_doc_eabbf35a.txt",
+    "queries_path": "data/llm_queries_temp_doc_eabbf35a.csv",
+    "queries_generated": true,
+    "num_queries": 5,
+    "chunkers_evaluated": [
+        "chonkie_token"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.1767912673056443,
+            "recall_mean": 1.0,
+            "precision_mean": 0.1767912673056443,
+            "precision_omega_mean": 0.4256834068352777,
+            "chunker_config": {
+                "provider": "chonkie",
+                "tokenizer": "character",
+                "chunker_type": "chonkie_token",
+                "chunk_size": 400,
+                "chunk_overlap": 20
+            }
+        }
+    ]
+}
+
+-----------------------
+
 >> sample request body 1 (using sample_document_medium.txt + LLM query generation):
 {
   "document_path": "data/sample_document_medium.txt",
