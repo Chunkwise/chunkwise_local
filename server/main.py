@@ -129,7 +129,13 @@ def evaluate(request: EitherRequest):
             f"{EVALUATION_SERVICE_URL}/evaluate", json=request_body
         )
         evaluation_response.raise_for_status()
-        metrics = evaluation_response.json()
+        evaluation_json = evaluation_response.json()
+        metrics = {
+            "omega_precision": evaluation_json.results[0].precision_omega_mean,
+            "precision": evaluation_json.results[0].precision_mean,
+            "recall": evaluation_json.results[0].recall_mean,
+            "iou": evaluation_json.results[0].iou_mean,
+        }
 
         return metrics
 
