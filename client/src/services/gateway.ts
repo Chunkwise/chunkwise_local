@@ -21,7 +21,7 @@ export async function getVisualization(
 ): Promise<VisualizationOutput> {
   const requestBody = createRequestBody({ ...configuration, text });
   const { data } = await axios.post(
-    `http://localhost:8000/visualize`,
+    `http://localhost:8000/api/visualize`,
     requestBody
   );
 
@@ -31,7 +31,7 @@ export async function getVisualization(
 export async function getEvals(configuration: Args): Promise<Evals> {
   const requestBody = createRequestBody({ ...configuration, text });
   const { data } = await axios.post(
-    "http://localhost:8000/evaluate",
+    "http://localhost:8000/api/evaluate",
     requestBody
   );
 
