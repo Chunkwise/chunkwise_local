@@ -69,7 +69,7 @@ def visualize(request: EitherRequest):
 
         # Send request to chunking service
         chunking_response = requests.post(
-            f"{CHUNKING_SERVICE_URL}/chunks", json=chunking_payload
+            f"{CHUNKING_SERVICE_URL}/chunk", json=chunking_payload
         )
         chunking_response.raise_for_status()
         chunks = chunking_response.json()
@@ -79,7 +79,7 @@ def visualize(request: EitherRequest):
 
         # Send chunks to visualization service
         visualization_response = requests.post(
-            f"{VISUALIZATION_SERVICE_URL}/visualization", json=chunks
+            f"{VISUALIZATION_SERVICE_URL}/visualize", json=chunks
         )
         visualization_response.raise_for_status()
 

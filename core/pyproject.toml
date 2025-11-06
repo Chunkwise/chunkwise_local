@@ -1,18 +1,16 @@
-[project]
+[tool.poetry]
 name = "chunkwise-core"
 version = "0.1.0"
 description = "Shared types, constants, and helpers for Chunkwise services"
-authors = [
-    {name = "Your Name",email = "you@example.com"}
-]
-packages = [{ include = "chunkwise_core" }]
+authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-requires-python = ">=3.13,<4.0.0"
-dependencies = [
-    "chonkie (>=1.4.0,<2.0.0)",
-    "langchain-text-splitters (>=1.0.0,<2.0.0)",
-    "pydantic (>=2.12.3,<3.0.0)"
-]
+packages = [{include = "chunkwise_core"}]
+
+[tool.poetry.dependencies]
+python = ">=3.13,<4.0"
+chonkie = ">=1.4.0,<2.0.0"
+langchain-text-splitters = ">=1.0.0,<2.0.0"
+pydantic = ">=2.12.3,<3.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
