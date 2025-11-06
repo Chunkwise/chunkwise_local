@@ -5,6 +5,9 @@ from typing import Literal, Optional
 import requests
 import os
 from utils import calculate_chunk_stats, normalize_document
+from chunkwise_core import (
+    Chunk,
+)
 
 app = FastAPI()
 router = APIRouter()
@@ -59,7 +62,7 @@ def visualize(request: EitherRequest):
         # Prepare the request for the chunking service
         chunking_payload = {
             "chunker_config": {
-                "chunker_type": request.provider + "_" + request.chunker_type,
+                "chunker_type": request.chunker_type,
                 "provider": request.provider,
                 "chunk_size": int(request.chunk_size),
                 "chunk_overlap": int(request.chunk_overlap),
@@ -117,7 +120,7 @@ def evaluate(request: EitherRequest):
         request_body = {
             "chunking_configs": [
                 {
-                    "chunker_type": request.provider + "_" + request.chunker_type,
+                    "chunker_type": request.chunker_type,
                     "provider": request.provider,
                     "chunk_size": request.chunk_size,
                     "chunk_overlap": request.chunk_overlap,
