@@ -48,16 +48,19 @@ class ChonkieBaseChunkerConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     chunker_type: Literal["chonkie_recursive", "chonkie_token"]
     provider: Literal["chonkie"] = "chonkie"
-    tokenizer: Literal["character", "word", "gpt2"] | str = "character"
-    chunk_size: int = Field(default=2048, gt=0)
+    tokenizer: Literal["character", "word", "gpt2"] | str = "gpt2"
 
 
 class ChonkieRecursiveConfig(ChonkieBaseChunkerConfig):
+    tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     rules: RecursiveRules = Field(default_factory=RecursiveRules)
+    chunk_size: int = Field(default=2048, gt=0)
     min_characters_per_chunk: int = Field(default=24, gt=0)
 
 
 class ChonkieTokenConfig(ChonkieBaseChunkerConfig):
+    tokenizer: Literal["character", "word", "gpt2"] | str = "character"
+    chunk_size: int = Field(default=2048, gt=0)
     chunk_overlap: int | float = Field(default=0, ge=0)
 
     @model_validator(mode="after")
