@@ -16,7 +16,8 @@ dependencies = [
     "uvicorn (>=0.38.0,<0.39.0)",
     "requests (>=2.32.5,<3.0.0)",
     "black (>=25.9.0,<26.0.0)",
-    "chunkwise-core @ ../core"
+    "chunkwise-core @ ../core",
+    "boto3 (>=1.40.68,<2.0.0)"
 ]
 
 
