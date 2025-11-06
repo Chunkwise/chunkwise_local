@@ -5,11 +5,12 @@ services and it will eventually manage the database(s) and document storage.
 
 from typing import Literal, Optional
 import os
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
 from utils import calculate_chunk_stats, normalize_document
+from chunkwise_core import ChunkerConfig
 
 app = FastAPI()
 router = APIRouter()
@@ -27,19 +28,16 @@ app.add_middleware(
 )
 
 
-class EitherRequest(BaseModel):
-    chunker_type: Literal["recursive", "token"]
-    provider: Literal["langchain", "chonkie"]
-    chunk_size: int
-    chunk_overlap: int
-    text: str
+# class EitherRequest(BaseModel):
+#     chunker_type: Literal["recursive", "token"]
+#     provider: Literal["langchain", "chonkie"]
+#     chunk_size: int
+#     chunk_overlap: int
+#     text: str
 
 
-class Chunk(BaseModel):
-    text: str
-    start_index: int
-    end_index: int
-    token_count: Optional[int] = None
+# class VisualizeResponse(BaseModel):
+#     pass
 
 
 CHUNKING_SERVICE_URL = os.getenv("CHUNKING_SERVICE_URL", "http://localhost:8001")
@@ -56,7 +54,7 @@ def health_check():
 
 
 @router.post("/visualize")
-def visualize(request: EitherRequest):
+def visualize(chunker_config: ChunkerConfig = Body(...), document: str = Body(...)):
     """
     Receives chunking parameters and text from client, sends them to the chunking service,
     then sends the chunks to the visualization service and returns the HTML and statistics.
@@ -64,13 +62,8 @@ def visualize(request: EitherRequest):
     try:
         # Prepare the request for the chunking service
         chunking_payload = {
-            "chunker_config": {
-                "chunker_type": request.provider + "_" + request.chunker_type,
-                "provider": request.provider,
-                "chunk_size": int(request.chunk_size),
-                "chunk_overlap": int(request.chunk_overlap),
-            },
-            "text": normalize_document(request.text),
+            "chunker_config": chunker_config.__dict__,
+            "text": normalize_document(document),
         }
 
         # Send request to chunking service
@@ -120,7 +113,7 @@ def visualize(request: EitherRequest):
 
 
 @router.post("/evaluate")
-def evaluate(request: EitherRequest):
+def evaluate(chunker_config: ChunkerConfig = Body(...), document: str = Body(...)):
     """
     Receives chunker configs and a text/document from the client, which it then normalizes
     and sends to the evaluation server. Once it receives a response, it gets the necessary
@@ -128,15 +121,8 @@ def evaluate(request: EitherRequest):
     """
     try:
         request_body = {
-            "chunking_configs": [
-                {
-                    "chunker_type": request.provider + "_" + request.chunker_type,
-                    "provider": request.provider,
-                    "chunk_size": request.chunk_size,
-                    "chunk_overlap": request.chunk_overlap,
-                }
-            ],
-            "document": normalize_document(request.text),
+            "chunker_config": chunker_config.__dict__,
+            "document": normalize_document(document),
         }
 
         # Send request to chunking service
