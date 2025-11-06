@@ -3,14 +3,18 @@ This is the backend server which acts as a gateway for the client to access
 services and it will eventually manage the database(s) and document storage.
 """
 
-from typing import Literal, Optional
 import os
+from server_types import (
+    Chunk,
+    ChunkerConfig,
+    ChunkStatistics,
+    VisualizeResponse,
+    VisualizeRequest,
+)
+from utils import calculate_chunk_stats, normalize_document
 from fastapi import FastAPI, APIRouter, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import requests
-from utils import calculate_chunk_stats, normalize_document
-from chunkwise_core import ChunkerConfig
 
 app = FastAPI()
 router = APIRouter()
@@ -28,18 +32,6 @@ app.add_middleware(
 )
 
 
-# class EitherRequest(BaseModel):
-#     chunker_type: Literal["recursive", "token"]
-#     provider: Literal["langchain", "chonkie"]
-#     chunk_size: int
-#     chunk_overlap: int
-#     text: str
-
-
-# class VisualizeResponse(BaseModel):
-#     pass
-
-
 CHUNKING_SERVICE_URL = os.getenv("CHUNKING_SERVICE_URL", "http://localhost:8001")
 VISUALIZATION_SERVICE_URL = os.getenv(
     "VISUALIZATION_SERVICE_URL", "http://localhost:8002"
@@ -54,14 +46,16 @@ def health_check():
 
 
 @router.post("/visualize")
-def visualize(chunker_config: ChunkerConfig = Body(...), document: str = Body(...)):
+def visualize(
+    chunker_config: ChunkerConfig = Body(...), document: str = Body(...)
+) -> VisualizeResponse:
     """
     Receives chunking parameters and text from client, sends them to the chunking service,
     then sends the chunks to the visualization service and returns the HTML and statistics.
     """
     try:
         # Prepare the request for the chunking service
-        chunking_payload = {
+        chunking_payload: VisualizeRequest = {
             "chunker_config": chunker_config.__dict__,
             "text": normalize_document(document),
         }
@@ -71,10 +65,10 @@ def visualize(chunker_config: ChunkerConfig = Body(...), document: str = Body(..
             f"{CHUNKING_SERVICE_URL}/chunks", json=chunking_payload, timeout=10
         )
         chunking_response.raise_for_status()
-        chunks = chunking_response.json()
+        chunks: list[Chunk] = chunking_response.json()
 
         # Get chunk related stats
-        stats = calculate_chunk_stats(chunks)
+        stats: ChunkStatistics = calculate_chunk_stats(chunks)
 
         # Send chunks to visualization service
         visualization_response = requests.post(
