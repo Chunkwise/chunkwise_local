@@ -1,10 +1,5 @@
-# Adapted from:
-# Minhas, Bhavnick AND Nigam, Shreyash (2025)
-# "Chonkie: A no-nonsense fast, lightweight, and efficient text chunking library"
-# https://github.com/chonkie-inc/chonkie/blob/65874b1e69b5e8c2cd9a6233818efaf6b948c131/src/chonkie/types/recursive.py#L115
 from typing import Literal, Callable, Annotated
 from pydantic import BaseModel, Field, ConfigDict, model_validator, field_serializer
-from typing import Literal
 from chonkie.types import RecursiveRules
 
 
@@ -12,6 +7,7 @@ from chonkie.types import RecursiveRules
 # Only considering 4 chunkers for now
 class LangChainBaseChunkerConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
+    chunker_type: Literal["langchain_recursive", "langchain_token"]
     provider: Literal["langchain"] = "langchain"
     chunk_size: int = Field(default=4000, ge=1)
     chunk_overlap: int = Field(default=200, ge=0)
@@ -36,20 +32,12 @@ class LangChainBaseChunkerConfig(BaseModel):
 
 
 class LangChainRecursiveConfig(LangChainBaseChunkerConfig):
-    chunker_type: Literal["langchain_recursive"] = "langchain_recursive"
     separators: list[str] | None = None
     keep_separator: bool | Literal["start", "end"] = True
     is_separator_regex: bool = False
 
 
-class LangChainTokenConfig(BaseModel):  # doesn't use all properties on base chunker
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    provider: Literal["langchain"] = "langchain"
-    chunker_type: Literal["langchain_token"] = "langchain_token"
-
-    # Only relevant fields for token splitting
-    chunk_size: int = Field(default=4000, ge=1)
-    chunk_overlap: int = Field(default=200, ge=0)
+class LangChainTokenConfig(LangChainBaseChunkerConfig):
     encoding_name: str = "gpt2"
     model_name: str | None = None
     allowed_special: Literal["all"] | set[str] = Field(default_factory=set)
@@ -58,23 +46,19 @@ class LangChainTokenConfig(BaseModel):  # doesn't use all properties on base chu
 
 class ChonkieBaseChunkerConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
+    chunker_type: Literal["chonkie_recursive", "chonkie_token"]
     provider: Literal["chonkie"] = "chonkie"
-    tokenizer: Literal["character", "word", "gpt2"] | str = "gpt2"
+    tokenizer: Literal["character", "word", "gpt2"] | str = "character"
+    chunk_size: int = Field(default=2048, gt=0)
 
 
 class ChonkieRecursiveConfig(ChonkieBaseChunkerConfig):
-    chunker_type: Literal["chonkie_recursive"] = "chonkie_recursive"
-    chunk_size: int = Field(default=2048, gt=0)
-    tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     rules: RecursiveRules = Field(default_factory=RecursiveRules)
     min_characters_per_chunk: int = Field(default=24, gt=0)
 
 
 class ChonkieTokenConfig(ChonkieBaseChunkerConfig):
-    chunker_type: Literal["chonkie_token"] = "chonkie_token"
-    chunk_size: int = Field(default=2048, gt=0)
     chunk_overlap: int | float = Field(default=0, ge=0)
-    tokenizer: Literal["character", "word", "gpt2"] | str = "character"
 
     @model_validator(mode="after")
     def validate_overlap(self) -> "ChonkieTokenConfig":
