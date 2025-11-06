@@ -2,21 +2,24 @@ from .chunk import Chunk
 from .chunker_config import (
     RecursiveLevel,
     RecursiveRules,
-    BaseChunkerConfig,
-    RecursiveChunkerConfig,
-    TokenChunkerConfig,
-    GeneralChunkerConfig,
+    LangChainRecursiveConfig,
+    LangChainTokenConfig,
+    ChonkieRecursiveConfig,
+    ChonkieTokenConfig,
+    ChunkerConfig,
 )
-from .evaluation import ChunkingResult, EvaluateResponse
+from .evaluation import Evaluation, EvaluationResponse, EvaluationRequest
 
 __all__ = [
     "Chunk",
     "RecursiveLevel",
     "RecursiveRules",
-    "BaseChunkerConfig",
-    "RecursiveChunkerConfig",
-    "TokenChunkerConfig",
-    "GeneralChunkerConfig",
-    "ChunkingResult",
-    "EvaluateResponse",
+    "LangChainRecursiveConfig",
+    "LangChainTokenConfig",
+    "ChonkieRecursiveConfig",
+    "ChonkieTokenConfig",
+    "ChunkerConfig",
+    "Evaluation",
+    "EvaluationResponse",
+    "EvaluationRequest",
 ]
