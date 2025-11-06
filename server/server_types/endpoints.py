@@ -20,3 +20,7 @@ class VisualizeRequest(BaseModel):
 class VisualizeResponse(BaseModel):
     stats: ChunkStatistics
     html: str
+
+
+class DocumentPostResponse(BaseModel):
+    document_endpoint: str

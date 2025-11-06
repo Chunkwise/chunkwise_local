@@ -10,6 +10,7 @@ from server_types import (
     ChunkStatistics,
     VisualizeResponse,
     VisualizeRequest,
+    DocumentPostResponse,
 )
 from utils import calculate_chunk_stats, normalize_document
 from fastapi import FastAPI, APIRouter, HTTPException, Body
@@ -133,6 +134,53 @@ def evaluate(chunker_config: ChunkerConfig = Body(...), document: str = Body(...
         }
 
         return metrics
+
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid input") from exc
+
+    except requests.RequestException as e:
+        response = getattr(e, "response", None)
+        if response is not None:
+            if response.status_code in (400, 401, 403, 404):
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail="Upstream service returned a client error",
+                ) from e
+            else:
+                raise HTTPException(
+                    status_code=502, detail="Upstream service error"
+                ) from e
+        else:
+            raise HTTPException(
+                status_code=503, detail="Unable to reach upstream service"
+            ) from e
+
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Internal server error") from exc
+
+
+@router.post("/documents")
+def upload_document(document: str = Body(...)) -> DocumentPostResponse:
+    """
+    This endpoint receives a string and uses it to create a txt file.
+    It then sends the file to S3 and returns the path/url of the created resource.
+    """
+    try:
+        # Create a temp files
+        if document:
+            # Create random name
+            document_name = f"{os.urandom(4).hex()}"
+            document_id = f"{document_name}.txt"
+
+            # Make sure that the directory exists
+            os.makedirs("documents", exist_ok=True)
+            # Track temporary file (created from the input `document` string) for cleanup
+            temp_doc_path = os.path.join("documents", document_id)
+
+            with open(temp_doc_path, "w", encoding="utf-8") as f:
+                f.write(document)
+
+        return {"document_endpoint": temp_doc_path}
 
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid input") from exc
