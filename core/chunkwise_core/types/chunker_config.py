@@ -7,7 +7,6 @@ from chonkie.types import RecursiveRules
 # Only considering 4 chunkers for now
 class LangChainBaseChunkerConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
-    chunker_type: Literal["langchain_recursive", "langchain_token"]
     provider: Literal["langchain"] = "langchain"
     chunk_size: int = Field(default=4000, ge=1)
     chunk_overlap: int = Field(default=200, ge=0)
@@ -32,12 +31,14 @@ class LangChainBaseChunkerConfig(BaseModel):
 
 
 class LangChainRecursiveConfig(LangChainBaseChunkerConfig):
+    chunker_type: Literal["recursive"]
     separators: list[str] | None = None
     keep_separator: bool | Literal["start", "end"] = True
     is_separator_regex: bool = False
 
 
 class LangChainTokenConfig(LangChainBaseChunkerConfig):
+    chunker_type: Literal["token"]
     encoding_name: str = "gpt2"
     model_name: str | None = None
     allowed_special: Literal["all"] | set[str] = Field(default_factory=set)
@@ -46,12 +47,12 @@ class LangChainTokenConfig(LangChainBaseChunkerConfig):
 
 class ChonkieBaseChunkerConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    chunker_type: Literal["chonkie_recursive", "chonkie_token"]
     provider: Literal["chonkie"] = "chonkie"
     tokenizer: Literal["character", "word", "gpt2"] | str = "gpt2"
 
 
 class ChonkieRecursiveConfig(ChonkieBaseChunkerConfig):
+    chunker_type: Literal["recursive"]
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     rules: RecursiveRules = Field(default_factory=RecursiveRules)
     chunk_size: int = Field(default=2048, gt=0)
@@ -59,6 +60,7 @@ class ChonkieRecursiveConfig(ChonkieBaseChunkerConfig):
 
 
 class ChonkieTokenConfig(ChonkieBaseChunkerConfig):
+    chunker_type: Literal["token"]
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     chunk_size: int = Field(default=2048, gt=0)
     chunk_overlap: int | float = Field(default=0, ge=0)
@@ -79,10 +81,15 @@ class ChonkieTokenConfig(ChonkieBaseChunkerConfig):
         return self
 
 
+LangChainConfigs = Annotated[
+    LangChainRecursiveConfig | LangChainTokenConfig, Field(discriminator="chunker_type")
+]
+
+ChonkieConfigs = Annotated[
+    ChonkieRecursiveConfig | ChonkieTokenConfig, Field(discriminator="chunker_type")
+]
+
 ChunkerConfig = Annotated[
-    LangChainRecursiveConfig
-    | LangChainTokenConfig
-    | ChonkieRecursiveConfig
-    | ChonkieTokenConfig,
-    Field(discriminator="chunker_type"),
+    LangChainConfigs | ChonkieConfigs,
+    Field(discriminator="provider"),
 ]
