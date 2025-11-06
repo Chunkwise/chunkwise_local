@@ -1,9 +1,14 @@
+"""
+This is the backend server which acts as a gateway for the client to access
+services and it will eventually manage the database(s) and document storage.
+"""
+
+from typing import Literal, Optional
+import os
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Literal, Optional
 import requests
-import os
 from utils import calculate_chunk_stats, normalize_document
 
 app = FastAPI()
@@ -46,6 +51,7 @@ EVALUATION_SERVICE_URL = os.getenv("EVALUATION_SERVICE_URL", "http://localhost:8
 
 @router.get("/health")
 def health_check():
+    """Allows for services to check the health of this server if needed."""
     return {"status": "ok"}
 
 
@@ -69,7 +75,7 @@ def visualize(request: EitherRequest):
 
         # Send request to chunking service
         chunking_response = requests.post(
-            f"{CHUNKING_SERVICE_URL}/chunks", json=chunking_payload
+            f"{CHUNKING_SERVICE_URL}/chunks", json=chunking_payload, timeout=10
         )
         chunking_response.raise_for_status()
         chunks = chunking_response.json()
@@ -79,7 +85,7 @@ def visualize(request: EitherRequest):
 
         # Send chunks to visualization service
         visualization_response = requests.post(
-            f"{VISUALIZATION_SERVICE_URL}/visualization", json=chunks
+            f"{VISUALIZATION_SERVICE_URL}/visualization", json=chunks, timeout=10
         )
         visualization_response.raise_for_status()
 
@@ -89,8 +95,8 @@ def visualize(request: EitherRequest):
         # Return dict with stats and HTML
         return {"stats": stats, "html": visualization_html}
 
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid input")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid input") from exc
 
     except requests.RequestException as e:
         response = getattr(e, "response", None)
@@ -99,20 +105,27 @@ def visualize(request: EitherRequest):
                 raise HTTPException(
                     status_code=response.status_code,
                     detail="Upstream service returned a client error",
-                )
+                ) from e
             else:
-                raise HTTPException(status_code=502, detail="Upstream service error")
+                raise HTTPException(
+                    status_code=502, detail="Upstream service error"
+                ) from e
         else:
             raise HTTPException(
                 status_code=503, detail="Unable to reach upstream service"
-            )
+            ) from e
 
-    except Exception:
-        raise HTTPException(status_code=500, detail="Internal server error")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Internal server error") from exc
 
 
 @router.post("/evaluate")
 def evaluate(request: EitherRequest):
+    """
+    Receives chunker configs and a text/document from the client, which it then normalizes
+    and sends to the evaluation server. Once it receives a response, it gets the necessary
+    data from it and sends that back to the client.
+    """
     try:
         request_body = {
             "chunking_configs": [
@@ -128,7 +141,7 @@ def evaluate(request: EitherRequest):
 
         # Send request to chunking service
         evaluation_response = requests.post(
-            f"{EVALUATION_SERVICE_URL}/evaluate", json=request_body
+            f"{EVALUATION_SERVICE_URL}/evaluate", json=request_body, timeout=120
         )
         evaluation_response.raise_for_status()
         evaluation_json = evaluation_response.json()
@@ -141,8 +154,8 @@ def evaluate(request: EitherRequest):
 
         return metrics
 
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid input")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid input") from exc
 
     except requests.RequestException as e:
         response = getattr(e, "response", None)
@@ -151,16 +164,18 @@ def evaluate(request: EitherRequest):
                 raise HTTPException(
                     status_code=response.status_code,
                     detail="Upstream service returned a client error",
-                )
+                ) from e
             else:
-                raise HTTPException(status_code=502, detail="Upstream service error")
+                raise HTTPException(
+                    status_code=502, detail="Upstream service error"
+                ) from e
         else:
             raise HTTPException(
                 status_code=503, detail="Unable to reach upstream service"
-            )
+            ) from e
 
-    except Exception:
-        raise HTTPException(status_code=500, detail="Internal server error")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Internal server error") from exc
 
 
 app.include_router(router, prefix="/api")
