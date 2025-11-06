@@ -15,9 +15,9 @@ class RecursiveLevel:
 
     Attributes:
         whitespace (bool): Whether to use whitespace as a delimiter.
-        delimiters (Optional[Union[str, List[str]]]): Custom delimiters for chunking.
-        include_delim (Optional[Literal["prev", "next"]]): Whether to include the delimiter at all, or in the previous chunk, or the next chunk.
-        pattern (Optional[str]): Regex pattern for advanced splitting/extraction.
+        delimiters (str | List[str] | None): Custom delimiters for chunking.
+        include_delim (Literal["prev", "next"] | None): Whether to include the delimiter at all, or in the previous chunk, or the next chunk.
+        pattern (str | None): Regex pattern for advanced splitting/extraction.
         pattern_mode (Literal["split", "extract"]): Whether to split on pattern matches or extract pattern matches.
 
     """
