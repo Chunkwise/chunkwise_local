@@ -14,7 +14,7 @@ from server_types import (
     VisualizeRequest,
     DocumentPostResponse,
 )
-from utils import calculate_chunk_stats, normalize_document, delete_file
+from utils import calculate_chunk_stats, normalize_document, delete_file, create_file
 from fastapi import FastAPI, APIRouter, HTTPException, Body
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -136,7 +136,7 @@ def visualize(
 
 
 @router.post("/evaluate")
-def evaluate(chunker_config: ChunkerConfig = Body(...), document: str = Body(...)):
+def evaluate(chunker_config: ChunkerConfig = Body(...), document_id: str = Body(...)):
     """
     Receives chunker configs and a text/document from the client, which it then normalizes
     and sends to the evaluation server. Once it receives a response, it gets the necessary
@@ -145,7 +145,7 @@ def evaluate(chunker_config: ChunkerConfig = Body(...), document: str = Body(...
     try:
         request_body = {
             "chunker_config": chunker_config.__dict__,
-            "document": normalize_document(document),
+            "document_id": document_id,
         }
 
         # Send request to chunking service
@@ -200,19 +200,7 @@ def upload_document(document: str = Body(...)) -> DocumentPostResponse:
     """
     try:
         # Create a temp file
-        if document:
-            # Create random name
-            normalized_document = normalize_document(document)
-            document_name = f"{os.urandom(4).hex()}"
-            document_id = f"{document_name}.txt"
-
-            # Make sure that the directory exists
-            os.makedirs("documents", exist_ok=True)
-            # Track temporary file (created from the input `document` string) for cleanup
-            temp_doc_path = os.path.join("documents", document_id)
-
-            with open(temp_doc_path, "w", encoding="utf-8") as f:
-                f.write(normalized_document)
+        document_id = create_file(document)
 
         # Upload the file to S3
         try:
