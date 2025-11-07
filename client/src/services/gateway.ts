@@ -1,4 +1,9 @@
-import type { ChunkerSelection, ChunkStats, Evals } from "../types/types";
+import type {
+  ChunkerSelection,
+  ChunkStats,
+  Evals,
+  Config,
+} from "../types/types";
 import createRequestBody from "../utils/createRequestBody";
 import axios from "axios";
 import { text } from "../dataset/rumpelstiltskin";
@@ -34,6 +39,12 @@ export async function getEvals(configuration: Args): Promise<Evals> {
     "http://localhost:8000/api/evaluate",
     requestBody
   );
+
+  return data;
+}
+
+export async function getConfigs(): Promise<Config[]> {
+  const { data } = await axios.get("http://localhost:8000/api/configs");
 
   return data;
 }

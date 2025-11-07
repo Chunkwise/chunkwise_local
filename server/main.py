@@ -1,9 +1,10 @@
+import os
+from typing import Literal
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Literal, Optional
 import requests
-import os
+from chunkwise_core import Chunk, adjustable_configs
 from utils import calculate_chunk_stats, normalize_document
 
 app = FastAPI()
@@ -30,13 +31,6 @@ class EitherRequest(BaseModel):
     text: str
 
 
-class Chunk(BaseModel):
-    text: str
-    start_index: int
-    end_index: int
-    token_count: Optional[int] = None
-
-
 CHUNKING_SERVICE_URL = os.getenv("CHUNKING_SERVICE_URL", "http://localhost:8001")
 VISUALIZATION_SERVICE_URL = os.getenv(
     "VISUALIZATION_SERVICE_URL", "http://localhost:8002"
@@ -49,6 +43,14 @@ def health_check():
     return {"status": "ok"}
 
 
+@router.get("/configs")
+def configs():
+    """
+    Returns the adjustable parameters for each chunker's config
+    """
+    return adjustable_configs
+
+
 @router.post("/visualize")
 def visualize(request: EitherRequest):
     """
@@ -59,7 +61,7 @@ def visualize(request: EitherRequest):
         # Prepare the request for the chunking service
         chunking_payload = {
             "chunker_config": {
-                "chunker_type": request.provider + "_" + request.chunker_type,
+                "chunker_type": request.chunker_type,
                 "provider": request.provider,
                 "chunk_size": int(request.chunk_size),
                 "chunk_overlap": int(request.chunk_overlap),
@@ -72,7 +74,7 @@ def visualize(request: EitherRequest):
             f"{CHUNKING_SERVICE_URL}/chunk", json=chunking_payload
         )
         chunking_response.raise_for_status()
-        chunks = chunking_response.json()
+        chunks: list[Chunk] = chunking_response.json()
 
         # Get chunk related stats
         stats = calculate_chunk_stats(chunks)
@@ -117,7 +119,7 @@ def evaluate(request: EitherRequest):
         request_body = {
             "chunking_configs": [
                 {
-                    "chunker_type": request.provider + "_" + request.chunker_type,
+                    "chunker_type": request.chunker_type,
                     "provider": request.provider,
                     "chunk_size": request.chunk_size,
                     "chunk_overlap": request.chunk_overlap,
