@@ -23,7 +23,6 @@ from botocore.exceptions import ClientError
 
 app = FastAPI()
 router = APIRouter()
-s3 = boto3.resource("s3")
 
 # Configure logging
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -61,17 +60,26 @@ def health_check():
 
 @router.post("/visualize")
 def visualize(
-    chunker_config: ChunkerConfig = Body(...), document: str = Body(...)
-) -> VisualizeResponse:
+    chunker_config: ChunkerConfig = Body(...), document_name: str = Body(...)
+):
     """
     Receives chunking parameters and text from client, sends them to the chunking service,
     then sends the chunks to the visualization service and returns the HTML and statistics.
     """
     try:
+        # Download file from S3
+        s3_client = boto3.client("s3")
+        s3_client.download_file(
+            BUCKET_NAME, document_name, f"documents/{document_name}"
+        )
+
+        # Make document contents into a string
+        document = open(f"documents/{document_name}")
+
         # Prepare the request for the chunking service
         chunking_payload: VisualizeRequest = {
             "chunker_config": chunker_config.__dict__,
-            "text": normalize_document(document),
+            "text": document,
         }
 
         # Send request to chunking service
@@ -189,9 +197,10 @@ def upload_document(document: str = Body(...)) -> DocumentPostResponse:
     It then sends the file to S3 and returns the path/url of the created resource.
     """
     try:
-        # Create a temp files
+        # Create a temp file
         if document:
             # Create random name
+            normalized_document = normalize_document(document)
             document_name = f"{os.urandom(4).hex()}"
             document_id = f"{document_name}.txt"
 
@@ -201,17 +210,17 @@ def upload_document(document: str = Body(...)) -> DocumentPostResponse:
             temp_doc_path = os.path.join("documents", document_id)
 
             with open(temp_doc_path, "w", encoding="utf-8") as f:
-                f.write(document)
+                f.write(normalized_document)
 
+        # Upload the file to S3
         try:
             s3_client = boto3.client("s3")
-            s3_client.upload_file(
-                f"documents/{document_id}", BUCKET_NAME, document_name
-            )
+            s3_client.upload_file(f"documents/{document_id}", BUCKET_NAME, document_id)
         except ClientError as e:
             logging.exception("S3 ClientError while uploading document")
 
-        return {"document_endpoint": temp_doc_path}
+        # Return the name of the file
+        return {"document_id": document_id}
 
     except ValueError as exc:
         logging.exception("Invalid input for /documents")
