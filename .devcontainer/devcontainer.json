@@ -1,9 +1,9 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "features": {
-    "python": {
-      "version": "3.13"
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "PYTHON_VERSION": "3.13.0"
     }
   },
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y sqlite3"
+  "postCreateCommand": "python -c \"import sqlite3, sys; print('Python:', sys.version); print('SQLite:', sqlite3.sqlite_version)\""
 }
