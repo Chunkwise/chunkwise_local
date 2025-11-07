@@ -14,7 +14,7 @@ from server_types import (
     VisualizeRequest,
     DocumentPostResponse,
 )
-from utils import calculate_chunk_stats, normalize_document
+from utils import calculate_chunk_stats, normalize_document, delete_file
 from fastapi import FastAPI, APIRouter, HTTPException, Body
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -60,8 +60,8 @@ def health_check():
 
 @router.post("/visualize")
 def visualize(
-    chunker_config: ChunkerConfig = Body(...), document_name: str = Body(...)
-):
+    chunker_config: ChunkerConfig = Body(...), document_id: str = Body(...)
+) -> VisualizeResponse:
     """
     Receives chunking parameters and text from client, sends them to the chunking service,
     then sends the chunks to the visualization service and returns the HTML and statistics.
@@ -69,12 +69,12 @@ def visualize(
     try:
         # Download file from S3
         s3_client = boto3.client("s3")
-        s3_client.download_file(
-            BUCKET_NAME, document_name, f"documents/{document_name}"
-        )
+        s3_client.download_file(BUCKET_NAME, document_id, f"documents/{document_id}")
 
         # Make document contents into a string
-        document = open(f"documents/{document_name}")
+        with open(f"documents/{document_id}", "r") as file:
+            document = file.read()
+            file.close()
 
         # Prepare the request for the chunking service
         chunking_payload: VisualizeRequest = {
@@ -100,6 +100,8 @@ def visualize(
 
         # Get the text from the response
         visualization_html = visualization_response.text
+
+        delete_file(f"documents/{document_id}")
 
         # Return dict with stats and HTML
         return {"stats": stats, "html": visualization_html}
@@ -216,6 +218,8 @@ def upload_document(document: str = Body(...)) -> DocumentPostResponse:
         try:
             s3_client = boto3.client("s3")
             s3_client.upload_file(f"documents/{document_id}", BUCKET_NAME, document_id)
+
+            delete_file(f"documents/{document_id}")
         except ClientError as e:
             logging.exception("S3 ClientError while uploading document")
 

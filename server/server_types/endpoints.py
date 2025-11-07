@@ -23,4 +23,4 @@ class VisualizeResponse(BaseModel):
 
 
 class DocumentPostResponse(BaseModel):
-    document_endpoint: str
+    document_id: str
