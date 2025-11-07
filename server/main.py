@@ -5,14 +5,10 @@ services and it will eventually manage the database(s) and document storage.
 
 import os
 import logging
-import requests
 from server_types import (
-    Chunk,
     ChunkerConfig,
     VisualizeResponse,
-    VisualizeRequest,
     Evaluations,
-    EvaluationResponse,
 )
 from utils import (
     calculate_chunk_stats,
@@ -100,7 +96,7 @@ async def visualize(
     delete_file(f"documents/{document_id}")
 
     # Return dict with stats and HTML
-    return {"stats": stats, "html": visualization_html}
+    return {"stats": stats, "html": html}
 
 
 @router.get("/{document_id}/evaluation")
@@ -165,7 +161,7 @@ async def delete_document(document_id: str) -> dict:
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
+async def global_exception_handler(_request, _exc):
     """
     Global exception handler to ensure any unhandled exception is logged with full trace
     """
