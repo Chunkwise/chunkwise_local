@@ -40,21 +40,17 @@ RUN git clone https://github.com/pyenv/pyenv.git ${PYENV_ROOT} \
     && echo 'export PATH=$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH' >> /etc/profile.d/pyenv.sh \
     && echo 'eval "$(pyenv init -)"' >> /etc/profile.d/pyenv.sh
 
-# Choose the Python version here
 ARG PYTHON_VERSION=3.13.0
 
-# Ensure Python build finds the /usr/local SQLite headers/libs
 ENV CPPFLAGS="-I/usr/local/include"
 ENV LDFLAGS="-L/usr/local/lib"
 ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
 
-# Build Python and verify the linked SQLite version
 RUN bash -lc "pyenv install -v ${PYTHON_VERSION} \
   && pyenv global ${PYTHON_VERSION} \
   && python -m pip install --upgrade pip setuptools wheel \
   && python - <<'PY'\nimport sqlite3, sys; print(sys.version); print('linked sqlite:', sqlite3.sqlite_version)\nPY"
 
-# Use bash as default shell for subsequent RUNs
 SHELL ["/bin/bash", "-lc"]
 
 # -------------------------------------------------------
