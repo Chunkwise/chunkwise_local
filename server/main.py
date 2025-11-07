@@ -58,7 +58,7 @@ def health_check():
     return {"status": "ok"}
 
 
-@router.post("/{document_id}/visualize")
+@router.get("/{document_id}/visualization")
 def visualize(
     document_id: str, chunker_config: ChunkerConfig = Body(...)
 ) -> VisualizeResponse:
@@ -143,7 +143,7 @@ def visualize(
         raise HTTPException(status_code=500, detail="Internal server error") from exc
 
 
-@router.post("/{document_id}/evaluate/")
+@router.get("/{document_id}/evaluation")
 def evaluate(document_id: str, chunker_config: ChunkerConfig = Body(...)):
     """
     Receives chunker configs and a text/document from the client, which it then normalizes
