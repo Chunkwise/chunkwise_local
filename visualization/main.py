@@ -6,7 +6,7 @@ from chunkwise_core import Chunk
 app = FastAPI()
 
 
-@app.post("/visualization")
+@app.post("/visualize")
 def visualize(chunks: List[Chunk]) -> str:
     """
     Receives chunks from server

@@ -5,7 +5,7 @@ from utils import get_chunks
 app = FastAPI()
 
 
-@app.post("/chunks")
+@app.post("/chunk")
 def chunk(
     chunker_config: ChunkerConfig = Body(...), text: str = Body(...)
 ) -> list[Chunk]:

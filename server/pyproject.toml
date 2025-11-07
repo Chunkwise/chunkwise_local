@@ -1,13 +1,8 @@
 [tool.poetry]
-package-mode = false
-
-[project]
 name = "server"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "Your Name",email = "you@example.com"}
-]
+authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 requires-python = ">=3.13,<4.0.0"
 dependencies = [

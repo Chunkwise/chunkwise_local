@@ -1,25 +1,20 @@
 [tool.poetry]
-package-mode = false
-
-[tool.poetry.dependencies]
-chunkwise-core = {develop = true}
-[project]
 name = "evaluation"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "Your Name",email = "you@example.com"}
-]
+authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-requires-python = ">=3.13,<4.0.0"
-dependencies = [
-    "python-dotenv (>=1.2.1,<2.0.0)",
-    "fastapi (>=0.120.3,<0.121.0)",
-    "uvicorn (>=0.38.0,<0.39.0)",
-    "chunking-evaluation @ git+https://github.com/Chunkwise/chunking_evaluation_refactored.git",
-    "chunkwise-core @ ../core",
-]
+package-mode = false
 
+[tool.poetry.dependencies]
+python = ">=3.13,<4.0"
+python-dotenv = "^1.2.1"
+fastapi = "^0.120.3"
+uvicorn = "^0.38.0"
+# Git dependency
+chunking-evaluation = { git = "https://github.com/Chunkwise/chunking_evaluation_refactored.git" }
+# Local path dependency; prefer a relative path and keep it editable during dev
+chunkwise-core = { path = "../core", develop = true }
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
