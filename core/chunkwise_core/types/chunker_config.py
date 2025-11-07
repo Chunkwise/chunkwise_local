@@ -31,14 +31,14 @@ class LangChainBaseChunkerConfig(BaseModel):
 
 
 class LangChainRecursiveConfig(LangChainBaseChunkerConfig):
-    chunker_type: Literal["recursive"]
+    chunker_type: Literal["recursive"] = "recursive"
     separators: list[str] | None = None
     keep_separator: bool | Literal["start", "end"] = True
     is_separator_regex: bool = False
 
 
 class LangChainTokenConfig(LangChainBaseChunkerConfig):
-    chunker_type: Literal["token"]
+    chunker_type: Literal["token"] = "token"
     encoding_name: str = "gpt2"
     model_name: str | None = None
     allowed_special: Literal["all"] | set[str] = Field(default_factory=set)
@@ -52,7 +52,7 @@ class ChonkieBaseChunkerConfig(BaseModel):
 
 
 class ChonkieRecursiveConfig(ChonkieBaseChunkerConfig):
-    chunker_type: Literal["recursive"]
+    chunker_type: Literal["recursive"] = "recursive"
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     rules: RecursiveRules = Field(default_factory=RecursiveRules)
     chunk_size: int = Field(default=2048, gt=0)
@@ -60,7 +60,7 @@ class ChonkieRecursiveConfig(ChonkieBaseChunkerConfig):
 
 
 class ChonkieTokenConfig(ChonkieBaseChunkerConfig):
-    chunker_type: Literal["token"]
+    chunker_type: Literal["token"] = "token"
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     chunk_size: int = Field(default=2048, gt=0)
     chunk_overlap: int | float = Field(default=0, ge=0)
