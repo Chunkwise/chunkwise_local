@@ -12,11 +12,15 @@
 
 ## To test the evaluation function locally or use the /evaluate endpoint:
 
-- generate an OPENAI API key (for calling the embedding model)
+- generate an OPENAI API key (for calling the embedding model & query generation via LLM)
 
 - create a .env file with:
 
   `OPENAI_API_KEY=[your_api_key]`
+
+## To run the server
+
+`poetry run uvicorn main:app --reload`
 
 ## For MVP local testing
 
