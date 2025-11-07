@@ -36,7 +36,6 @@ export default function ChunkerForm() {
     const fetchConfigs = async () => {
       try {
         const configs = await getConfigs();
-        console.log("Configs: ", configs);
         setConfigs(configs);
         if (configs.length > 0) {
           setSelectedConfig(configs[0]);
