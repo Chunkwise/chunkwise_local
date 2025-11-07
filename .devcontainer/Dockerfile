@@ -32,31 +32,33 @@ RUN wget -q https://www.sqlite.org/2021/sqlite-autoconf-${SQLITE_AUTOCONF}.tar.g
 # 2) Install pyenv system-wide and build Python with it
 #    We make sure it links against /usr/local SQLite
 # -------------------------------------------------------
+# Use bash for the following RUNs (move earlier if you need bash sooner)
+SHELL ["/bin/bash", "-lc"]
+
 ENV PYENV_ROOT=/usr/local/pyenv
 ENV PATH=${PYENV_ROOT}/bin:${PYENV_ROOT}/shims:$PATH
-
-RUN git clone https://github.com/pyenv/pyenv.git ${PYENV_ROOT} \
-    && mkdir -p ${PYENV_ROOT}/cache \
-    && echo 'export PYENV_ROOT=/usr/local/pyenv' > /etc/profile.d/pyenv.sh \
-    && echo 'export PATH=$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH' >> /etc/profile.d/pyenv.sh \
-    && echo 'eval "$(pyenv init -)"' >> /etc/profile.d/pyenv.sh
-
-# Choose your Python version here (can be overridden from devcontainer.json build args)
-ARG PYTHON_VERSION=3.13.0
-
-# Ensure Python build finds the /usr/local SQLite headers/libs
 ENV CPPFLAGS="-I/usr/local/include"
 ENV LDFLAGS="-L/usr/local/lib"
 ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
 
-# Build Python and verify the linked SQLite version
-RUN bash -lc "pyenv install -v ${PYTHON_VERSION} \
-  && pyenv global ${PYTHON_VERSION} \
-  && python -m pip install --upgrade pip setuptools wheel \
-  && python - <<'PY'\nimport sqlite3, sys; print(sys.version); print('linked sqlite:', sqlite3.sqlite_version)\nPY"
+RUN git clone https://github.com/pyenv/pyenv.git ${PYENV_ROOT} \
+ && mkdir -p ${PYENV_ROOT}/cache \
+ && echo 'export PYENV_ROOT=/usr/local/pyenv' > /etc/profile.d/pyenv.sh \
+ && echo 'export PATH=$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH' >> /etc/profile.d/pyenv.sh \
+ && echo 'eval "$(pyenv init -)"' >> /etc/profile.d/pyenv.sh
 
-# Use bash as default shell for subsequent RUNs
-SHELL ["/bin/bash", "-lc"]
+# Build Python with pyenv ensuring env + init are active in the same RUN
+RUN export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH" \
+ && eval "$(pyenv init -)" \
+ && pyenv install -v ${PYTHON_VERSION} \
+ && pyenv global ${PYTHON_VERSION} \
+ && pyenv rehash \
+ && python -m pip install --upgrade pip setuptools wheel \
+ && python - <<'PY'
+import sqlite3, sys
+print(sys.version)
+print('linked sqlite:', sqlite3.sqlite_version)
+PY
 
 # -------------------------------------------------------
 # 3) Install Poetry for the 'vscode' user
