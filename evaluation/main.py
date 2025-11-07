@@ -75,7 +75,7 @@ async def evaluate_chunking(request: EvaluationRequest):
             request, normalized_doc_path, document_name
         )
 
-        # Handle queries (use existing or generate)
+        # Initialize evaluation
         try:
             evaluation = BaseEvaluation(
                 questions_csv_path=final_queries_path,
