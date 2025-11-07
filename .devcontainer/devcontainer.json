@@ -8,7 +8,5 @@
       "SQLITE_VERSION": "3350000"
     }
   },
-  "containerUser": "vscode",
-  "remoteUser": "vscode",
   "shutdownAction": "stopContainer"
 }
