@@ -1,67 +1,62 @@
-# syntax=docker/dockerfile:1
+# Base image with Python (choosing Ubuntu for compatibility)
+FROM ubuntu:22.04
 
-# Base devcontainer image (Ubuntu 22.04).
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-22.04
+# Environment configurations
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHON_VERSION=3.13.0
+ENV SQLITE_VERSION=3350000     # match for SQLite 3.35.0 as Makename expects (3 digit per segment)
+ENV SQLITE_VERSION_STR=3.35.0
 
-USER root
-ARG DEBIAN_FRONTEND=noninteractive
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        wget \
+        curl \
+        libssl-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        ca-certificates \
+        git \
+        make \
+        libffi-dev \
+        liblzma-dev \
+        xz-utils
 
-# Build dependencies for SQLite and Python
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl wget git build-essential make pkg-config \
-    libssl-dev zlib1g-dev libbz2-dev libreadline-dev libffi-dev \
-    liblzma-dev tk-dev uuid-dev xz-utils libgdbm-dev libnss3-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Build SQLite 3.35.0 (replace system libsqlite3)
+RUN wget https://www.sqlite.org/2021/sqlite-autoconf-3350000.tar.gz && \
+    tar xzf sqlite-autoconf-3350000.tar.gz && \
+    cd sqlite-autoconf-3350000 && \
+    ./configure && \
+    make && \
+    make install && \
+    ldconfig && \
+    cd .. && \
+    rm -rf sqlite-autoconf-3350000 sqlite-autoconf-3350000.tar.gz
 
-# -------------------------------------------------------------------
-# 1) Build and install SQLite 3.35.0 from source (goes to /usr/local)
-# -------------------------------------------------------------------
-ARG SQLITE_AUTOCONF=3350000     # 3.35.0 => 3350000
-RUN wget -q https://www.sqlite.org/2021/sqlite-autoconf-${SQLITE_AUTOCONF}.tar.gz \
-    && tar -xzf sqlite-autoconf-${SQLITE_AUTOCONF}.tar.gz \
-    && cd sqlite-autoconf-${SQLITE_AUTOCONF} \
-    && ./configure --prefix=/usr/local \
-    && make -j"$(nproc)" \
-    && make install \
-    && cd .. \
-    && rm -rf sqlite-autoconf-${SQLITE_AUTOCONF}* \
-    && echo "/usr/local/lib" > /etc/ld.so.conf.d/usrlocal.conf \
-    && ldconfig
+# Install Python 3.13.0 from source
+RUN wget https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tgz && \
+    tar xzf Python-3.13.0.tgz && \
+    cd Python-3.13.0 && \
+    ./configure --enable-optimizations --with-ensurepip=install \
+        --with-openssl \
+        --enable-shared \
+        --with-system-ffi \
+        --with-system-sqlite \
+        --prefix=/usr/local \
+        CPPFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd .. && \
+    rm -rf Python-3.13.0 Python-3.13.0.tgz
 
-# -------------------------------------------------------
-# 2) Install pyenv system-wide and build Python with it
-# -------------------------------------------------------
-ENV PYENV_ROOT=/usr/local/pyenv
-ENV PATH=${PYENV_ROOT}/bin:${PYENV_ROOT}/shims:$PATH
+# Upgrade pip and install poetry
+RUN /usr/local/bin/python3.13 -m pip install --upgrade pip && \
+    /usr/local/bin/python3.13 -m pip install poetry
 
-RUN git clone https://github.com/pyenv/pyenv.git ${PYENV_ROOT} \
-    && mkdir -p ${PYENV_ROOT}/cache \
-    && echo 'export PYENV_ROOT=/usr/local/pyenv' > /etc/profile.d/pyenv.sh \
-    && echo 'export PATH=$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH' >> /etc/profile.d/pyenv.sh \
-    && echo 'eval "$(pyenv init -)"' >> /etc/profile.d/pyenv.sh
-
-# Choose the Python version here
-ARG PYTHON_VERSION=3.13.0
-
-# Ensure Python build finds the /usr/local SQLite headers/libs
-ENV CPPFLAGS="-I/usr/local/include"
-ENV LDFLAGS="-L/usr/local/lib"
-ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
-
-# Build Python and verify the linked SQLite version
-RUN bash -lc "pyenv install -v ${PYTHON_VERSION} \
-  && pyenv global ${PYTHON_VERSION} \
-  && python -m pip install --upgrade pip setuptools wheel \
-  && python - <<'PY'\nimport sqlite3, sys; print(sys.version); print('linked sqlite:', sqlite3.sqlite_version)\nPY"
-
-# Use bash as default shell for subsequent RUNs
-SHELL ["/bin/bash", "-lc"]
-
-# -------------------------------------------------------
-# 3) Install Poetry
-# -------------------------------------------------------
-USER vscode
-RUN curl -sSL https://install.python-poetry.org | python3 - \
-  && echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc \
-  && ~/.local/bin/poetry --version \
-  && ~/.local/bin/poetry config virtualenvs.in-project true
+# Set python3 default to 3.13
+RUN ln -sf /usr/local/bin/python3.13 /usr/local/bin/python3 && \
+    ln -sf /usr/local/bin/python3.13 /usr/bin/python3
