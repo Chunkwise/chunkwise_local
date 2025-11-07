@@ -1,13 +1,12 @@
-# Base image with Python (choosing Ubuntu for compatibility)
 FROM ubuntu:22.04
 
-# Environment configurations
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHON_VERSION=3.13.0
-ENV SQLITE_VERSION=3350000     # match for SQLite 3.35.0 as Makename expects (3 digit per segment)
-ENV SQLITE_VERSION_STR=3.35.0
+ARG PYTHON_VERSION=3.13.0
+ARG SQLITE_VERSION=3350000
+ARG SQLITE_VERSION_STR=3.35.0
 
-# Install build dependencies
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Basic dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
@@ -17,29 +16,29 @@ RUN apt-get update && \
         zlib1g-dev \
         libbz2-dev \
         libreadline-dev \
-        libsqlite3-dev \
-        ca-certificates \
-        git \
-        make \
         libffi-dev \
         liblzma-dev \
-        xz-utils
+        xz-utils \
+        git \
+        ca-certificates \
+        make \
+        sudo
 
-# Build SQLite 3.35.0 (replace system libsqlite3)
-RUN wget https://www.sqlite.org/2021/sqlite-autoconf-3350000.tar.gz && \
-    tar xzf sqlite-autoconf-3350000.tar.gz && \
-    cd sqlite-autoconf-3350000 && \
+# Build and install SQLite 3.35.0
+RUN wget https://www.sqlite.org/2021/sqlite-autoconf-${SQLITE_VERSION}.tar.gz && \
+    tar xzf sqlite-autoconf-${SQLITE_VERSION}.tar.gz && \
+    cd sqlite-autoconf-${SQLITE_VERSION} && \
     ./configure && \
     make && \
     make install && \
     ldconfig && \
     cd .. && \
-    rm -rf sqlite-autoconf-3350000 sqlite-autoconf-3350000.tar.gz
+    rm -rf sqlite-autoconf-${SQLITE_VERSION} sqlite-autoconf-${SQLITE_VERSION}.tar.gz
 
-# Install Python 3.13.0 from source
-RUN wget https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tgz && \
-    tar xzf Python-3.13.0.tgz && \
-    cd Python-3.13.0 && \
+# Build and install Python 3.13.0 (using updated SQLite)
+RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
+    tar xzf Python-${PYTHON_VERSION}.tgz && \
+    cd Python-${PYTHON_VERSION} && \
     ./configure --enable-optimizations --with-ensurepip=install \
         --with-openssl \
         --enable-shared \
@@ -51,12 +50,14 @@ RUN wget https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tgz && \
     make install && \
     ldconfig && \
     cd .. && \
-    rm -rf Python-3.13.0 Python-3.13.0.tgz
+    rm -rf Python-${PYTHON_VERSION} Python-${PYTHON_VERSION}.tgz
+
+# Ensure correct symlink
+RUN ln -sf /usr/local/bin/python3.13 /usr/bin/python3 && \
+    ln -sf /usr/local/bin/python3.13 /usr/local/bin/python3
 
 # Upgrade pip and install poetry
-RUN /usr/local/bin/python3.13 -m pip install --upgrade pip && \
-    /usr/local/bin/python3.13 -m pip install poetry
+RUN python3 --version && python3 -m pip install --upgrade pip && python3 -m pip install poetry
 
-# Set python3 default to 3.13
-RUN ln -sf /usr/local/bin/python3.13 /usr/local/bin/python3 && \
-    ln -sf /usr/local/bin/python3.13 /usr/bin/python3
+# Verify python and sqlite linkage
+RUN python3 -c "import sqlite3, sys; print(sys.version); print('linked sqlite:', sqlite3.sqlite_version)"
