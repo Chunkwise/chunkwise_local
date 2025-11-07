@@ -185,7 +185,7 @@ def upload_document(document: str = Body(...)) -> dict:
 
 @router.get("/")
 @handle_endpoint_exceptions
-def get_documents():
+def get_documents() -> list[str]:
     """
     This endpoint returns a list of all of the document_ids in s3.
     """
@@ -207,7 +207,7 @@ def get_documents():
 
 @router.delete("/{document_id}")
 @handle_endpoint_exceptions
-def delete_document(document_id: str):
+def delete_document(document_id: str) -> dict:
     """
     This endpoint deletes a resource from the S3 store
     """
