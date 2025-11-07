@@ -1,13 +1,23 @@
-import React, { useState } from "react";
-import type { Evals, ChunkStats, ChunkerSelection } from "../types/types";
-import { getEvals, getVisualization } from "../services/gateway";
+import React, { useState, useEffect } from "react";
+import type {
+  Evals,
+  ChunkStats,
+  ChunkerSelection,
+  Config,
+} from "../types/types";
+import { getEvals, getVisualization, getConfigs } from "../services/gateway";
 import { ChunkStatistics } from "./ChunkStatistics";
 import Evaluations from "./Evaluations";
 
 export default function ChunkerForm() {
-  const [chunker, setChunker] = useState<ChunkerSelection>("Chonkie Token");
+  const [configs, setConfigs] = useState<Config[]>([]);
+  const [selectedConfig, setSelectedConfig] = useState<Config | undefined>(
+    undefined
+  );
+  // const [chunker, setChunker] = useState<ChunkerSelection>("Chonkie Token");
   const [chunkMaxSize, setChunkMaxSize] = useState<number>(500);
-  const [chunkOverlap, setChunkOverlap] = useState<number>(500);
+  const [chunkOverlapOrMinChars, setChunkOverlapOrMinChars] =
+    useState<number>(500);
   const [evals, setEvals] = useState<Evals>(() => ({
     precision: 0,
     omega_precision: 0,
@@ -23,8 +33,36 @@ export default function ChunkerForm() {
     smallest_text: "",
   }));
 
+  useEffect(() => {
+    const fetchConfigs = async () => {
+      try {
+        const configs = await getConfigs();
+        console.log("Configs: ", configs);
+        setConfigs(configs);
+        if (configs.length > 0) {
+          setSelectedConfig(configs[0]);
+          setChunkMaxSize(configs[0].chunk_size.default);
+          setChunkOverlapOrMinChars(
+            configs[0].chunk_overlap
+              ? configs[0].chunk_overlap.default
+              : configs[0].min_characters_per_chunk
+              ? configs[0].min_characters_per_chunk.default
+              : 0
+          );
+        }
+      } catch (error: unknown) {
+        throw new Error("Unknown error: " + error);
+      }
+    };
+
+    fetchConfigs();
+  }, []);
+
   function onChangeChunker(event: React.ChangeEvent<HTMLSelectElement>) {
-    setChunker(event.target.value as ChunkerSelection);
+    // setChunker(event.target.value as ChunkerSelection);
+    setSelectedConfig(
+      configs.find((config) => config.name === event.target.value)
+    );
   }
 
   function onChangeChunkSize(event: React.ChangeEvent<HTMLInputElement>) {
@@ -32,15 +70,15 @@ export default function ChunkerForm() {
   }
 
   function onChangeOverlap(event: React.ChangeEvent<HTMLInputElement>) {
-    setChunkOverlap(Number(event.target.value));
+    setChunkOverlapOrMinChars(Number(event.target.value));
   }
 
   async function onVisualize(event: React.SyntheticEvent<Element, Event>) {
     event.preventDefault();
     const result = await getVisualization({
-      chunker: chunker,
+      chunker: (selectedConfig?.name as ChunkerSelection) ?? "Chonkie Token",
       size: chunkMaxSize,
-      overlap: chunkOverlap,
+      overlap: chunkOverlapOrMinChars,
     });
 
     setChunkStats(result.stats);
@@ -49,65 +87,102 @@ export default function ChunkerForm() {
   async function onEvaluate(event: React.SyntheticEvent<Element, Event>) {
     event.preventDefault();
     const result = await getEvals({
-      chunker,
+      chunker: (selectedConfig?.name as ChunkerSelection) ?? "Chonkie Token",
       size: chunkMaxSize,
-      overlap: chunkOverlap,
+      overlap: chunkOverlapOrMinChars,
     });
     setEvals(result);
   }
 
   return (
     <div id="chunking-configuration">
-      <form>
-        <h1>Configure Chunking Strategy</h1>
-        <label htmlFor="chunker">Chunker:</label>
-        <select id="chunker" onChange={onChangeChunker} value={chunker}>
-          <option value="Chonkie Token">Chonkie Token</option>
-          <option value="Chonkie Recursive">Chonkie Recursive</option>
-          <option value="LangChain Token">LangChain Token</option>
-          <option value="LangChain Recursive">LangChain Recursive</option>
-        </select>
-        <label htmlFor="chunk-max-size">Maximum chunk size:</label>
-        <input
-          id="chunk-max-size-range"
-          type="range"
-          step={1}
-          min={0}
-          max={1000}
-          value={chunkMaxSize}
-          onChange={onChangeChunkSize}
-        />
-        <input
-          id="chunk-max-size"
-          type="number"
-          value={chunkMaxSize}
-          min={0}
-          max={1000}
-          onChange={onChangeChunkSize}
-        />
-        <label htmlFor="chunk-overlap">Chunk overlap:</label>
-        <input
-          id="chunk-overlap-range"
-          type="range"
-          step={1}
-          min={0}
-          max={1000}
-          value={chunkOverlap}
-          onChange={onChangeOverlap}
-        />
-        <input
-          id="chunk-overlap"
-          type="number"
-          value={chunkOverlap}
-          min={0}
-          max={1000}
-          onChange={onChangeOverlap}
-        />
-        <div id="buttons">
-          <button onClick={onVisualize}>Visualize</button>
-          <button onClick={onEvaluate}>Evaluate</button>
-        </div>
-      </form>
+      {selectedConfig ? (
+        <form>
+          <h1>Configure Chunking Strategy</h1>
+          <label htmlFor="chunker">Chunker:</label>
+          <select
+            id="chunker"
+            onChange={onChangeChunker}
+            value={selectedConfig.name}
+          >
+            {configs.map((config) => (
+              <option value={config.name} key={config.name}>
+                {config.name}
+              </option>
+            ))}
+          </select>
+          <label htmlFor="chunk-max-size">Maximum Chunk Size:</label>
+          <input
+            id="chunk-max-size-range"
+            type="range"
+            step={1}
+            min={selectedConfig.chunk_size.min}
+            max={selectedConfig.chunk_size.max}
+            value={chunkMaxSize}
+            onChange={onChangeChunkSize}
+          />
+          <input
+            id="chunk-max-size"
+            type="number"
+            value={chunkMaxSize}
+            min={selectedConfig.chunk_size.min}
+            max={selectedConfig.chunk_size.max}
+            onChange={onChangeChunkSize}
+          />
+          {selectedConfig.chunk_overlap ? (
+            <label htmlFor="chunk-overlap">Chunk Overlap:</label>
+          ) : (
+            <label htmlFor="chunk-overlap">Minimum Chunk Size :</label>
+          )}
+          <input
+            id="chunk-overlap-range"
+            type="range"
+            step={1}
+            min={
+              selectedConfig.chunk_overlap
+                ? selectedConfig.chunk_overlap.min
+                : selectedConfig.min_characters_per_chunk
+                ? selectedConfig.min_characters_per_chunk.min
+                : 0
+            }
+            max={
+              selectedConfig.chunk_overlap
+                ? selectedConfig.chunk_overlap.max
+                : selectedConfig.min_characters_per_chunk
+                ? selectedConfig.min_characters_per_chunk.max
+                : 1000
+            }
+            value={chunkOverlapOrMinChars}
+            onChange={onChangeOverlap}
+          />
+          <input
+            id="chunk-overlap"
+            type="number"
+            value={chunkOverlapOrMinChars}
+            min={
+              selectedConfig.chunk_overlap
+                ? selectedConfig.chunk_overlap.min
+                : selectedConfig.min_characters_per_chunk
+                ? selectedConfig.min_characters_per_chunk.min
+                : 0
+            }
+            max={
+              selectedConfig.chunk_overlap
+                ? selectedConfig.chunk_overlap.max
+                : selectedConfig.min_characters_per_chunk
+                ? selectedConfig.min_characters_per_chunk.max
+                : 1000
+            }
+            onChange={onChangeOverlap}
+          />
+          <div id="buttons">
+            <button onClick={onVisualize}>Visualize</button>
+            <button onClick={onEvaluate}>Evaluate</button>
+          </div>
+        </form>
+      ) : (
+        <div>Loading configs...</div>
+      )}
       <ChunkStatistics {...chunkStats}></ChunkStatistics>
       <Evaluations {...evals}></Evaluations>
     </div>
