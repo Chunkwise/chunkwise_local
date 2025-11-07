@@ -1,9 +1,11 @@
-adjustable_configs = {
-    "ChonkieToken": {
+adjustable_configs = [
+    {
+        "name": "Chonkie Token",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "chunk_overlap": {"type": "int", "default": 0, "min": 0, "max": 8192},
     },
-    "ChonkieRecursive": {
+    {
+        "name": "Chonkie Recursive",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "min_characters_per_chunk": {
             "type": "int",
@@ -12,12 +14,14 @@ adjustable_configs = {
             "max": 8192,
         },
     },
-    "LangChainToken": {
+    {
+        "name": "LangChain Token",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "chunk_overlap": {"type": "int", "default": 0, "min": 0, "max": 8192},
     },
-    "LangChainRecursive": {
+    {
+        "name": "LangChain Recursive",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "chunk_overlap": {"type": "int", "default": 0, "min": 0, "max": 8192},
     },
-}
+]
