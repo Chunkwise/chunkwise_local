@@ -95,15 +95,7 @@ async def visualize(
 
     chunks = await get_chunks(chunker_config, document)
     stats = calculate_chunk_stats(chunks)
-
-    # Send chunks to visualization service
-    visualization_response = requests.post(
-        f"{VISUALIZATION_SERVICE_URL}/visualize", json=chunks, timeout=10
-    )
-    visualization_response.raise_for_status()
-
-    # Get the text from the response
-    visualization_html = visualization_response.text
+    html = await get_visualization(chunks)
 
     delete_file(f"documents/{document_id}")
 
@@ -122,18 +114,8 @@ async def evaluate(
     data from it and sends that back to the clisent.
     """
 
-    request_body = {
-        "chunker_config": chunker_config.__dict__,
-        "document_id": document_id,
-    }
-
-    # Send request to chunking service
-    evaluation_response = requests.post(
-        f"{EVALUATION_SERVICE_URL}/evaluate", json=request_body, timeout=120
-    )
-    evaluation_response.raise_for_status()
-    evaluation_json: EvaluationResponse = evaluation_response.json()
-    metrics = extract_metrics(evaluation_json)
+    evaluation = await get_evaluation(chunker_config, document_id)
+    metrics = extract_metrics(evaluation)
 
     return metrics
 
