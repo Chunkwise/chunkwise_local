@@ -1,3 +1,25 @@
+export interface Config {
+  name: string;
+  chunk_size: {
+    type: string;
+    min: number;
+    max: number;
+    default: number;
+  };
+  chunk_overlap?: {
+    type: string;
+    min: number;
+    max: number;
+    default: number;
+  };
+  min_characters_per_chunk?: {
+    type: string;
+    min: number;
+    max: number;
+    default: number;
+  };
+}
+
 export interface Evals {
   precision: number;
   omega_precision: number;
