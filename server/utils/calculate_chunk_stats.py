@@ -1,7 +1,8 @@
 from fastapi import HTTPException
+from server_types import ChunkStatistics, Chunk
 
 
-def calculate_chunk_stats(chunks):
+def calculate_chunk_stats(chunks: list[Chunk]) -> ChunkStatistics:
     try:
         if not isinstance(chunks, list):
             raise ValueError("chunks must be a list")

@@ -1,6 +1,6 @@
-from typing import Literal, Optional
+# from typing import Literal, Optional
 from pydantic import BaseModel
-from chunkwise_core import ChunkerConfig, Chunk
+from chunkwise_core import ChunkerConfig, Chunk, EvaluationResponse
 
 
 class ChunkStatistics(BaseModel):
@@ -12,6 +12,13 @@ class ChunkStatistics(BaseModel):
     avg_chars: float
 
 
+class Evaluations(BaseModel):
+    omega_precision: float
+    precision: float
+    recall: float
+    iou: float
+
+
 class VisualizeRequest(BaseModel):
     chunker_config: ChunkerConfig
     text: str
@@ -20,7 +27,3 @@ class VisualizeRequest(BaseModel):
 class VisualizeResponse(BaseModel):
     stats: ChunkStatistics
     html: str
-
-
-class DocumentPostResponse(BaseModel):
-    document_id: str

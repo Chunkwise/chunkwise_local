@@ -5,6 +5,8 @@ from .endpoints import (
     DocumentPostResponse,
     Chunk,
     ChunkerConfig,
+    Evaluations,
+    EvaluationResponse,
 )
 
 __all__ = [
@@ -13,5 +15,6 @@ __all__ = [
     "VisualizeResponse",
     "ChunkerConfig",
     "VisualizeRequest",
-    "DocumentPostResponse",
+    "Evaluations",
+    "EvaluationResponse",
 ]
