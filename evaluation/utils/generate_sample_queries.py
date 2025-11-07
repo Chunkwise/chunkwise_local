@@ -5,49 +5,6 @@ from chunking_evaluation.evaluation_framework.synthetic_evaluation import (
 from chunkwise_core import QueryGenerationConfig
 
 
-# class QueryGenerationConfig(BaseModel):
-#     """Configuration for query generation."""
-
-#     model_config = ConfigDict(
-#         str_strip_whitespace=True,
-#         validate_assignment=True,
-#         frozen=False,
-#     )
-#     openai_api_key: str = Field(..., description="Your OpenAI API key", min_length=1)
-#     document_paths: list[str] = Field(
-#         ..., description="List of document paths", min_length=1
-#     )
-#     queries_output_path: str = Field(
-#         ..., description="Where to save generated queries", min_length=1
-#     )
-#     chroma_db_path: str | None = Field(
-#         default=None, description="Optional: path to ChromaDB"
-#     )
-#     num_rounds: int = Field(
-#         default=1,
-#         description="Number of rounds to generate queries",
-#         ge=1,
-#     )
-#     queries_per_corpus: int = Field(
-#         default=5, description="Number of queries to generate per document", gt=0
-#     )
-#     approximate_excerpts: bool = Field(
-#         default=False, description="Set to True for approximate reference extraction"
-#     )
-#     poor_reference_threshold: float = Field(
-#         default=0.36,
-#         description="Threshold for filtering poor references",
-#         ge=0.0,
-#         le=1.0,
-#     )
-#     duplicate_question_threshold: float = Field(
-#         default=0.78,
-#         description="Threshold for filtering duplicate questions",
-#         ge=0.0,
-#         le=1.0,
-#     )
-
-
 def generate_sample_queries(config: QueryGenerationConfig) -> str:
     """Generate synthetic queries and reference excerpts for evaluation."""
 
