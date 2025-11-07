@@ -14,8 +14,9 @@ from server_types import (
     VisualizeRequest,
     DocumentPostResponse,
 )
+from typing import Annotated
 from utils import calculate_chunk_stats, normalize_document, delete_file, create_file
-from fastapi import FastAPI, APIRouter, HTTPException, Body
+from fastapi import FastAPI, APIRouter, HTTPException, Body, Path
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import boto3
@@ -58,9 +59,9 @@ def health_check():
     return {"status": "ok"}
 
 
-@router.post("/visualize")
+@router.post("/visualize/{document_id}")
 def visualize(
-    chunker_config: ChunkerConfig = Body(...), document_id: str = Body(...)
+    document_id: str, chunker_config: ChunkerConfig = Body(...)
 ) -> VisualizeResponse:
     """
     Receives chunking parameters and text from client, sends them to the chunking service,
@@ -75,6 +76,9 @@ def visualize(
         with open(f"documents/{document_id}", "r") as file:
             document = file.read()
             file.close()
+
+        print(chunker_config)
+        print(type(document))
 
         # Prepare the request for the chunking service
         chunking_payload: VisualizeRequest = {
@@ -135,8 +139,8 @@ def visualize(
         raise HTTPException(status_code=500, detail="Internal server error") from exc
 
 
-@router.post("/evaluate")
-def evaluate(chunker_config: ChunkerConfig = Body(...), document_id: str = Body(...)):
+@router.post("/evaluate/{document_id}")
+def evaluate(document_id: str, chunker_config: ChunkerConfig = Body(...)):
     """
     Receives chunker configs and a text/document from the client, which it then normalizes
     and sends to the evaluation server. Once it receives a response, it gets the necessary
@@ -241,6 +245,56 @@ def upload_document(document: str = Body(...)) -> DocumentPostResponse:
     except Exception as exc:
         logging.exception("Unhandled exception in /documents")
         raise HTTPException(status_code=500, detail="Internal server error") from exc
+
+
+# @router.get("/documents")
+# def get_documents() -> list[str]:
+#     """
+#     This endpoint returns a list of all of the document_ids in s3.
+#     """
+#     try:
+#         # Create a temp file
+#         document_id = create_file(document)
+
+#         # Upload the file to S3
+#         try:
+#             s3_client = boto3.client("s3")
+#             s3_client.upload_file(f"documents/{document_id}", BUCKET_NAME, document_id)
+
+#             delete_file(f"documents/{document_id}")
+#         except ClientError as e:
+#             logging.exception("S3 ClientError while uploading document")
+
+#         # Return the name of the file
+#         return {"document_id": document_id}
+
+#     except ValueError as exc:
+#         logging.exception("Invalid input for /documents")
+#         raise HTTPException(status_code=400, detail="Invalid input") from exc
+
+#     except requests.RequestException as e:
+#         response = getattr(e, "response", None)
+#         logging.exception(
+#             "Requests error in /documents when contacting upstream service"
+#         )
+#         if response is not None:
+#             if response.status_code in (400, 401, 403, 404):
+#                 raise HTTPException(
+#                     status_code=response.status_code,
+#                     detail="Upstream service returned a client error",
+#                 ) from e
+#             else:
+#                 raise HTTPException(
+#                     status_code=502, detail="Upstream service error"
+#                 ) from e
+#         else:
+#             raise HTTPException(
+#                 status_code=503, detail="Unable to reach upstream service"
+#             ) from e
+
+#     except Exception as exc:
+#         logging.exception("Unhandled exception in /documents")
+#         raise HTTPException(status_code=500, detail="Internal server error") from exc
 
 
 # Global exception handler to ensure any unhandled exception is logged with full trace

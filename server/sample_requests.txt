@@ -4,14 +4,14 @@ FOR CREATE DOCUMENT:
 
 FOR VISUALIZE AND EVALUATE:
 
+http://localhost:8000/api/visualize/af07fee0.txt
 {
-    "chunker_config":{
-        "chunker_type": "chonkie_token",
-        "provider": "chonkie",
-        "chunk_size": 125,
-        "chunk_overlap": 20
-    },
-    "document_id": "5cdec9de.txt"
+    "chunker_type": "chonkie_token",
+    "provider": "chonkie",
+    "chunk_size": 125,
+    "chunk_overlap": 20
 }
 
-The document_id should be the full name of the resource on s3.
+In the path of the request, use the document_id to be more RESTful
+Just send the chunker configs in the body. The document_id should
+be the full name of the resource on s3.
