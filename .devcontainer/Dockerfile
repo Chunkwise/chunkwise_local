@@ -77,12 +77,6 @@ RUN ln -sf /usr/local/bin/python3 /usr/local/bin/python \
  && ln -sf /usr/local/bin/python3 /usr/local/bin/python3.13 \
  && ln -sf /usr/local/bin/pip3 /usr/local/bin/pip
 
-# Create non-root vscode user (UID 1000) and give sudo without password (codespace convention)
-RUN groupadd --gid ${USER_GID} ${USERNAME} \
- && useradd -s /bin/bash --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} \
- && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
- && chmod 0440 /etc/sudoers.d/${USERNAME}
-
 # Install Poetry (official installer). This will put poetry in $HOME/.local/bin for the vscode user.
 # We'll also create a global location for poetry so it's available for root and vscode:
 ENV POETRY_HOME=/opt/poetry
