@@ -14,7 +14,6 @@ export default function ChunkerForm() {
   const [selectedConfig, setSelectedConfig] = useState<Config | undefined>(
     undefined
   );
-  // const [chunker, setChunker] = useState<ChunkerSelection>("Chonkie Token");
   const [chunkMaxSize, setChunkMaxSize] = useState<number>(500);
   const [chunkOverlapOrMinChars, setChunkOverlapOrMinChars] =
     useState<number>(500);
@@ -59,7 +58,6 @@ export default function ChunkerForm() {
   }, []);
 
   function onChangeChunker(event: React.ChangeEvent<HTMLSelectElement>) {
-    // setChunker(event.target.value as ChunkerSelection);
     setSelectedConfig(
       configs.find((config) => config.name === event.target.value)
     );
@@ -132,7 +130,7 @@ export default function ChunkerForm() {
           {selectedConfig.chunk_overlap ? (
             <label htmlFor="chunk-overlap">Chunk Overlap:</label>
           ) : (
-            <label htmlFor="chunk-overlap">Minimum Chunk Size :</label>
+            <label htmlFor="chunk-overlap">Minimum Chunk Size:</label>
           )}
           <input
             id="chunk-overlap-range"
