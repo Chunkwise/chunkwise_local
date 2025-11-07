@@ -6,7 +6,12 @@ from .chunker_config import (
     ChonkieTokenConfig,
     ChunkerConfig,
 )
-from .evaluation import Evaluation, EvaluationResponse, EvaluationRequest
+from .evaluation import (
+    QueryGenerationConfig,
+    Evaluation,
+    EvaluationResponse,
+    EvaluationRequest,
+)
 
 __all__ = [
     "Chunk",
@@ -15,6 +20,7 @@ __all__ = [
     "ChonkieRecursiveConfig",
     "ChonkieTokenConfig",
     "ChunkerConfig",
+    "QueryGenerationConfig",
     "Evaluation",
     "EvaluationResponse",
     "EvaluationRequest",
