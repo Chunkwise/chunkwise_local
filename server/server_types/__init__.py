@@ -2,7 +2,6 @@ from .endpoints import (
     ChunkStatistics,
     VisualizeRequest,
     VisualizeResponse,
-    DocumentPostResponse,
     Chunk,
     ChunkerConfig,
     Evaluations,
