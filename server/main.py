@@ -58,7 +58,7 @@ def health_check():
     return {"status": "ok"}
 
 
-@router.post("/documents/{document_id}/visualize")
+@router.post("/{document_id}/visualize")
 def visualize(
     document_id: str, chunker_config: ChunkerConfig = Body(...)
 ) -> VisualizeResponse:
@@ -143,7 +143,7 @@ def visualize(
         raise HTTPException(status_code=500, detail="Internal server error") from exc
 
 
-@router.post("/documents/{document_id}/evaluate/")
+@router.post("/{document_id}/evaluate/")
 def evaluate(document_id: str, chunker_config: ChunkerConfig = Body(...)):
     """
     Receives chunker configs and a text/document from the client, which it then normalizes
@@ -200,7 +200,7 @@ def evaluate(document_id: str, chunker_config: ChunkerConfig = Body(...)):
         raise HTTPException(status_code=500, detail="Internal server error") from exc
 
 
-@router.post("/documents")
+@router.post("/")
 def upload_document(document: str = Body(...)) -> DocumentPostResponse:
     """
     This endpoint receives a string and uses it to create a txt file.
@@ -251,54 +251,99 @@ def upload_document(document: str = Body(...)) -> DocumentPostResponse:
         raise HTTPException(status_code=500, detail="Internal server error") from exc
 
 
-# @router.get("/documents")
-# def get_documents() -> list[str]:
-#     """
-#     This endpoint returns a list of all of the document_ids in s3.
-#     """
-#     try:
-#         # Create a temp file
-#         document_id = create_file(document)
+@router.get("/")
+def get_documents():
+    """
+    This endpoint returns a list of all of the document_ids in s3.
+    """
+    try:
+        # Get the list of resources from a bucket
+        try:
+            s3_client = boto3.client("s3")
+            resources = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
 
-#         # Upload the file to S3
-#         try:
-#             s3_client = boto3.client("s3")
-#             s3_client.upload_file(f"documents/{document_id}", BUCKET_NAME, document_id)
+        except ClientError as e:
+            logging.exception("S3 ClientError while uploading document")
 
-#             delete_file(f"documents/{document_id}")
-#         except ClientError as e:
-#             logging.exception("S3 ClientError while uploading document")
+        # Create a list of the files names of a bucket
+        file_names = [resource["Key"] for resource in resources["Contents"]]
 
-#         # Return the name of the file
-#         return {"document_id": document_id}
+        # Return the name of the file
+        return file_names
 
-#     except ValueError as exc:
-#         logging.exception("Invalid input for /documents")
-#         raise HTTPException(status_code=400, detail="Invalid input") from exc
+    except ValueError as exc:
+        logging.exception("Invalid input for /documents")
+        raise HTTPException(status_code=400, detail="Invalid input") from exc
 
-#     except requests.RequestException as e:
-#         response = getattr(e, "response", None)
-#         logging.exception(
-#             "Requests error in /documents when contacting upstream service"
-#         )
-#         if response is not None:
-#             if response.status_code in (400, 401, 403, 404):
-#                 raise HTTPException(
-#                     status_code=response.status_code,
-#                     detail="Upstream service returned a client error",
-#                 ) from e
-#             else:
-#                 raise HTTPException(
-#                     status_code=502, detail="Upstream service error"
-#                 ) from e
-#         else:
-#             raise HTTPException(
-#                 status_code=503, detail="Unable to reach upstream service"
-#             ) from e
+    except requests.RequestException as e:
+        response = getattr(e, "response", None)
+        logging.exception(
+            "Requests error in /documents when contacting upstream service"
+        )
+        if response is not None:
+            if response.status_code in (400, 401, 403, 404):
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail="Upstream service returned a client error",
+                ) from e
+            else:
+                raise HTTPException(
+                    status_code=502, detail="Upstream service error"
+                ) from e
+        else:
+            raise HTTPException(
+                status_code=503, detail="Unable to reach upstream service"
+            ) from e
 
-#     except Exception as exc:
-#         logging.exception("Unhandled exception in /documents")
-#         raise HTTPException(status_code=500, detail="Internal server error") from exc
+    except Exception as exc:
+        logging.exception("Unhandled exception in /documents")
+        raise HTTPException(status_code=500, detail="Internal server error") from exc
+
+
+@router.delete("/{document_id}")
+def delete_document(document_id: str):
+    """
+    This endpoint deletes a resource from the S3 store
+    """
+    try:
+        # Get the list of resources from a bucket
+        try:
+            s3_client = boto3.client("s3")
+            s3_client.delete_object(Key=document_id, Bucket=BUCKET_NAME)
+
+        except ClientError as e:
+            logging.exception("S3 ClientError while uploading document")
+
+        # Return the name of the file
+        return {"detail": "deleted"}
+
+    except ValueError as exc:
+        logging.exception("Invalid input for /documents")
+        raise HTTPException(status_code=400, detail="Invalid input") from exc
+
+    except requests.RequestException as e:
+        response = getattr(e, "response", None)
+        logging.exception(
+            "Requests error in /documents when contacting upstream service"
+        )
+        if response is not None:
+            if response.status_code in (400, 401, 403, 404):
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail="Upstream service returned a client error",
+                ) from e
+            else:
+                raise HTTPException(
+                    status_code=502, detail="Upstream service error"
+                ) from e
+        else:
+            raise HTTPException(
+                status_code=503, detail="Unable to reach upstream service"
+            ) from e
+
+    except Exception as exc:
+        logging.exception("Unhandled exception in /documents")
+        raise HTTPException(status_code=500, detail="Internal server error") from exc
 
 
 # Global exception handler to ensure any unhandled exception is logged with full trace
@@ -308,4 +353,4 @@ async def global_exception_handler(request, exc):
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
-app.include_router(router, prefix="/api")
+app.include_router(router, prefix="/api/documents")
