@@ -1,20 +1,12 @@
 {
-  "name": "Python 3.13 + SQLite 3.35.0 + Poetry",
+  "name": "Python 3.13.0 + SQLite 3.35.0 Dev Container",
   "build": {
-    "dockerfile": "Dockerfile",
-    "args": {
-      "PYTHON_VERSION": "3.13.0"
-    }
+    "dockerfile": "Dockerfile"
   },
-  "remoteUser": "vscode",
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-toolsai.jupyter"
-      ]
-    }
-  },
-  "postCreateCommand": "python -c \"import sqlite3, sys; print('Python:', sys.version); print('SQLite:', sqlite3.sqlite_version)\" && sqlite3 --version && poetry --version"
+  "extensions": [
+    "ms-python.python",
+    "ms-python.vscode-pylance"
+  ],
+  "postCreateCommand": "python3 --version && sqlite3 --version && poetry --version",
+  "remoteUser": "vscode"
 }
