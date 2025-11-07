@@ -1,3 +1,8 @@
+"""
+Contains the normalize_document function.
+"""
+
+
 def normalize_document(content):
     """Normalize smart quotes and dashes in the document to standard ASCII characters."""
 

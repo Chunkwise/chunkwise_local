@@ -63,13 +63,13 @@ def health_check() -> dict:
     return {"status": "ok"}
 
 
-@router.get("/configs")
-@handle_endpoint_exceptions
-def configs():
-    """
-    Returns the adjustable parameters for each chunker's config
-    """
-    return adjustable_configs
+# @router.get("/configs")
+# @handle_endpoint_exceptions
+# def configs():
+#     """
+#     Returns the adjustable parameters for each chunker's config
+#     """
+#     return adjustable_configs
 
 
 @router.get("/{document_id}/visualization")

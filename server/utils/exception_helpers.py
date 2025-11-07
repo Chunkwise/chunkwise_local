@@ -1,3 +1,7 @@
+"""
+Middlewear used as a decorator on each route to deal with exceptions.
+"""
+
 import logging
 import functools
 import requests

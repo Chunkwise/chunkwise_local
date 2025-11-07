@@ -1,3 +1,7 @@
+"""
+Creates a file based on some passed in text.
+"""
+
 import os
 from utils import normalize_document
 
