@@ -14,9 +14,8 @@ from server_types import (
     VisualizeRequest,
     DocumentPostResponse,
 )
-from typing import Annotated
-from utils import calculate_chunk_stats, normalize_document, delete_file, create_file
-from fastapi import FastAPI, APIRouter, HTTPException, Body, Path
+from utils import calculate_chunk_stats, delete_file, create_file
+from fastapi import FastAPI, APIRouter, HTTPException, Body
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import boto3
