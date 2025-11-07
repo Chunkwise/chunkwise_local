@@ -58,7 +58,7 @@ def health_check():
     return {"status": "ok"}
 
 
-@router.post("/visualize/{document_id}")
+@router.post("/documents/{document_id}/visualize")
 def visualize(
     document_id: str, chunker_config: ChunkerConfig = Body(...)
 ) -> VisualizeResponse:
@@ -68,8 +68,13 @@ def visualize(
     """
     try:
         # Download file from S3
-        s3_client = boto3.client("s3")
-        s3_client.download_file(BUCKET_NAME, document_id, f"documents/{document_id}")
+        try:
+            s3_client = boto3.client("s3")
+            s3_client.download_file(
+                BUCKET_NAME, document_id, f"documents/{document_id}"
+            )
+        except ClientError as e:
+            logging.exception("S3 ClientError while downloading document")
 
         # Make document contents into a string
         with open(f"documents/{document_id}", "r") as file:
@@ -138,7 +143,7 @@ def visualize(
         raise HTTPException(status_code=500, detail="Internal server error") from exc
 
 
-@router.post("/evaluate/{document_id}")
+@router.post("/documents/{document_id}/evaluate/")
 def evaluate(document_id: str, chunker_config: ChunkerConfig = Body(...)):
     """
     Receives chunker configs and a text/document from the client, which it then normalizes
