@@ -1,14 +1,47 @@
-def upload_s3_file():
-    pass
+import boto3
+from botocore.exceptions import ClientError
+import logging
+
+BUCKET_NAME = "chunkwise-test"
 
 
-def download_s3_file():
-    pass
+async def upload_s3_file(document_id):
+    # Upload a file to s3
+    try:
+        s3_client = boto3.client("s3")
+        s3_client.upload_file(f"documents/{document_id}", BUCKET_NAME, document_id)
+
+    except ClientError as e:
+        logging.exception("s3 ClientError while uploading document")
 
 
-def delete_s3_file():
-    pass
+async def download_s3_file(document_id):
+    # Download a file from s3
+    try:
+        s3_client = boto3.client("s3")
+        s3_client.download_file(BUCKET_NAME, document_id, f"documents/{document_id}")
+    except ClientError as e:
+        logging.exception("s3 ClientError while downloading document")
 
 
-def get_s3_file_names():
-    pass
+async def delete_s3_file(document_id):
+    # Delete a file on s3
+    try:
+        s3_client = boto3.client("s3")
+        s3_client.delete_object(Key=document_id, Bucket=BUCKET_NAME)
+
+    except ClientError as e:
+        logging.exception("s3 ClientError while uploading document")
+
+
+async def get_s3_file_names():
+    # Get the list of resources from a bucket
+    try:
+        s3_client = boto3.client("s3")
+        resources = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
+        # Create a list of the files names of a bucket
+        file_names = [resource["Key"] for resource in resources["Contents"]]
+        return file_names
+
+    except ClientError as e:
+        logging.exception("s3 ClientError while uploading document")

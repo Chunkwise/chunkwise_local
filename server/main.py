@@ -4,12 +4,11 @@ services and it will eventually manage the database(s) and document storage.
 """
 
 import os
-import requests
 import logging
+import requests
 from server_types import (
     Chunk,
     ChunkerConfig,
-    ChunkStatistics,
     VisualizeResponse,
     VisualizeRequest,
     Evaluations,
@@ -22,11 +21,18 @@ from utils import (
     extract_metrics,
     handle_endpoint_exceptions,
 )
-from fastapi import FastAPI, APIRouter, HTTPException, Body
+from services import (
+    upload_s3_file,
+    download_s3_file,
+    delete_s3_file,
+    get_s3_file_names,
+    get_chunks,
+    get_evaluation,
+    get_visualization,
+)
+from fastapi import FastAPI, APIRouter, Body
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-import boto3
-from botocore.exceptions import ClientError
 
 # from chunkwise_core import adjustable_configs
 
@@ -59,7 +65,6 @@ VISUALIZATION_SERVICE_URL = os.getenv(
     "VISUALIZATION_SERVICE_URL", "http://localhost:8002"
 )
 EVALUATION_SERVICE_URL = os.getenv("EVALUATION_SERVICE_URL", "http://localhost:8003")
-BUCKET_NAME = "chunkwise-test"
 
 
 @router.get("/health")
@@ -80,7 +85,7 @@ def configs():
 
 @router.get("/{document_id}/visualization")
 @handle_endpoint_exceptions
-def visualize(
+async def visualize(
     document_id: str, chunker_config: ChunkerConfig = Body(...)
 ) -> VisualizeResponse:
     """
@@ -88,15 +93,10 @@ def visualize(
     then sends the chunks to the visualization service and returns the HTML and statistics.
     """
 
-    # Download file from S3
-    try:
-        s3_client = boto3.client("s3")
-        s3_client.download_file(BUCKET_NAME, document_id, f"documents/{document_id}")
-    except ClientError as e:
-        logging.exception("S3 ClientError while downloading document")
+    await download_s3_file(document_id)
 
     # Make document contents into a string
-    with open(f"documents/{document_id}", "r") as file:
+    with open(f"documents/{document_id}", "r", encoding="utf8") as file:
         document = file.read()
         file.close()
 
@@ -133,7 +133,7 @@ def visualize(
 
 @router.get("/{document_id}/evaluation")
 @handle_endpoint_exceptions
-def evaluate(
+async def evaluate(
     document_id: str, chunker_config: ChunkerConfig = Body(...)
 ) -> list[Evaluations]:
     """
@@ -160,7 +160,7 @@ def evaluate(
 
 @router.post("/")
 @handle_endpoint_exceptions
-def upload_document(document: str = Body(...)) -> dict:
+async def upload_document(document: str = Body(...)) -> dict:
     """
     This endpoint receives a string and uses it to create a txt file.
     It then sends the file to S3 and returns the path/url of the created resource.
@@ -168,15 +168,7 @@ def upload_document(document: str = Body(...)) -> dict:
 
     # Create a temp file
     document_id = create_file(document)
-
-    # Upload the file to S3
-    try:
-        s3_client = boto3.client("s3")
-        s3_client.upload_file(f"documents/{document_id}", BUCKET_NAME, document_id)
-
-    except ClientError as e:
-        logging.exception("S3 ClientError while uploading document")
-
+    await upload_s3_file(document_id)
     delete_file(f"documents/{document_id}")
 
     # Return the name of the file
@@ -185,21 +177,13 @@ def upload_document(document: str = Body(...)) -> dict:
 
 @router.get("/")
 @handle_endpoint_exceptions
-def get_documents() -> list[str]:
+async def get_documents() -> list[str]:
     """
     This endpoint returns a list of all of the document_ids in s3.
     """
 
     # Get the list of resources from a bucket
-    try:
-        s3_client = boto3.client("s3")
-        resources = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
-
-    except ClientError as e:
-        logging.exception("S3 ClientError while uploading document")
-
-    # Create a list of the files names of a bucket
-    file_names = [resource["Key"] for resource in resources["Contents"]]
+    file_names = await get_s3_file_names()
 
     # Return the name of the file
     return file_names
@@ -207,26 +191,22 @@ def get_documents() -> list[str]:
 
 @router.delete("/{document_id}")
 @handle_endpoint_exceptions
-def delete_document(document_id: str) -> dict:
+async def delete_document(document_id: str) -> dict:
     """
     This endpoint deletes a resource from the S3 store
     """
 
-    # Get the list of resources from a bucket
-    try:
-        s3_client = boto3.client("s3")
-        s3_client.delete_object(Key=document_id, Bucket=BUCKET_NAME)
-
-    except ClientError as e:
-        logging.exception("S3 ClientError while uploading document")
+    await delete_s3_file(document_id)
 
     # Return the name of the file
     return {"detail": "deleted"}
 
 
-# Global exception handler to ensure any unhandled exception is logged with full trace
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
+    """
+    Global exception handler to ensure any unhandled exception is logged with full trace
+    """
     logging.exception("Unhandled exception during request processing")
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
