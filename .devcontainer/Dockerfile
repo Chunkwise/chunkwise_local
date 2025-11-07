@@ -97,17 +97,8 @@ RUN mkdir -p $POETRY_HOME \
 RUN apt-get purge -y --auto-remove \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Set default user to vscode
-USER ${USERNAME}
-WORKDIR /workspace
-
 # Ensure Poetry's bin is on PATH for the vscode user
 ENV PATH=$POETRY_HOME/bin:/home/${USERNAME}/.local/bin:$PATH
 
 # Default shell
 SHELL ["/bin/bash", "-lc"]
-
-# Recommended: when Codespace opens, run `poetry install` if pyproject.toml exists.
-# But keep Dockerfile minimal; devcontainer.json will run project-level commands.
-
-# Final notes printed at container build time are not available here; everything is installed.
