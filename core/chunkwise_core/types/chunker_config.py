@@ -1,12 +1,14 @@
 import os
-from dotenv import load_dotenv
 from typing import Literal, Callable, Annotated
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field, ConfigDict, model_validator, field_serializer
 from chonkie.types import RecursiveRules
 from chonkie.genie import OpenAIGenie
+from chonkie.embeddings import OpenAIEmbeddings
 
 load_dotenv()
 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # ChunkerConfig models using Pydantic v2
 # Only considering 4 chunkers for now
@@ -106,7 +108,7 @@ class ChonkieSentenceConfig(ChonkieBaseConfig):
 
 class ChonkieSemanticConfig(ChonkieBaseConfig):
     chunker_type: Literal["semantic"] = "semantic"
-    embedding_model: str | OpenAIEmbeddings = OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY"))
+    embedding_model: str | OpenAIEmbeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
     threshold: float = 0.8
     chunk_size: int = 2048
     similarity_window: int = 3
@@ -122,7 +124,7 @@ class ChonkieSemanticConfig(ChonkieBaseConfig):
 
 class ChonkieSlumberConfig(ChonkieBaseConfig):
     chunker_type: Literal["slumber"] = "slumber"
-    genie: OpenAIGenie | None = None
+    genie: OpenAIGenie | None = OpenAIGenie(api_key=OPENAI_API_KEY)
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     chunk_size: int = 2048
     rules: RecursiveRules = RecursiveRules()
