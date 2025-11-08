@@ -15,6 +15,7 @@ uvicorn = "^0.38.0"
 chunking-evaluation = { git = "https://github.com/Chunkwise/chunking_evaluation_refactored.git" }
 # Local path dependency; prefer a relative path and keep it editable during dev
 chunkwise-core = { path = "../core", develop = true }
+boto3 = "^1.40.69"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
