@@ -11,7 +11,7 @@ python = ">=3.13,<4.0"
 chonkie = {extras = ["openai"], version = "^1.4.1"}
 langchain-text-splitters = ">=1.0.0,<2.0.0"
 pydantic = ">=2.12.3,<3.0.0"
-dotenv = "^0.9.9"
+python-dotenv = "^1.2.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
