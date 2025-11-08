@@ -1,0 +1,164 @@
+GET /api/documents/health
+
+body: N/a
+
+response:
+{
+    "status": "ok"
+}
+------------------------------------------------------------------------
+
+GET /api/documents/configs
+
+body: N/a
+
+response:
+[
+    {
+        "name": "Chonkie Token",
+        "chunk_size": {
+            "type": "int",
+            "default": 2048,
+            "min": 1,
+            "max": 8192
+        },
+        "chunk_overlap": {
+            "type": "int",
+            "default": 0,
+            "min": 0,
+            "max": 8192
+        }
+    },
+    {
+        "name": "Chonkie Recursive",
+        "chunk_size": {
+            "type": "int",
+            "default": 2048,
+            "min": 1,
+            "max": 8192
+        },
+        "min_characters_per_chunk": {
+            "type": "int",
+            "default": 24,
+            "min": 1,
+            "max": 8192
+        }
+    },
+    {
+        "name": "LangChain Token",
+        "chunk_size": {
+            "type": "int",
+            "default": 2048,
+            "min": 1,
+            "max": 8192
+        },
+        "chunk_overlap": {
+            "type": "int",
+            "default": 0,
+            "min": 0,
+            "max": 8192
+        }
+    },
+    {
+        "name": "LangChain Recursive",
+        "chunk_size": {
+            "type": "int",
+            "default": 2048,
+            "min": 1,
+            "max": 8192
+        },
+        "chunk_overlap": {
+            "type": "int",
+            "default": 0,
+            "min": 0,
+            "max": 8192
+        }
+    }
+]
+
+A list of chunkers and their config options.
+------------------------------------------------------------------------
+
+GET /api/documents
+
+body: N/a
+
+response: 
+[
+    "b80c3151.txt"
+    "217jskad.txt"
+    "jaskldh1.txt"
+]
+
+A list of all document_ids in s3.
+------------------------------------------------------------------------
+
+POST /api/documents
+
+body: string
+
+response:
+{
+    "document_id": "8d01851e.txt"
+}
+
+This `document_id` corresponds to s3 and is used to download or delete files.
+------------------------------------------------------------------------
+
+DELETE /api/documents/{document_id}
+
+body: N/a
+
+response:
+{
+    "detail": "deleted"
+}
+------------------------------------------------------------------------
+
+GET /api/documents/{document_id}/visualization
+
+body: ChunkerConfig
+
+{
+    "chunker_type": "token",
+    "provider": "chonkie",
+    "chunk_size": 125,
+    "chunk_overlap": 20
+}
+
+response:
+
+{
+    "stats": {
+        "total_chunks": 32,
+        "largest_chunk_chars": 125,
+        "largest_text": "In addition to the figurines and other artifacts from the 1500 - 300 BCE era, human and animal remains have been found, some ",
+        "smallest_chunk_chars": 63,
+        "smallest_text": "al usefulness, and the reasonable prosperity of its members.[6]",
+        "avg_chars": 123.0625
+    },
+    "html": some string...
+}
+
+This gives stats and visualization html for a given document_id. Body is subject to change.
+------------------------------------------------------------------------
+
+GET /api/documents/{document_id}/evaluation
+
+body: ChunkerConfig
+
+{
+    "chunker_type": "token",
+    "provider": "chonkie",
+    "chunk_size": 125,
+    "chunk_overlap": 20
+}
+
+response:
+{
+    "omega_precision": 0.0192237,
+    "precision": 0.912890,
+    "recall": 0.453,
+    "iou": 0.9879
+}
+------------------------------------------------------------------------

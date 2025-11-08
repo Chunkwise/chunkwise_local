@@ -1,7 +1,15 @@
+"""
+Contains calculate_chunk_stats function
+"""
+
 from fastapi import HTTPException
+from server_types import ChunkStatistics, Chunk
 
 
-def calculate_chunk_stats(chunks):
+def calculate_chunk_stats(chunks: list[Chunk]) -> ChunkStatistics:
+    """
+    Calculates and returns a set of statistics based on a list of chunks.
+    """
     try:
         if not isinstance(chunks, list):
             raise ValueError("chunks must be a list")
@@ -39,5 +47,5 @@ def calculate_chunk_stats(chunks):
 
         return stats
 
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid input")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid input") from exc

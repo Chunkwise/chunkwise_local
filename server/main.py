@@ -1,14 +1,47 @@
+"""
+This is the backend server which acts as a gateway for the client to access
+services and it will eventually manage the database(s) and document storage.
+"""
+
 import os
-from typing import Literal
-from fastapi import FastAPI, APIRouter, HTTPException
+import logging
+from server_types import (
+    ChunkerConfig,
+    VisualizeResponse,
+    Evaluations,
+)
+from utils import (
+    calculate_chunk_stats,
+    delete_file,
+    create_file,
+    extract_metrics,
+    handle_endpoint_exceptions,
+)
+from services import (
+    upload_s3_file,
+    download_s3_file,
+    delete_s3_file,
+    get_s3_file_names,
+    get_chunks,
+    get_evaluation,
+    get_visualization,
+)
+from fastapi import FastAPI, APIRouter, Body
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import requests
-from chunkwise_core import Chunk, adjustable_configs
-from utils import calculate_chunk_stats, normalize_document
+
+from chunkwise_core import adjustable_configs
+
 
 app = FastAPI()
 router = APIRouter()
+
+# Configure logging
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
 
 origins = [
     "*",
@@ -23,27 +56,15 @@ app.add_middleware(
 )
 
 
-class EitherRequest(BaseModel):
-    chunker_type: Literal["recursive", "token"]
-    provider: Literal["langchain", "chonkie"]
-    chunk_size: int
-    chunk_overlap: int
-    text: str
-
-
-CHUNKING_SERVICE_URL = os.getenv("CHUNKING_SERVICE_URL", "http://localhost:8001")
-VISUALIZATION_SERVICE_URL = os.getenv(
-    "VISUALIZATION_SERVICE_URL", "http://localhost:8002"
-)
-EVALUATION_SERVICE_URL = os.getenv("EVALUATION_SERVICE_URL", "http://localhost:8003")
-
-
 @router.get("/health")
-def health_check():
+@handle_endpoint_exceptions
+def health_check() -> dict:
+    """Allows for services to check the health of this server if needed."""
     return {"status": "ok"}
 
 
 @router.get("/configs")
+@handle_endpoint_exceptions
 def configs():
     """
     Returns the adjustable parameters for each chunker's config
@@ -51,118 +72,101 @@ def configs():
     return adjustable_configs
 
 
-@router.post("/visualize")
-def visualize(request: EitherRequest):
+@router.get("/{document_id}/visualization")
+@handle_endpoint_exceptions
+async def visualize(
+    document_id: str, chunker_config: ChunkerConfig = Body(...)
+) -> VisualizeResponse:
     """
     Receives chunking parameters and text from client, sends them to the chunking service,
     then sends the chunks to the visualization service and returns the HTML and statistics.
     """
-    try:
-        # Prepare the request for the chunking service
-        chunking_payload = {
-            "chunker_config": {
-                "chunker_type": request.chunker_type,
-                "provider": request.provider,
-                "chunk_size": int(request.chunk_size),
-                "chunk_overlap": int(request.chunk_overlap),
-            },
-            "text": normalize_document(request.text),
-        }
 
-        # Send request to chunking service
-        chunking_response = requests.post(
-            f"{CHUNKING_SERVICE_URL}/chunk", json=chunking_payload
-        )
-        chunking_response.raise_for_status()
-        chunks: list[Chunk] = chunking_response.json()
+    await download_s3_file(document_id)
 
-        # Get chunk related stats
-        stats = calculate_chunk_stats(chunks)
+    # Make document contents into a string
+    with open(f"documents/{document_id}", "r", encoding="utf8") as file:
+        document = file.read()
+        file.close()
 
-        # Send chunks to visualization service
-        visualization_response = requests.post(
-            f"{VISUALIZATION_SERVICE_URL}/visualize", json=chunks
-        )
-        visualization_response.raise_for_status()
+    chunks = await get_chunks(chunker_config, document)
+    stats = calculate_chunk_stats(chunks)
+    html = await get_visualization(chunks)
 
-        # Get the text from the response
-        visualization_html = visualization_response.text
+    delete_file(f"documents/{document_id}")
 
-        # Return dict with stats and HTML
-        return {"stats": stats, "html": visualization_html}
-
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid input")
-
-    except requests.RequestException as e:
-        response = getattr(e, "response", None)
-        if response is not None:
-            if response.status_code in (400, 401, 403, 404):
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail="Upstream service returned a client error",
-                )
-            else:
-                raise HTTPException(status_code=502, detail="Upstream service error")
-        else:
-            raise HTTPException(
-                status_code=503, detail="Unable to reach upstream service"
-            )
-
-    except Exception:
-        raise HTTPException(status_code=500, detail="Internal server error")
+    # Return dict with stats and HTML
+    return {"stats": stats, "html": html}
 
 
-@router.post("/evaluate")
-def evaluate(request: EitherRequest):
-    try:
-        request_body = {
-            "chunking_configs": [
-                {
-                    "chunker_type": request.chunker_type,
-                    "provider": request.provider,
-                    "chunk_size": request.chunk_size,
-                    "chunk_overlap": request.chunk_overlap,
-                }
-            ],
-            "document": normalize_document(request.text),
-        }
+@router.get("/{document_id}/evaluation")
+@handle_endpoint_exceptions
+async def evaluate(
+    document_id: str, chunker_config: ChunkerConfig = Body(...)
+) -> list[Evaluations]:
+    """
+    Receives chunker configs and a document_id from the client, which it then
+    sends to the evaluation server. Once it receives a response, it gets the necessary
+    data from it and sends that back to the clisent.
+    """
 
-        # Send request to chunking service
-        evaluation_response = requests.post(
-            f"{EVALUATION_SERVICE_URL}/evaluate", json=request_body
-        )
-        evaluation_response.raise_for_status()
-        evaluation_json = evaluation_response.json()
-        metrics = {
-            "omega_precision": evaluation_json["results"][0]["precision_omega_mean"],
-            "precision": evaluation_json["results"][0]["precision_mean"],
-            "recall": evaluation_json["results"][0]["recall_mean"],
-            "iou": evaluation_json["results"][0]["iou_mean"],
-        }
+    evaluation = await get_evaluation(chunker_config, document_id)
+    metrics = extract_metrics(evaluation)
 
-        return metrics
-
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid input")
-
-    except requests.RequestException as e:
-        response = getattr(e, "response", None)
-        if response is not None:
-            if response.status_code in (400, 401, 403, 404):
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail="Upstream service returned a client error",
-                )
-            else:
-                raise HTTPException(status_code=502, detail="Upstream service error")
-        else:
-            raise HTTPException(
-                status_code=503, detail="Unable to reach upstream service"
-            )
-
-    except Exception:
-        raise HTTPException(status_code=500, detail="Internal server error")
+    return metrics
 
 
-app.include_router(router, prefix="/api")
+@router.post("/")
+@handle_endpoint_exceptions
+async def upload_document(document: str = Body(...)) -> dict:
+    """
+    This endpoint receives a string and uses it to create a txt file.
+    It then sends the file to S3 and returns the path/url of the created resource.
+    """
+
+    # Create a temp file
+    document_id = create_file(document)
+    await upload_s3_file(document_id)
+    delete_file(f"documents/{document_id}")
+
+    # Return the name of the file
+    return {"document_id": document_id}
+
+
+@router.get("/")
+@handle_endpoint_exceptions
+async def get_documents() -> list[str]:
+    """
+    This endpoint returns a list of all of the document_ids in s3.
+    """
+
+    # Get the list of resources from a bucket
+    file_names = await get_s3_file_names()
+
+    # Return the name of the file
+    return file_names
+
+
+@router.delete("/{document_id}")
+@handle_endpoint_exceptions
+async def delete_document(document_id: str) -> dict:
+    """
+    This endpoint deletes a resource from the S3 store
+    """
+
+    await delete_s3_file(document_id)
+
+    # Return the name of the file
+    return {"detail": "deleted"}
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(_request, _exc):
+    """
+    Global exception handler to ensure any unhandled exception is logged with full trace
+    """
+    logging.exception("Unhandled exception during request processing")
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+
+app.include_router(router, prefix="/api/documents")
