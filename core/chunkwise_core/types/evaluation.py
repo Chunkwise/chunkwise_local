@@ -3,7 +3,48 @@ from .chunker_config import ChunkerConfig, LangChainRecursiveConfig
 
 
 class QueryGenerationConfig(BaseModel):
-    """Configuration for query generation."""
+    """
+    Adjustable configurations for LLM-powered query generation.
+
+    These settings control how synthetic queries are generated from documents
+    for evaluation purposes.
+    """
+
+    num_rounds: int = Field(
+        default=1,
+        description="Number of rounds to generate queries",
+        ge=1,
+        le=3,
+    )
+    queries_per_corpus: int = Field(
+        default=5,
+        description="Number of queries to generate per document",
+        ge=3,
+        le=10,
+    )
+    approximate_excerpts: bool = Field(
+        default=False, description="Set to True for approximate reference extraction"
+    )
+    poor_reference_threshold: float = Field(
+        default=0.36,
+        description="Threshold for filtering poor references",
+        ge=0.0,
+        le=1.0,
+    )
+    duplicate_question_threshold: float = Field(
+        default=0.78,
+        description="Threshold for filtering duplicate questions",
+        ge=0.0,
+        le=1.0,
+    )
+
+
+class QueryGenerationRequest(BaseModel):
+    """
+    Request to generate queries for the input document via LLM (OpenAI by default).
+
+    Note: kept here for use in later phases for the internal generat_queries endpoint
+    """
 
     model_config = ConfigDict(
         str_strip_whitespace=True,
@@ -24,35 +65,16 @@ class QueryGenerationConfig(BaseModel):
     queries_output_path: str = Field(
         ..., description="Where to save generated queries", min_length=1
     )
+    query_generation_configs: QueryGenerationConfig = Field(
+        default_factory=QueryGenerationConfig,
+        description="Adjustable settings for query generation",
+    )
     chroma_db_path: str | None = Field(
         default=None, description="Optional: path to ChromaDB"
     )
-    num_rounds: int = Field(
-        default=1,
-        description="Number of rounds to generate queries",
-        ge=1,
-    )
-    queries_per_corpus: int = Field(
-        default=5, description="Number of queries to generate per document", gt=0
-    )
-    approximate_excerpts: bool = Field(
-        default=False, description="Set to True for approximate reference extraction"
-    )
-    poor_reference_threshold: float = Field(
-        default=0.36,
-        description="Threshold for filtering poor references",
-        ge=0.0,
-        le=1.0,
-    )
-    duplicate_question_threshold: float = Field(
-        default=0.78,
-        description="Threshold for filtering duplicate questions",
-        ge=0.0,
-        le=1.0,
-    )
 
 
-class Evaluation(BaseModel):
+class EvaluationMetrics(BaseModel):
     """Evaluation metrics for a single chunking configuration."""
 
     iou_mean: float
@@ -72,7 +94,7 @@ class EvaluationResponse(BaseModel):
     queries_generated: bool
     num_queries: int | None = None
     chunkers_evaluated: list[str]
-    results: list[Evaluation]
+    results: list[EvaluationMetrics]
 
 
 class EvaluationRequest(BaseModel):
@@ -85,18 +107,18 @@ class EvaluationRequest(BaseModel):
     )
 
     # Document and queries
-    # Teporarily optional for MVP testing - remove `None` option after document storage is setup
+    document_id: str = Field(
+        ...,
+        description="Unique identifier for the S3 document",
+        min_length=1,
+    )
+    # Optional for local testing - use document_id in production
     document_path: str | None = Field(
         default=None,
         description="Path to the document to evaluate. Can be absolute or relative path",
         min_length=1,
     )
-    # `document` field is temporary for MVP testing
-    document: str | None = Field(
-        default=None,
-        description="Document content as a string. Use this for MVP testing. ",
-        min_length=1,
-    )
+
     queries_path: str | None = Field(
         default=None,
         description="Optional: path to queries CSV. If not provided, queries will "
@@ -115,33 +137,15 @@ class EvaluationRequest(BaseModel):
         json_schema_extra={"writeOnly": True},
     )
 
-    # Query generation settings
     queries_output_dir: str = Field(
         default="data",
         description="Where to save generated queries (only used when generating queries)",
     )
-    num_rounds: int = Field(
-        default=1, ge=1, le=3, description="Number of rounds to generate queries"
-    )
-    queries_per_corpus: int = Field(
-        default=5, ge=3, le=10, description="Number of queries to generate per document"
-    )
 
-    # Evaluation settings
-    approximate_excerpts: bool = Field(
-        default=False, description="Set to True for approximate reference extraction"
-    )
-    poor_reference_threshold: float = Field(
-        default=0.36,
-        ge=0.0,
-        le=1.0,
-        description="Threshold for filtering poor references",
-    )
-    duplicate_question_threshold: float = Field(
-        default=0.78,
-        ge=0.0,
-        le=1.0,
-        description="Threshold for filtering duplicate questions",
+    query_generation_configs: QueryGenerationConfig | None = Field(
+        default=None,
+        description="Adjustable settings for LLM-powered query generation. Only"
+        " used when queries_path is not provided. If not provided, default values will be used",
     )
 
     # A list of chunking configurations (multiple strategies)
