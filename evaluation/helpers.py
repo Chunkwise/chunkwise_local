@@ -163,7 +163,7 @@ def run_chunker_evaluations(
             metrics = evaluation.run(chunker, embedding_function=embedding_func)
             chunker_name = f"{config.chunker_type}"
             chunker_names.append(chunker_name)
-            results.append(Evaluation(**metrics, chunker_config=config))
+            results.append(Evaluation(**metrics))
         except Exception as e:
             raise HTTPException(
                 status_code=500,
