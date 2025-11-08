@@ -1,25 +1,19 @@
 [tool.poetry]
-package-mode = false
-
-[project]
 name = "server"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "Your Name",email = "you@example.com"}
-]
+authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-requires-python = ">=3.13,<4.0.0"
-dependencies = [
-    "dotenv (>=0.9.9,<0.10.0)",
-    "fastapi (>=0.120.4,<0.121.0)",
-    "uvicorn (>=0.38.0,<0.39.0)",
-    "requests (>=2.32.5,<3.0.0)",
-    "black (>=25.9.0,<26.0.0)",
-    "chunkwise-core @ ../core",
-    "boto3 (>=1.40.68,<2.0.0)"
-]
+package-mode = false
 
+[tool.poetry.dependencies]
+python = ">=3.13,<4.0.0"
+python-dotenv = ">=1.0.0,<2.0.0"
+fastapi = ">=0.120.4,<0.121.0"
+uvicorn = ">=0.38.0,<0.39.0"
+requests = ">=2.32.5,<3.0.0"
+chunkwise-core = {path = "../core", develop = true}
+boto3 = ">=1.40.68,<2.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
