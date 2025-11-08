@@ -59,7 +59,6 @@ class Evaluation(BaseModel):
     recall_mean: float
     precision_mean: float
     precision_omega_mean: float
-    chunker_config: ChunkerConfig
 
 
 class EvaluationResponse(BaseModel):
