@@ -39,7 +39,7 @@ class QueryGenerationConfig(BaseModel):
     )
 
 
-class QueryGenerationRequest(BaseModel):
+class GenerateQueriesRequest(BaseModel):
     """
     Request to generate queries for the input document via LLM (OpenAI by default).
 
@@ -49,7 +49,6 @@ class QueryGenerationRequest(BaseModel):
     model_config = ConfigDict(
         str_strip_whitespace=True,
         validate_assignment=True,
-        frozen=False,
         extra="forbid",
     )
     openai_api_key: str = Field(
@@ -65,13 +64,13 @@ class QueryGenerationRequest(BaseModel):
     queries_output_path: str = Field(
         ..., description="Where to save generated queries", min_length=1
     )
-    query_generation_configs: QueryGenerationConfig = Field(
+    query_generation_config: QueryGenerationConfig = Field(
         default_factory=QueryGenerationConfig,
         description="Adjustable settings for query generation",
     )
-    chroma_db_path: str | None = Field(
-        default=None, description="Optional: path to ChromaDB"
-    )
+    # chroma_db_path: str | None = Field(
+    #     default=None, description="Optional: path to ChromaDB"
+    # )
 
 
 class EvaluationMetrics(BaseModel):
@@ -84,7 +83,7 @@ class EvaluationMetrics(BaseModel):
     chunker_config: ChunkerConfig
 
 
-class EvaluationResponse(BaseModel):
+class EvaluateResponse(BaseModel):
     """Response containing evaluation results for one or more chunking strategies."""
 
     embedding_model: str
@@ -97,7 +96,7 @@ class EvaluationResponse(BaseModel):
     results: list[EvaluationMetrics]
 
 
-class EvaluationRequest(BaseModel):
+class EvaluateRequest(BaseModel):
     """Request to evaluate one or more chunking strategies on a document."""
 
     model_config = ConfigDict(
@@ -126,7 +125,6 @@ class EvaluationRequest(BaseModel):
         min_length=1,
     )
 
-    # Models and API
     embedding_model: str = Field(
         default="openai.text-embedding-3-large", description="Embedding model to use"
     )
@@ -142,7 +140,7 @@ class EvaluationRequest(BaseModel):
         description="Where to save generated queries (only used when generating queries)",
     )
 
-    query_generation_configs: QueryGenerationConfig | None = Field(
+    query_generation_config: QueryGenerationConfig | None = Field(
         default=None,
         description="Adjustable settings for LLM-powered query generation. Only"
         " used when queries_path is not provided. If not provided, default values will be used",
