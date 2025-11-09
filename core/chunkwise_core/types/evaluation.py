@@ -61,9 +61,8 @@ class GenerateQueriesRequest(BaseModel):
     document_paths: list[str] = Field(
         ..., description="List of document paths", min_length=1
     )
-    queries_output_dir: str = Field(
-        default="data", # only used for local dev
-        description="Where to save generated queries", min_length=1
+    queries_output_path: str = Field(
+        ..., description="Where to save generated queries", min_length=1
     )
     query_generation_config: QueryGenerationConfig = Field(
         default_factory=QueryGenerationConfig,
@@ -134,6 +133,11 @@ class EvaluateRequest(BaseModel):
         description="Optional: OpenAI API key, required if queries path not provided",
         repr=False,
         json_schema_extra={"writeOnly": True},
+    )
+
+    queries_output_dir: str = Field(
+        default="data",
+        description="Where to save generated queries (only used when generating queries)",
     )
 
     query_generation_config: QueryGenerationConfig | None = Field(
