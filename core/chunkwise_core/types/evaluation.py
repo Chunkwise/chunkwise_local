@@ -58,14 +58,9 @@ class GenerateQueriesRequest(BaseModel):
         repr=False,
         json_schema_extra={"writeOnly": True},
     )
-    # document_id: str = Field(
-    #     ...,
-    #     description="Unique identifier for a S3 document",
-    #     min_length=1,
-    # )
-    document_paths: list[str] = Field(
+    document_path: str = Field(
         ...,
-        description="List of paths to sample documents, from which queries will be generated",
+        description="Path to sample document, from which queries will be generated",
         min_length=1,
     )
     corpus_id: str = Field(
