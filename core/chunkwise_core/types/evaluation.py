@@ -58,12 +58,23 @@ class GenerateQueriesRequest(BaseModel):
         repr=False,
         json_schema_extra={"writeOnly": True},
     )
+    # document_id: str = Field(
+    #     ...,
+    #     description="Unique identifier for a S3 document",
+    #     min_length=1,
+    # )
     document_paths: list[str] = Field(
-        ..., description="List of document paths", min_length=1
+        ...,
+        description="List of paths to sample documents, from which queries will be generated",
+        min_length=1,
     )
-    queries_output_dir: str = Field(
-        default="data",  # only used for local testing
-        description="Where to save generated queries",
+    corpus_id: str = Field(
+        ...,
+        description="Canonical identifier for a corpus",
+        min_length=1,
+    )
+    queries_output_path: str = Field(
+        ..., description="Where to save generated queries", min_length=1
     )
     query_generation_config: QueryGenerationConfig = Field(
         default_factory=QueryGenerationConfig,
@@ -88,8 +99,8 @@ class EvaluateResponse(BaseModel):
     """Response containing evaluation results for one or more chunking strategies."""
 
     embedding_model: str
-    document_id: str
-    document_path: str
+    corpus_id: str
+    document_paths: list[str]
     queries_path: str
     queries_generated: bool
     num_queries: int | None = None
@@ -108,7 +119,7 @@ class EvaluateRequest(BaseModel):
     # Document and queries
     document_id: str = Field(
         ...,
-        description="Unique identifier for the S3 document",
+        description="Unique identifier for a S3 document",
         min_length=1,
     )
     # Optional for local testing - use document_id in production
