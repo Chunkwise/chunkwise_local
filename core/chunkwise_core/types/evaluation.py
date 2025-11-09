@@ -61,8 +61,9 @@ class GenerateQueriesRequest(BaseModel):
     document_paths: list[str] = Field(
         ..., description="List of document paths", min_length=1
     )
-    queries_output_path: str = Field(
-        ..., description="Where to save generated queries", min_length=1
+    queries_output_dir: str = Field(
+        default="data",  # only used for local testing
+        description="Where to save generated queries",
     )
     query_generation_config: QueryGenerationConfig = Field(
         default_factory=QueryGenerationConfig,
@@ -104,7 +105,6 @@ class EvaluateRequest(BaseModel):
         validate_assignment=True,
         extra="forbid",
     )
-
     # Document and queries
     document_id: str = Field(
         ...,
@@ -117,14 +117,12 @@ class EvaluateRequest(BaseModel):
         description="Path to the document to evaluate. Can be absolute or relative path",
         min_length=1,
     )
-
     queries_path: str | None = Field(
         default=None,
         description="Optional: path to queries CSV. If not provided, queries will "
         "be generated using LLM (requires OPENAI_API_KEY)",
         min_length=1,
     )
-
     embedding_model: str = Field(
         default="openai.text-embedding-3-large", description="Embedding model to use"
     )
@@ -134,18 +132,11 @@ class EvaluateRequest(BaseModel):
         repr=False,
         json_schema_extra={"writeOnly": True},
     )
-
-    queries_output_dir: str = Field(
-        default="data",
-        description="Where to save generated queries (only used when generating queries)",
-    )
-
     query_generation_config: QueryGenerationConfig | None = Field(
         default=None,
         description="Adjustable settings for LLM-powered query generation. Only"
         " used when queries_path is not provided. If not provided, default values will be used",
     )
-
     # A list of chunking configurations (multiple strategies)
     chunking_configs: list[ChunkerConfig] = Field(
         default_factory=lambda: [
