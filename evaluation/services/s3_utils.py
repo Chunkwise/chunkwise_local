@@ -12,12 +12,15 @@ import logging
 import tempfile
 import functools
 from contextlib import contextmanager
+import dotenv
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 
+dotenv.load_dotenv()
+
 logger = logging.getLogger(__name__)
 
-BUCKET_NAME = "chunkwise-test-eval"
+BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
 
 def _get_s3_client():
