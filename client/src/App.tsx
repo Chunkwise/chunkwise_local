@@ -34,6 +34,10 @@ export default function App() {
       });
   }, []);
 
+  const selectedWorkflow = state.workflows.find(
+    (workflow) => workflow.id === state.selectedWorkflowId
+  );
+
   const createWorkflow = (name: string) => {
     const newWorkflow: Workflow = {
       id: makeId(),
@@ -47,10 +51,6 @@ export default function App() {
   const selectWorkflow = (id: string) => {
     dispatch({ type: "SELECT_WORKFLOW", id });
   };
-
-  const selectedWorkflow = state.workflows.find(
-    (workflow) => workflow.id === state.selectedWorkflowId
-  );
 
   const updateWorkflow = (id: string, patch: Partial<Workflow>) => {
     if (patch.chunker) {
