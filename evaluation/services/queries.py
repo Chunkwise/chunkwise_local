@@ -28,7 +28,7 @@ async def resolve_queries(
     """
     Resolve queries from S3 or generate new ones.
 
-    Workflow:
+    Control flow:
     1. If queries_id is provided: Download the specified queries CSV file (return 404 if not found)
     2. If queries CSV file exists for document_id: Reuse it
     3. Otherwise: Generate new queries and upload a CSV file to S3
@@ -40,9 +40,6 @@ async def resolve_queries(
 
     Returns:
         Tuple of (temp_queries_path, queries_generated, num_queries, queries_s3_key)
-
-    Raises:
-        HTTPException: If queries_id specified but not found, or if download/generation fails
     """
     # User specified queries_id
     if request.queries_id:
@@ -116,7 +113,7 @@ def _generate_sample_queries(
     query_generation_config: QueryGenerationConfig = QueryGenerationConfig(),
 ) -> str:
     """
-    A wrapper around `SyntheticEvaluation` that generates a CSV of queries and
+    A wrapper around Chroma's `SyntheticEvaluation` that generates a CSV of queries and
     ground-truth excerpts for a single document.
 
     Args:
@@ -140,7 +137,6 @@ def _generate_sample_queries(
             openai_api_key=openai_api_key,
             # Map temp file path to canonical corpus ID
             corpus_id_override={document_path: corpus_id},
-            # chroma_db_path=chroma_db_path,
         )
 
         # Generate queries and excerpts
