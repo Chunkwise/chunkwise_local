@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2 import OperationalError
 from configparser import ConfigParser
+from server_types import Workflow, ChunkerConfig
 
 
 def get_db_info(filename, section):
@@ -42,7 +43,7 @@ def create_workflow() -> int:
         pass
 
 
-def update_workflow(workflow_id: int, updated_columns):
+def update_workflow(workflow_id: int, updated_columns) -> Workflow:
     try:
         pass
     except:
@@ -60,7 +61,7 @@ def delete_workflow(workflow_id: int) -> bool:
         pass
 
 
-def get_all_workflows() -> list:
+def get_all_workflows() -> list[Workflow]:
     try:
         pass
     except:
@@ -69,7 +70,7 @@ def get_all_workflows() -> list:
         pass
 
 
-def get_chunker_configuration(workflow_id) -> list:
+def get_chunker_configuration(workflow_id) -> ChunkerConfig:
     try:
         pass
     except:

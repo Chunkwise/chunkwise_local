@@ -1,5 +1,5 @@
-# from typing import Literal, Optional
-from pydantic import BaseModel
+from typing import Optional
+from pydantic import BaseModel, Optional
 from chunkwise_core import ChunkerConfig, Chunk, EvaluationResponse
 
 
@@ -43,3 +43,12 @@ class VisualizeResponse(BaseModel):
 
     stats: ChunkStatistics
     html: str
+
+
+class Workflow(BaseModel):
+    id: Optional[int]
+    document_id: Optional[int]
+    chunking_strategy: Optional[ChunkerConfig]
+    chunks_stats: Optional[ChunkStatistics]
+    visualization_html: Optional[str]
+    eval_metrics: Optional[EvaluationResponse]
