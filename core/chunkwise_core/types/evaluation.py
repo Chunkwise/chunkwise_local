@@ -93,7 +93,7 @@ class EvaluationRequest(BaseModel):
     query_generation_config: QueryGenerationConfig | None = Field(
         default=None,
         description="Adjustable settings for LLM-powered query generation. Only"
-        " used when queries_path is not provided. If not provided, default values will be used",
+        " used when generating queries. If not provided, default values will be used",
     )
     # A list of chunking configurations (multiple strategies)
     chunking_configs: list[ChunkerConfig] = Field(

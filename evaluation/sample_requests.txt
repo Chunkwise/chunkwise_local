@@ -48,6 +48,7 @@
 
 {
   "document_id": "sample_document_small",
+  "queries_id": "llm_queries_sample_document_small",
   "chunking_configs": [
     {
       "provider": "chonkie",
