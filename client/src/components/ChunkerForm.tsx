@@ -1,187 +1,124 @@
-import React, { useState, useEffect } from "react";
-import type {
-  Evals,
-  ChunkStats,
-  ChunkerSelection,
-  Config,
-} from "../types/types";
-import { getEvals, getVisualization, getConfigs } from "../services/gateway";
-import { ChunkStatistics } from "./ChunkStatistics";
-import Evaluations from "./Evaluations";
+import type { Workflow, Config } from "../types";
 
-export default function ChunkerForm() {
-  const [configs, setConfigs] = useState<Config[]>([]);
-  const [selectedConfig, setSelectedConfig] = useState<Config | undefined>(
-    undefined
-  );
-  const [chunkMaxSize, setChunkMaxSize] = useState<number>(500);
-  const [chunkOverlapOrMinChars, setChunkOverlapOrMinChars] =
-    useState<number>(500);
-  const [evals, setEvals] = useState<Evals>(() => ({
-    precision: 0,
-    omega_precision: 0,
-    recall: 0,
-    iou: 0,
-  }));
-  const [chunkStats, setChunkStats] = useState<ChunkStats>(() => ({
-    total_chunks: 0,
-    avg_chars: 0,
-    largest_chunk_chars: 0,
-    smallest_chunk_chars: 0,
-    largest_text: "",
-    smallest_text: "",
-  }));
+interface ChunkerFormProps {
+  workflow: Workflow;
+  configs: Config[];
+  selectedConfig?: Config;
+  onChunkerChange: (chunker: string) => void;
+  onConfigChange: (option: string, value: number) => void;
+}
 
-  useEffect(() => {
-    const fetchConfigs = async () => {
-      try {
-        const configs = await getConfigs();
-        setConfigs(configs);
-        if (configs.length > 0) {
-          setSelectedConfig(configs[0]);
-          setChunkMaxSize(configs[0].chunk_size.default);
-          setChunkOverlapOrMinChars(
-            configs[0].chunk_overlap
-              ? configs[0].chunk_overlap.default
-              : configs[0].min_characters_per_chunk
-              ? configs[0].min_characters_per_chunk.default
-              : 0
-          );
-        }
-      } catch (error: unknown) {
-        throw new Error("Unknown error: " + error);
-      }
-    };
-
-    fetchConfigs();
-  }, []);
-
-  function onChangeChunker(event: React.ChangeEvent<HTMLSelectElement>) {
-    setSelectedConfig(
-      configs.find((config) => config.name === event.target.value)
-    );
-  }
-
-  function onChangeChunkSize(event: React.ChangeEvent<HTMLInputElement>) {
-    setChunkMaxSize(Number(event.target.value));
-  }
-
-  function onChangeOverlap(event: React.ChangeEvent<HTMLInputElement>) {
-    setChunkOverlapOrMinChars(Number(event.target.value));
-  }
-
-  async function onVisualize(event: React.SyntheticEvent<Element, Event>) {
-    event.preventDefault();
-    const result = await getVisualization({
-      chunker: (selectedConfig?.name as ChunkerSelection) ?? "Chonkie Token",
-      size: chunkMaxSize,
-      overlap: chunkOverlapOrMinChars,
-    });
-
-    setChunkStats(result.stats);
-  }
-
-  async function onEvaluate(event: React.SyntheticEvent<Element, Event>) {
-    event.preventDefault();
-    const result = await getEvals({
-      chunker: (selectedConfig?.name as ChunkerSelection) ?? "Chonkie Token",
-      size: chunkMaxSize,
-      overlap: chunkOverlapOrMinChars,
-    });
-    setEvals(result);
-  }
-
+const ChunkerForm = ({
+  workflow,
+  configs,
+  selectedConfig,
+  onChunkerChange,
+  onConfigChange,
+}: ChunkerFormProps) => {
   return (
-    <div id="chunking-configuration">
-      {selectedConfig ? (
-        <form>
-          <h1>Configure Chunking Strategy</h1>
-          <label htmlFor="chunker">Chunker:</label>
+    <div className="details-row">
+      <h2 className="section-title">Chunker & configuration</h2>
+      <div className="box">
+        <div className="field">
+          <label className="label">Chunker</label>
           <select
-            id="chunker"
-            onChange={onChangeChunker}
-            value={selectedConfig.name}
+            className="select"
+            value={workflow.chunker ?? ""}
+            onChange={(event) => onChunkerChange(event.target.value)}
           >
+            <option value="">-- choose chunker --</option>
             {configs.map((config) => (
-              <option value={config.name} key={config.name}>
+              <option key={config.name} value={config.name}>
                 {config.name}
               </option>
             ))}
           </select>
-          <label htmlFor="chunk-max-size">Maximum Chunk Size:</label>
-          <input
-            id="chunk-max-size-range"
-            type="range"
-            step={1}
-            min={selectedConfig.chunk_size.min}
-            max={selectedConfig.chunk_size.max}
-            value={chunkMaxSize}
-            onChange={onChangeChunkSize}
-          />
-          <input
-            id="chunk-max-size"
-            type="number"
-            value={chunkMaxSize}
-            min={selectedConfig.chunk_size.min}
-            max={selectedConfig.chunk_size.max}
-            onChange={onChangeChunkSize}
-          />
-          {selectedConfig.chunk_overlap ? (
-            <label htmlFor="chunk-overlap">Chunk Overlap:</label>
-          ) : (
-            <label htmlFor="chunk-overlap">Minimum Chunk Size:</label>
-          )}
-          <input
-            id="chunk-overlap-range"
-            type="range"
-            step={1}
-            min={
-              selectedConfig.chunk_overlap
-                ? selectedConfig.chunk_overlap.min
-                : selectedConfig.min_characters_per_chunk
-                ? selectedConfig.min_characters_per_chunk.min
-                : 0
-            }
-            max={
-              selectedConfig.chunk_overlap
-                ? selectedConfig.chunk_overlap.max
-                : selectedConfig.min_characters_per_chunk
-                ? selectedConfig.min_characters_per_chunk.max
-                : 1000
-            }
-            value={chunkOverlapOrMinChars}
-            onChange={onChangeOverlap}
-          />
-          <input
-            id="chunk-overlap"
-            type="number"
-            value={chunkOverlapOrMinChars}
-            min={
-              selectedConfig.chunk_overlap
-                ? selectedConfig.chunk_overlap.min
-                : selectedConfig.min_characters_per_chunk
-                ? selectedConfig.min_characters_per_chunk.min
-                : 0
-            }
-            max={
-              selectedConfig.chunk_overlap
-                ? selectedConfig.chunk_overlap.max
-                : selectedConfig.min_characters_per_chunk
-                ? selectedConfig.min_characters_per_chunk.max
-                : 1000
-            }
-            onChange={onChangeOverlap}
-          />
-          <div id="buttons">
-            <button onClick={onVisualize}>Visualize</button>
-            <button onClick={onEvaluate}>Evaluate</button>
+        </div>
+
+        {workflow.chunker && selectedConfig ? (
+          <div className="config-area">
+            <div className="muted">
+              Configure chunker options (defaults pre-selected)
+            </div>
+
+            <div className="config-row">
+              <label className="label">Chunk size</label>
+              <input
+                type="number"
+                className="input"
+                value={
+                  workflow.chunkingConfig?.chunk_size ??
+                  selectedConfig.chunk_size.default
+                }
+                min={selectedConfig.chunk_size.min}
+                max={selectedConfig.chunk_size.max}
+                onChange={(e) =>
+                  onConfigChange("chunk_size", Number(e.target.value))
+                }
+              />
+              <small className="hint">
+                min {selectedConfig.chunk_size.min} — max{" "}
+                {selectedConfig.chunk_size.max}
+              </small>
+            </div>
+
+            {selectedConfig.chunk_overlap && (
+              <div className="config-row">
+                <label className="label">Chunk overlap</label>
+                <input
+                  type="number"
+                  className="input"
+                  value={
+                    workflow.chunkingConfig?.chunk_overlap ??
+                    selectedConfig.chunk_overlap.default
+                  }
+                  min={selectedConfig.chunk_overlap.min}
+                  max={selectedConfig.chunk_overlap.max}
+                  onChange={(e) =>
+                    onConfigChange("chunk_overlap", Number(e.target.value))
+                  }
+                />
+                <small className="hint">
+                  min {selectedConfig.chunk_overlap.min} — max{" "}
+                  {selectedConfig.chunk_overlap.max}
+                </small>
+              </div>
+            )}
+
+            {selectedConfig.min_characters_per_chunk && (
+              <div className="config-row">
+                <label className="label">Min chars per chunk</label>
+                <input
+                  type="number"
+                  className="input"
+                  value={
+                    workflow.chunkingConfig?.min_characters_per_chunk ??
+                    selectedConfig.min_characters_per_chunk.default
+                  }
+                  min={selectedConfig.min_characters_per_chunk.min}
+                  max={selectedConfig.min_characters_per_chunk.max}
+                  onChange={(e) =>
+                    onConfigChange(
+                      "min_characters_per_chunk",
+                      Number(e.target.value)
+                    )
+                  }
+                />
+                <small className="hint">
+                  min {selectedConfig.min_characters_per_chunk.min} — max{" "}
+                  {selectedConfig.min_characters_per_chunk.max}
+                </small>
+              </div>
+            )}
           </div>
-        </form>
-      ) : (
-        <div>Loading configs...</div>
-      )}
-      <ChunkStatistics {...chunkStats}></ChunkStatistics>
-      <Evaluations {...evals}></Evaluations>
+        ) : (
+          <div className="muted">
+            Choose a chunker to preview its config options.
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default ChunkerForm;

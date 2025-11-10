@@ -11,9 +11,8 @@ python = ">=3.13,<4.0"
 python-dotenv = "^1.2.1"
 fastapi = "^0.120.3"
 uvicorn = "^0.38.0"
-# Git dependency
 chunking-evaluation = { git = "https://github.com/Chunkwise/chunking_evaluation_refactored.git" }
-# Local path dependency; prefer a relative path and keep it editable during dev
+boto3 = "^1.40.69"
 chunkwise-core = { path = "../core", develop = true }
 
 [build-system]
