@@ -14,6 +14,9 @@ From the projects root directory use these commands:
 1. createdb chunkwise
 2. psql chunkwise < schema.sql
 
+Then setup the database connection in `/server/services/db_info.ini` to use your
+preferred username and password.
+
 ## To run each server:
 
 From each server's root directory use these commands:
