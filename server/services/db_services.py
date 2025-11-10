@@ -60,7 +60,7 @@ def delete_workflow(workflow_id: int) -> bool:
         pass
 
 
-def get_workflows() -> list:
+def get_all_workflows() -> list:
     try:
         pass
     except:
@@ -69,7 +69,7 @@ def get_workflows() -> list:
         pass
 
 
-def get_workflow() -> list:
+def get_chunker_configuration(workflow_id) -> list:
     try:
         pass
     except:
