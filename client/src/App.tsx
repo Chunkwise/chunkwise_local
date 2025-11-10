@@ -23,20 +23,20 @@ export default function App() {
     workflows: stored.workflows,
     selectedWorkflowId: stored.selectedWorkflowId,
   } as State);
-  const sampleDoc = { name: "about_git.txt", text: sampleText };
-
-  // Fetch chunkers and configs
   const [configs, setConfigs] = useState<Config[]>([]);
-  const [configsError, setConfigsError] = useState<string | null>(null);
+  const sampleDoc = { name: "about_git.txt", text: sampleText };
 
   useEffect(() => {
     getConfigs()
       .then((data) => setConfigs(data))
       .catch((error) => {
-        setConfigsError("Failed to load chunker configs from server.");
         console.error(error);
       });
   }, []);
+
+  const selectedWorkflow = state.workflows.find(
+    (workflow) => workflow.id === state.selectedWorkflowId
+  );
 
   const createWorkflow = (name: string) => {
     const newWorkflow: Workflow = {
@@ -51,10 +51,6 @@ export default function App() {
   const selectWorkflow = (id: string) => {
     dispatch({ type: "SELECT_WORKFLOW", id });
   };
-
-  const selectedWorkflow = state.workflows.find(
-    (workflow) => workflow.id === state.selectedWorkflowId
-  );
 
   const updateWorkflow = (id: string, patch: Partial<Workflow>) => {
     if (patch.chunker) {
@@ -85,7 +81,6 @@ export default function App() {
           <WorkflowDetails
             workflow={selectedWorkflow}
             configs={configs}
-            configsError={configsError}
             sampleDoc={sampleDoc}
             onUpdate={(patch) =>
               selectedWorkflow && updateWorkflow(selectedWorkflow.id, patch)

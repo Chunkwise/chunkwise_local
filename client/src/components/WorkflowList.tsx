@@ -9,13 +9,13 @@ type Props = {
   onDelete: (id: string) => void;
 };
 
-export default function WorkflowList({
+const WorkflowList = ({
   workflows,
   selectedId,
   onCreate,
   onSelect,
   onDelete,
-}: Props) {
+}: Props) => {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
 
@@ -95,4 +95,6 @@ export default function WorkflowList({
       </div>
     </div>
   );
-}
+};
+
+export default WorkflowList;
