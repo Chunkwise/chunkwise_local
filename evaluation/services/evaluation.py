@@ -48,9 +48,7 @@ async def evaluate(request: EvaluationRequest, embedding_func) -> EvaluationResp
             )
 
         # Download document
-        with download_file_temp(
-            document_s3_key, suffix=".txt", delete=False
-        ) as temp_doc_path:
+        with download_file_temp(document_s3_key, suffix=".txt") as temp_doc_path:
             if temp_doc_path is None:
                 raise HTTPException(
                     status_code=500, detail="Failed to download document from S3"

@@ -71,6 +71,27 @@ def _count_queries_in_csv(csv_path: str) -> int | None:
 
 def _download_queries(queries_s3_key: str) -> tuple[str, bool, int | None, str]:
     """Download queries from S3 to temp file."""
+    # with download_file_temp(queries_s3_key, suffix=".csv") as temp_queries_path:
+    #     if temp_queries_path is None:
+    #         raise HTTPException(
+    #             status_code=500,
+    #             detail=f"Failed to download queries from S3: {queries_s3_key}",
+    #         )
+
+    #     # Count queries while we have the file
+    #     num_queries = _count_queries_in_csv(temp_queries_path)
+
+    #     # Copy to a new temp file that won't be auto-deleted
+    #     new_temp_file = tempfile.NamedTemporaryFile(
+    #         mode="w+b", suffix=".csv", delete=False
+    #     )
+    #     new_temp_path = new_temp_file.name
+    #     new_temp_file.close()
+
+    #     # Copy the contents
+    #     shutil.copy2(temp_queries_path, new_temp_path)
+
+    #     return new_temp_path, False, num_queries, queries_s3_key
     with download_file_temp(queries_s3_key, suffix=".csv") as temp_queries_path:
         if temp_queries_path is None:
             raise HTTPException(
@@ -78,20 +99,8 @@ def _download_queries(queries_s3_key: str) -> tuple[str, bool, int | None, str]:
                 detail=f"Failed to download queries from S3: {queries_s3_key}",
             )
 
-        # Count queries while we have the file
         num_queries = _count_queries_in_csv(temp_queries_path)
-
-        # Copy to a new temp file that won't be auto-deleted
-        new_temp_file = tempfile.NamedTemporaryFile(
-            mode="w+b", suffix=".csv", delete=False
-        )
-        new_temp_path = new_temp_file.name
-        new_temp_file.close()
-
-        # Copy the contents
-        shutil.copy2(temp_queries_path, new_temp_path)
-
-        return new_temp_path, False, num_queries, queries_s3_key
+        return temp_queries_path, False, num_queries, queries_s3_key
 
 
 def _generate_sample_queries(
