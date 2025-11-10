@@ -1,11 +1,18 @@
+import os
 from typing import Literal, Callable, Annotated
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field, ConfigDict, model_validator, field_serializer
 from chonkie.types import RecursiveRules
+from chonkie.genie import OpenAIGenie
+from chonkie.embeddings import OpenAIEmbeddings
 
+load_dotenv()
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # ChunkerConfig models using Pydantic v2
 # Only considering 4 chunkers for now
-class LangChainBaseChunkerConfig(BaseModel):
+class LangChainBaseConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
     provider: Literal["langchain"] = "langchain"
     chunk_size: int = Field(default=4000, ge=1)
@@ -16,7 +23,7 @@ class LangChainBaseChunkerConfig(BaseModel):
     strip_whitespace: bool = True
 
     @model_validator(mode="after")
-    def validate_overlap(self) -> "LangChainBaseChunkerConfig":
+    def validate_overlap(self) -> "LangChainBaseConfig":
         """Validate that chunk_overlap < chunk_size."""
         if self.chunk_overlap >= self.chunk_size:
             raise ValueError(
@@ -30,14 +37,20 @@ class LangChainBaseChunkerConfig(BaseModel):
         return getattr(fn, "__name__", "<callable>")
 
 
-class LangChainRecursiveConfig(LangChainBaseChunkerConfig):
+class LangChainCharacterConfig(LangChainBaseConfig):
+    chunker_type: Literal["character"] = "character"
+    separator: str = "\n\n"
+    is_separator_regex: bool = False
+
+
+class LangChainRecursiveConfig(LangChainBaseConfig):
     chunker_type: Literal["recursive"] = "recursive"
     separators: list[str] | None = None
     keep_separator: bool | Literal["start", "end"] = True
     is_separator_regex: bool = False
 
 
-class LangChainTokenConfig(LangChainBaseChunkerConfig):
+class LangChainTokenConfig(LangChainBaseConfig):
     chunker_type: Literal["token"] = "token"
     encoding_name: str = "gpt2"
     model_name: str | None = None
@@ -45,13 +58,13 @@ class LangChainTokenConfig(LangChainBaseChunkerConfig):
     disallowed_special: Literal["all"] | set[str] = "all"
 
 
-class ChonkieBaseChunkerConfig(BaseModel):
+class ChonkieBaseConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     provider: Literal["chonkie"] = "chonkie"
     tokenizer: Literal["character", "word", "gpt2"] | str = "gpt2"
 
 
-class ChonkieRecursiveConfig(ChonkieBaseChunkerConfig):
+class ChonkieRecursiveConfig(ChonkieBaseConfig):
     chunker_type: Literal["recursive"] = "recursive"
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     rules: RecursiveRules = Field(default_factory=RecursiveRules)
@@ -59,7 +72,7 @@ class ChonkieRecursiveConfig(ChonkieBaseChunkerConfig):
     min_characters_per_chunk: int = Field(default=24, gt=0)
 
 
-class ChonkieTokenConfig(ChonkieBaseChunkerConfig):
+class ChonkieTokenConfig(ChonkieBaseConfig):
     chunker_type: Literal["token"] = "token"
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     chunk_size: int = Field(default=2048, gt=0)
@@ -81,12 +94,57 @@ class ChonkieTokenConfig(ChonkieBaseChunkerConfig):
         return self
 
 
+class ChonkieSentenceConfig(ChonkieBaseConfig):
+    chunker_type: Literal["sentence"] = "sentence"
+    tokenizer: Literal["character", "word", "gpt2"] | str = "character"
+    chunk_size: int = 2048
+    chunk_overlap: int = 0
+    min_sentences_per_chunk: int = 1
+    min_characters_per_sentence: int = 12
+    approximate: bool = False
+    delim: str | list[str] = [". ", "! ", "? ", "\n"]
+    include_delim: Literal["prev", "next"] | None = "prev"
+
+
+class ChonkieSemanticConfig(ChonkieBaseConfig):
+    chunker_type: Literal["semantic"] = "semantic"
+    embedding_model: str | OpenAIEmbeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
+    threshold: float = 0.8
+    chunk_size: int = 2048
+    similarity_window: int = 3
+    min_sentences_per_chunk: int = 1
+    min_characters_per_sentence: int = 24
+    delim: str | list[str] = [". ", "! ", "? ", "\n"]
+    include_delim: Literal["prev", "next"] | None = "prev"
+    skip_window: int = 0
+    filter_window: int = 5
+    filter_polyorder: int = 3
+    filter_tolerance: float = 0.2
+
+
+class ChonkieSlumberConfig(ChonkieBaseConfig):
+    chunker_type: Literal["slumber"] = "slumber"
+    genie: OpenAIGenie | None = OpenAIGenie(api_key=OPENAI_API_KEY)
+    tokenizer: Literal["character", "word", "gpt2"] | str = "character"
+    chunk_size: int = 2048
+    rules: RecursiveRules = RecursiveRules()
+    candidate_size: int = 128
+    min_characters_per_chunk: int = 24
+    verbose: bool = True
+
+
 LangChainConfigs = Annotated[
-    LangChainRecursiveConfig | LangChainTokenConfig, Field(discriminator="chunker_type")
+    LangChainCharacterConfig | LangChainRecursiveConfig | LangChainTokenConfig,
+    Field(discriminator="chunker_type"),
 ]
 
 ChonkieConfigs = Annotated[
-    ChonkieRecursiveConfig | ChonkieTokenConfig, Field(discriminator="chunker_type")
+    ChonkieRecursiveConfig
+    | ChonkieTokenConfig
+    | ChonkieSentenceConfig
+    | ChonkieSemanticConfig
+    | ChonkieSlumberConfig,
+    Field(discriminator="chunker_type"),
 ]
 
 ChunkerConfig = Annotated[
