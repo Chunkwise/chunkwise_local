@@ -6,7 +6,6 @@ export type State = {
 };
 
 export type Action =
-  | { type: "INIT"; workflows: Workflow[] }
   | { type: "CREATE_WORKFLOW"; workflow: Workflow }
   | { type: "SELECT_WORKFLOW"; id?: string }
   | { type: "UPDATE_WORKFLOW"; id: string; patch: Partial<Workflow> }
@@ -14,12 +13,6 @@ export type Action =
 
 export function workflowReducer(state: State, action: Action): State {
   switch (action.type) {
-    case "INIT":
-      return {
-        ...state,
-        workflows: action.workflows,
-        selectedWorkflowId: action.workflows[0]?.id,
-      };
     case "CREATE_WORKFLOW":
       return {
         ...state,
@@ -31,12 +24,16 @@ export function workflowReducer(state: State, action: Action): State {
     case "UPDATE_WORKFLOW":
       return {
         ...state,
-        workflows: state.workflows.map((w) =>
-          w.id === action.id ? { ...w, ...action.patch } : w
+        workflows: state.workflows.map((workflow) =>
+          workflow.id === action.id
+            ? { ...workflow, ...action.patch }
+            : workflow
         ),
       };
     case "DELETE_WORKFLOW": {
-      const remaining = state.workflows.filter((w) => w.id !== action.id);
+      const remaining = state.workflows.filter(
+        (workflow) => workflow.id !== action.id
+      );
       const selected =
         state.selectedWorkflowId === action.id
           ? remaining[0]?.id

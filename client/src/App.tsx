@@ -1,5 +1,4 @@
 import { useEffect, useReducer, useState } from "react";
-import axios from "axios";
 import type { Workflow, Config } from "./types";
 import Header from "./components/Header";
 import WorkflowList from "./components/WorkflowList";
@@ -7,7 +6,8 @@ import WorkflowDetails from "./components/WorkflowDetails";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { State } from "./reducers/workflowReducer";
 import { workflowReducer } from "./reducers/workflowReducer";
-import "./styles.css";
+import { getConfigs } from "./services/getConfigs";
+import sampleText from "./assets/about_git_sample_text.txt?raw";
 
 const STORAGE_KEY = "chunkwise_workflows_v1";
 
@@ -15,74 +15,57 @@ function makeId() {
   return Math.random().toString(36).slice(2, 9);
 }
 
-const SAMPLE_DOC_NAME = "sample-document.txt";
-const SAMPLE_DOC_TEXT = `This is a short sample document used for chunker testing.
-You can replace this with your own .txt file (max 50KB).`;
-
 export default function App() {
   const [stored, setStored] = useLocalStorage<State>(STORAGE_KEY, {
     workflows: [],
   });
   const [state, dispatch] = useReducer(workflowReducer, {
-    workflows: stored.workflows ?? [],
+    workflows: stored.workflows,
     selectedWorkflowId: stored.selectedWorkflowId,
   } as State);
+  const sampleDoc = { name: "about_git.txt", text: sampleText };
 
-  useEffect(() => {
-    setStored(state);
-  }, [state, setStored]);
-
-  // Fetch chunker configs
+  // Fetch chunkers and configs
   const [configs, setConfigs] = useState<Config[]>([]);
   const [configsError, setConfigsError] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    axios
-      .get<Config[]>("/api/documents/configs")
-      .then((r) => {
-        if (!cancelled) setConfigs(r.data);
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          setConfigsError("Failed to load chunker configs from server.");
-          console.error(e);
-        }
+    getConfigs()
+      .then((data) => setConfigs(data))
+      .catch((error) => {
+        setConfigsError("Failed to load chunker configs from server.");
+        console.error(error);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
-  useEffect(() => {
-    dispatch({ type: "INIT", workflows: stored.workflows ?? [] });
-  }, [stored.workflows]);
-
   const createWorkflow = (name: string) => {
-    const newW: Workflow = {
+    const newWorkflow: Workflow = {
       id: makeId(),
       name,
-      createdAt: new Date().toISOString(),
-      stage: "draft",
+      createdAt: new Date().toLocaleString(),
+      stage: "Draft",
     };
-    dispatch({ type: "CREATE_WORKFLOW", workflow: newW });
+    dispatch({ type: "CREATE_WORKFLOW", workflow: newWorkflow });
   };
 
-  const selectWorkflow = (id?: string) => {
+  const selectWorkflow = (id: string) => {
     dispatch({ type: "SELECT_WORKFLOW", id });
   };
 
+  const selectedWorkflow = state.workflows.find(
+    (workflow) => workflow.id === state.selectedWorkflowId
+  );
+
   const updateWorkflow = (id: string, patch: Partial<Workflow>) => {
-    const patch2 = { ...patch };
     if (patch.chunker) {
-      patch2.stage = "configured";
+      patch.stage = "Configured";
     }
-    dispatch({ type: "UPDATE_WORKFLOW", id, patch: patch2 });
+    dispatch({ type: "UPDATE_WORKFLOW", id, patch: patch });
   };
 
-  const selectedWorkflow = state.workflows.find(
-    (w) => w.id === state.selectedWorkflowId
-  );
+  useEffect(() => {
+    setStored(state);
+  }, [state, setStored]);
 
   return (
     <div className="app-root">
@@ -103,7 +86,7 @@ export default function App() {
             workflow={selectedWorkflow}
             configs={configs}
             configsError={configsError}
-            sampleDoc={{ name: SAMPLE_DOC_NAME, text: SAMPLE_DOC_TEXT }}
+            sampleDoc={sampleDoc}
             onUpdate={(patch) =>
               selectedWorkflow && updateWorkflow(selectedWorkflow.id, patch)
             }
