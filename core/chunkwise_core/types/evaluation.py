@@ -6,7 +6,7 @@ class QueryGenerationConfig(BaseModel):
     """
     Adjustable configurations for LLM-powered query generation.
 
-    These settings control how synthetic queries are generated from documents
+    These settings control how queries are generated from documents
     for evaluation purposes.
     """
 

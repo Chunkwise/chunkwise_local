@@ -8,6 +8,7 @@ from fastapi import HTTPException
 from chunking_evaluation.evaluation_framework.base_evaluation import BaseEvaluation
 from chunkwise_core import (
     create_chunker,
+    ChunkerConfig,
     EvaluationRequest,
     EvaluationResponse,
     EvaluationMetrics,
@@ -99,7 +100,7 @@ async def evaluate(request: EvaluationRequest, embedding_func) -> EvaluationResp
 
 
 def run_evaluations(
-    evaluation: BaseEvaluation, chunking_configs: list, embedding_func
+    evaluation: BaseEvaluation, chunking_configs: list[ChunkerConfig], embedding_func
 ) -> tuple[list[str], list[EvaluationMetrics]]:
     """Run evaluation for all chunking configurations."""
     results = []
