@@ -25,8 +25,54 @@ def get_db_connection():
     try:
         db_info = get_db_info("db_info.ini", "chunkwise-db")
         db_connection = psycopg2.connect(**db_info)
+        print("Successfully connected to database.")
 
     except OperationalError:
         print("Error connecting to the database.")
 
     return db_connection
+
+
+def create_workflow() -> int:
+    try:
+        pass
+    except:
+        pass
+    finally:
+        pass
+
+
+def update_workflow(workflow_id: int, updated_columns):
+    try:
+        pass
+    except:
+        pass
+    finally:
+        pass
+
+
+def delete_workflow(workflow_id: int) -> bool:
+    try:
+        pass
+    except:
+        pass
+    finally:
+        pass
+
+
+def get_workflows() -> list:
+    try:
+        pass
+    except:
+        pass
+    finally:
+        pass
+
+
+def get_workflow() -> list:
+    try:
+        pass
+    except:
+        pass
+    finally:
+        pass
