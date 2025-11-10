@@ -8,10 +8,9 @@ from .chunker_config import (
 )
 from .evaluation import (
     QueryGenerationConfig,
-    GenerateQueriesRequest,
     EvaluationMetrics,
-    EvaluateResponse,
-    EvaluateRequest,
+    EvaluationResponse,
+    EvaluationRequest,
 )
 
 __all__ = [
@@ -22,8 +21,7 @@ __all__ = [
     "ChonkieTokenConfig",
     "ChunkerConfig",
     "QueryGenerationConfig",
-    "GenerateQueriesRequest",
     "EvaluationMetrics",
-    "EvaluateResponse",
-    "EvaluateRequest",
+    "EvaluationResponse",
+    "EvaluationRequest",
 ]

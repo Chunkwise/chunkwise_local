@@ -39,47 +39,6 @@ class QueryGenerationConfig(BaseModel):
     )
 
 
-class GenerateQueriesRequest(BaseModel):
-    """
-    Request to generate queries for the input document via LLM (OpenAI by default).
-
-    Note: kept here for use in later phases for the internal generat_queries endpoint
-    """
-
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True,
-        extra="forbid",
-    )
-    openai_api_key: str = Field(
-        ...,
-        description="Your OpenAI API key",
-        min_length=1,
-        repr=False,
-        json_schema_extra={"writeOnly": True},
-    )
-    document_path: str = Field(
-        ...,
-        description="Path to sample document, from which queries will be generated",
-        min_length=1,
-    )
-    corpus_id: str = Field(
-        ...,
-        description="Canonical identifier for a corpus",
-        min_length=1,
-    )
-    queries_output_path: str = Field(
-        ..., description="Where to save generated queries", min_length=1
-    )
-    query_generation_config: QueryGenerationConfig = Field(
-        default_factory=QueryGenerationConfig,
-        description="Adjustable settings for query generation",
-    )
-    # chroma_db_path: str | None = Field(
-    #     default=None, description="Optional: path to ChromaDB"
-    # )
-
-
 class EvaluationMetrics(BaseModel):
     """Evaluation metrics for a single chunking configuration."""
 
@@ -87,23 +46,22 @@ class EvaluationMetrics(BaseModel):
     recall_mean: float
     precision_mean: float
     precision_omega_mean: float
-    chunker_config: ChunkerConfig
 
 
-class EvaluateResponse(BaseModel):
+class EvaluationResponse(BaseModel):
     """Response containing evaluation results for one or more chunking strategies."""
 
     embedding_model: str
     corpus_id: str
-    document_paths: list[str]
-    queries_path: str
+    document_s3_key: str
+    queries_s3_key: str
     queries_generated: bool
     num_queries: int | None = None
     chunkers_evaluated: list[str]
     results: list[EvaluationMetrics]
 
 
-class EvaluateRequest(BaseModel):
+class EvaluationRequest(BaseModel):
     """Request to evaluate one or more chunking strategies on a document."""
 
     model_config = ConfigDict(
@@ -111,22 +69,16 @@ class EvaluateRequest(BaseModel):
         validate_assignment=True,
         extra="forbid",
     )
-    # Document and queries
+    # S3-based (for production)
     document_id: str = Field(
         ...,
         description="Unique identifier for a S3 document",
         min_length=1,
     )
-    # Optional for local testing - use document_id in production
-    document_path: str | None = Field(
+    queries_id: str | None = Field(
         default=None,
-        description="Path to the document to evaluate. Can be absolute or relative path",
-        min_length=1,
-    )
-    queries_path: str | None = Field(
-        default=None,
-        description="Optional: path to queries CSV. If not provided, queries will "
-        "be generated using LLM (requires OPENAI_API_KEY)",
+        description="Optional: Queries identifier in S3. If not provided and document_id "
+        "is used, will reuse existing queries for that document or generate new ones.",
         min_length=1,
     )
     embedding_model: str = Field(
