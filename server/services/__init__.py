@@ -1,4 +1,4 @@
-from .local_services import get_chunks, get_visualization, get_evaluation
+from .chunkwise_services import get_chunks, get_visualization, get_evaluation
 from .s3_services import (
     download_s3_file,
     upload_s3_file,
