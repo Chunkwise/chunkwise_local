@@ -18,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 BUCKET_NAME = "chunkwise-test-eval"
 
-_s3_client = None
-
+_s3_client = None 
 
 def _get_s3_client():
     """
@@ -37,6 +36,12 @@ def _get_s3_client():
     global _s3_client
     if _s3_client is None:
         _s3_client = boto3.client("s3")
+        # Validate bucket exists
+        try:
+            _s3_client.head_bucket(Bucket=BUCKET_NAME)
+        except ClientError:
+            logger.error("S3 bucket %s does not exist or is not accessible", BUCKET_NAME)
+            raise
     return _s3_client
 
 
