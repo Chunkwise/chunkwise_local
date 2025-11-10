@@ -46,7 +46,7 @@ async def evaluate(request: EvaluationRequest, embedding_func) -> EvaluationResp
                 status_code=404, detail=f"Document not found in S3: {document_s3_key}"
             )
 
-        # Download document - keep it for the entire evaluation
+        # Download document
         with download_file_temp(
             document_s3_key, suffix=".txt", delete=False
         ) as temp_doc_path:
@@ -71,17 +71,17 @@ async def evaluate(request: EvaluationRequest, embedding_func) -> EvaluationResp
                 evaluation, request.chunking_configs, embedding_func
             )
 
-        # Return response
-        return EvaluationResponse(
-            embedding_model=request.embedding_model,
-            corpus_id=canonical_corpus_id,
-            document_s3_key=document_s3_key,
-            queries_s3_key=queries_s3_key,
-            queries_generated=queries_generated,
-            num_queries=num_queries,
-            chunkers_evaluated=chunker_names,
-            results=results,
-        )
+            # Return response
+            return EvaluationResponse(
+                embedding_model=request.embedding_model,
+                corpus_id=canonical_corpus_id,
+                document_s3_key=document_s3_key,
+                queries_s3_key=queries_s3_key,
+                queries_generated=queries_generated,
+                num_queries=num_queries,
+                chunkers_evaluated=chunker_names,
+                results=results,
+            )
 
     finally:
         # Cleanup temp files

@@ -1,10 +1,14 @@
->> request body for MVP with S3 integration:
+------------------sample requests for MVP with S3 integration---------------
 
 * "sample_document_medium" is the id of the S3 document to evaluate (i.e., document name without extension)
-* This query uses the existing queries csv file, which was generated and stored in S3 in the previous request
 
+>> request body 1:
 {
-  "document_id": "sample_document_medium", 
+  "document_id": "sample_document_small",
+  "query_generation_config": {
+    "num_rounds": 1,
+    "queries_per_corpus": 3,
+  },
   "chunking_configs": [
     {
       "provider": "langchain",
@@ -15,26 +19,105 @@
   ]
 }
 
->> response: 
+>> response 1: 
 {
   "embedding_model": "openai.text-embedding-3-large",
-  "corpus_id": "sample_document_medium",
-  "document_s3_key": "documents/sample_document_medium.txt",
-  "queries_s3_key": "queries/sample_document_medium/llm_queries_sample_document_medium.csv",
-  "queries_generated": false,
-  "num_queries": 1,
+  "corpus_id": "sample_document_small",
+  "document_s3_key": "documents/sample_document_small.txt",
+  "queries_s3_key": "queries/sample_document_small/llm_queries_sample_document_small.csv",
+  "queries_generated": true,
+  "num_queries": 2,
   "chunkers_evaluated": [
     "langchain recursive"
   ],
   "results": [
     {
-      "iou_mean": 0.495114006514658,
+      "iou_mean": 0.2017241379310345,
       "recall_mean": 1.0,
-      "precision_mean": 0.495114006514658,
-      "precision_omega_mean": 0.7111111111111111
+      "precision_mean": 0.2017241379310345,
+      "precision_omega_mean": 0.6003401360544218
     }
   ]
 }
+
+-----------------------
+>> request body 2:
+
+* This query uses the existing queries csv file, which was generated and stored
+ in S3 in the previous request
+
+{
+  "document_id": "sample_document_small",
+  "chunking_configs": [
+    {
+      "provider": "chonkie",
+      "chunker_type": "token",
+      "chunk_size": 400,
+      "chunk_overlap": 20
+    }
+  ]
+}
+
+>> response 2: 
+{
+  "embedding_model": "openai.text-embedding-3-large",
+  "corpus_id": "sample_document_small",
+  "document_s3_key": "documents/sample_document_small.txt",
+  "queries_s3_key": "queries/sample_document_small/llm_queries_sample_document_small.csv",
+  "queries_generated": false,
+  "num_queries": 2,
+  "chunkers_evaluated": [
+    "chonkie token"
+  ],
+  "results": [
+    {
+      "iou_mean": 0.19138495092693564,
+      "recall_mean": 1.0,
+      "precision_mean": 0.19138495092693564,
+      "precision_omega_mean": 0.3206089743589744
+    }
+  ]
+}
+
+-----------------
+>> request body 3 (using a different chunker):
+{
+  "document_id": "test_document",
+  "query_generation_config": {
+    "num_rounds": 1,
+    "queries_per_corpus": 3
+  },
+  "chunking_configs": [
+    {
+      "provider": "chonkie",
+      "chunker_type": "token",
+      "chunk_size": 400,
+      "chunk_overlap": 30
+    }
+  ]
+}
+
+>> response 3:
+{
+    "embedding_model": "openai.text-embedding-3-large",
+    "corpus_id": "test_document",
+    "document_s3_key": "documents/test_document.txt",
+    "queries_s3_key": "queries/test_document/llm_queries_test_document.csv",
+    "queries_generated": true,
+    "num_queries": 3,
+    "chunkers_evaluated": [
+        "chonkie token"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.18521525215252152,
+            "recall_mean": 0.8313253012048193,
+            "precision_mean": 0.18733333333333332,
+            "precision_omega_mean": 0.23745487217185332
+        }
+    ]
+}
+
 
 -----------------------Legacy sample requests (local file storage)-----------------------
 

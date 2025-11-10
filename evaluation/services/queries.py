@@ -204,4 +204,3 @@ async def _handle_query_generation(
         logger.warning("Failed to upload queries to S3: %s", queries_s3_key)
 
     return final_queries_path, True, num_queries, queries_s3_key
-
