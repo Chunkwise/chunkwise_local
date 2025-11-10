@@ -3,37 +3,24 @@ from .chunker_config import ChunkerConfig, LangChainRecursiveConfig
 
 
 class QueryGenerationConfig(BaseModel):
-    """Configuration for query generation."""
+    """
+    Adjustable configurations for LLM-powered query generation.
 
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True,
-        frozen=False,
-        extra="forbid",
-    )
-    openai_api_key: str = Field(
-        ...,
-        description="Your OpenAI API key",
-        min_length=1,
-        repr=False,
-        json_schema_extra={"writeOnly": True},
-    )
-    document_paths: list[str] = Field(
-        ..., description="List of document paths", min_length=1
-    )
-    queries_output_path: str = Field(
-        ..., description="Where to save generated queries", min_length=1
-    )
-    chroma_db_path: str | None = Field(
-        default=None, description="Optional: path to ChromaDB"
-    )
+    These settings control how queries are generated from documents
+    for evaluation purposes.
+    """
+
     num_rounds: int = Field(
         default=1,
         description="Number of rounds to generate queries",
         ge=1,
+        le=3,
     )
     queries_per_corpus: int = Field(
-        default=5, description="Number of queries to generate per document", gt=0
+        default=5,
+        description="Number of queries to generate per document",
+        ge=1,
+        le=10,
     )
     approximate_excerpts: bool = Field(
         default=False, description="Set to True for approximate reference extraction"
@@ -52,7 +39,7 @@ class QueryGenerationConfig(BaseModel):
     )
 
 
-class Evaluation(BaseModel):
+class EvaluationMetrics(BaseModel):
     """Evaluation metrics for a single chunking configuration."""
 
     iou_mean: float
@@ -65,13 +52,13 @@ class EvaluationResponse(BaseModel):
     """Response containing evaluation results for one or more chunking strategies."""
 
     embedding_model: str
-    document_id: str
-    document_path: str
-    queries_path: str
+    corpus_id: str
+    document_s3_key: str
+    queries_s3_key: str
     queries_generated: bool
     num_queries: int | None = None
     chunkers_evaluated: list[str]
-    results: list[Evaluation]
+    results: list[EvaluationMetrics]
 
 
 class EvaluationRequest(BaseModel):
@@ -82,28 +69,18 @@ class EvaluationRequest(BaseModel):
         validate_assignment=True,
         extra="forbid",
     )
-
-    # Document and queries
-    # Teporarily optional for MVP testing - remove `None` option after document storage is setup
-    document_path: str | None = Field(
-        default=None,
-        description="Path to the document to evaluate. Can be absolute or relative path",
+    # S3-based (for production)
+    document_id: str = Field(
+        ...,
+        description="Unique identifier for a S3 document",
         min_length=1,
     )
-    # `document` field is temporary for MVP testing
-    document: str | None = Field(
+    queries_id: str | None = Field(
         default=None,
-        description="Document content as a string. Use this for MVP testing. ",
+        description="Optional: Queries identifier in S3. If not provided and document_id "
+        "is used, will reuse existing queries for that document or generate new ones.",
         min_length=1,
     )
-    queries_path: str | None = Field(
-        default=None,
-        description="Optional: path to queries CSV. If not provided, queries will "
-        "be generated using LLM (requires OPENAI_API_KEY)",
-        min_length=1,
-    )
-
-    # Models and API
     embedding_model: str = Field(
         default="openai.text-embedding-3-large", description="Embedding model to use"
     )
@@ -113,36 +90,11 @@ class EvaluationRequest(BaseModel):
         repr=False,
         json_schema_extra={"writeOnly": True},
     )
-
-    # Query generation settings
-    queries_output_dir: str = Field(
-        default="data",
-        description="Where to save generated queries (only used when generating queries)",
+    query_generation_config: QueryGenerationConfig | None = Field(
+        default=None,
+        description="Adjustable settings for LLM-powered query generation. Only"
+        " used when generating queries. If not provided, default values will be used",
     )
-    num_rounds: int = Field(
-        default=1, ge=1, le=3, description="Number of rounds to generate queries"
-    )
-    queries_per_corpus: int = Field(
-        default=5, ge=3, le=10, description="Number of queries to generate per document"
-    )
-
-    # Evaluation settings
-    approximate_excerpts: bool = Field(
-        default=False, description="Set to True for approximate reference extraction"
-    )
-    poor_reference_threshold: float = Field(
-        default=0.36,
-        ge=0.0,
-        le=1.0,
-        description="Threshold for filtering poor references",
-    )
-    duplicate_question_threshold: float = Field(
-        default=0.78,
-        ge=0.0,
-        le=1.0,
-        description="Threshold for filtering duplicate questions",
-    )
-
     # A list of chunking configurations (multiple strategies)
     chunking_configs: list[ChunkerConfig] = Field(
         default_factory=lambda: [
