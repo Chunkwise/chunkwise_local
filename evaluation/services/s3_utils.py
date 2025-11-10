@@ -10,6 +10,7 @@ This module provides functions to interact with AWS S3 for:
 import os
 import logging
 import tempfile
+import functools
 from contextlib import contextmanager
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
@@ -18,31 +19,32 @@ logger = logging.getLogger(__name__)
 
 BUCKET_NAME = "chunkwise-test-eval"
 
-_s3_client = None 
 
 def _get_s3_client():
     """
-    Get a boto3 S3 client using implicit credentials.
-    Reuses the same client across calls for efficiency.
+    Get S3 client (cached at module level).
 
-    Credentials are automatically loaded from:
-    - AWS CLI config (~/.aws/credentials)
-    - Environment variables
-    - IAM roles (if running on AWS)
-
-    Returns:
-        boto3 S3 client
+    Note: This relies on Lambda container reuse. The client is created
+    once per container and reused across invocations in that container.
     """
-    global _s3_client
-    if _s3_client is None:
-        _s3_client = boto3.client("s3")
-        # Validate bucket exists
-        try:
-            _s3_client.head_bucket(Bucket=BUCKET_NAME)
-        except ClientError:
-            logger.error("S3 bucket %s does not exist or is not accessible", BUCKET_NAME)
-            raise
-    return _s3_client
+    # Use functools.lru_cache for cleaner caching
+    return _create_client()
+
+
+@functools.lru_cache(maxsize=1)
+def _create_client():
+    """Create and cache S3 client."""
+    try:
+        client = boto3.client("s3")
+        # Validate bucket on first creation
+        client.head_bucket(Bucket=BUCKET_NAME)
+        logger.info("S3 client initialized for bucket: %s", BUCKET_NAME)
+        return client
+    except ClientError as e:
+        logger.error(
+            "S3 bucket %s does not exist or is not accessible: %s", BUCKET_NAME, e
+        )
+        raise
 
 
 def upload_file(local_path: str, s3_key: str) -> bool:
@@ -109,21 +111,23 @@ def download_file(s3_key: str, local_path: str) -> bool:
 
 
 @contextmanager
-def download_file_temp(s3_key: str, suffix: str | None):
+def download_file_temp(s3_key: str, suffix: str | None = None, delete: bool = True):
     """
     Download a file from S3 to a temporary file (context manager).
 
-    The temporary file is automatically cleaned up when the context exits.
-    Works seamlessly in both local development and AWS Lambda.
+    The temporary file is automatically cleaned up when the context exits
+    unless delete=False is specified.
 
     Args:
         s3_key: S3 object key (path within bucket)
         suffix: Optional file suffix (e.g., '.txt', '.csv')
+        delete: Whether to delete the temp file on exit (default: True)
 
     Yields:
         str: Path to the temporary file, or None if download failed
     """
     temp_file = None
+    temp_path = None
     try:
         # Create a temporary file
         temp_file = tempfile.NamedTemporaryFile(
@@ -154,13 +158,13 @@ def download_file_temp(s3_key: str, suffix: str | None):
         logger.error("AWS credentials not found")
         yield None
     finally:
-        # Clean up temporary file
-        if temp_file and os.path.exists(temp_file.name):
+        # Clean up temporary file only if delete=True
+        if delete and temp_path and os.path.exists(temp_path):
             try:
-                os.unlink(temp_file.name)
+                os.unlink(temp_path)
             except Exception as e:
                 logger.warning(
-                    "Failed to delete temporary file %s: %s", temp_file.name, e
+                    "Failed to delete temporary file %s: %s", temp_path, e
                 )
 
 
@@ -273,19 +277,3 @@ def get_queries_s3_key(document_id: str) -> str:
         document_id = document_id[:-4]
 
     return f"queries/{document_id}/llm_queries_{document_id}.csv"
-
-
-def is_s3_configured() -> bool:
-    """
-    Check if S3 is properly configured.
-    
-    Returns:
-        True if S3 client can be created and credentials are available
-    """
-    try:
-        s3_client = _get_s3_client()
-        # Try a simple operation to verify credentials
-        s3_client.head_bucket(Bucket=BUCKET_NAME)
-        return True
-    except (ClientError, NoCredentialsError):
-        return False

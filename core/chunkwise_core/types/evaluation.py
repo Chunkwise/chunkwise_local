@@ -19,7 +19,7 @@ class QueryGenerationConfig(BaseModel):
     queries_per_corpus: int = Field(
         default=5,
         description="Number of queries to generate per document",
-        ge=3,
+        ge=1,
         le=10,
     )
     approximate_excerpts: bool = Field(
