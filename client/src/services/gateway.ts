@@ -1,9 +1,4 @@
-import type {
-  ChunkerSelection,
-  ChunkStats,
-  Evals,
-  Config,
-} from "../types/types";
+import type { ChunkerSelection, ChunkStats, Evals, Config } from "../types";
 import createRequestBody from "../utils/createRequestBody";
 import axios from "axios";
 import { text } from "../dataset/rumpelstiltskin";
