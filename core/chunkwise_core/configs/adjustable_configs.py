@@ -40,6 +40,8 @@ adjustable_configs = [
     {
         "name": "Chonkie Semantic",
         "chunk_size": {"default": 2048, "min": 1, "max": 8192},
+        "threshold": {"default": 0.8, "min": 0, "max": 1},
+        "similarity_window": {"default": 3, "min": 1, "max": 100},
         "min_sentences_per_chunk": {
             "default": 1,
             "min": 1,
