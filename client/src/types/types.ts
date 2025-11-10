@@ -1,19 +1,21 @@
 export interface Config {
   name: string;
   chunk_size: {
-    type: string;
     min: number;
     max: number;
     default: number;
   };
   chunk_overlap?: {
-    type: string;
     min: number;
     max: number;
     default: number;
   };
   min_characters_per_chunk?: {
-    type: string;
+    min: number;
+    max: number;
+    default: number;
+  };
+  min_characters_per_sentence?: {
     min: number;
     max: number;
     default: number;
@@ -49,5 +51,9 @@ export interface RequestBody {
 export type ChunkerSelection =
   | "Chonkie Token"
   | "Chonkie Recursive"
+  | "Chonkie Sentence"
+  | "Chonkie Semantic"
+  | "Chonkie Slumber"
   | "LangChain Token"
-  | "LangChain Recursive";
+  | "LangChain Recursive"
+  | "LangChain Character";
