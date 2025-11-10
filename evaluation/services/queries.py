@@ -29,9 +29,8 @@ async def resolve_queries(
     Resolve queries from S3 or generate new ones.
 
     Control flow:
-    1. If queries_id is provided: Download the specified queries CSV file (return 404 if not found)
-    2. If queries CSV file exists for document_id: Reuse it
-    3. Otherwise: Generate new queries and upload a CSV file to S3
+    1. If queries CSV file exists for document_id: Reuse it
+    2. Otherwise: Generate new queries and upload a CSV file to S3
 
     Args:
         request: Evaluation request
@@ -41,18 +40,6 @@ async def resolve_queries(
     Returns:
         Tuple of (temp_queries_path, queries_generated, num_queries, queries_s3_key)
     """
-    # User specified queries_id
-    if request.queries_id:
-        queries_s3_key = get_queries_s3_key(request.queries_id)
-
-        if not exists(queries_s3_key):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Queries not found in S3 for queries_id: {request.queries_id}",
-            )
-
-        return _download_queries(queries_s3_key)
-
     # Check if queries exist for this document
     queries_s3_key = get_queries_s3_key(request.document_id)
 
@@ -90,18 +77,20 @@ def _download_queries(queries_s3_key: str) -> tuple[str, bool, int | None, str]:
                 status_code=500,
                 detail=f"Failed to download queries from S3: {queries_s3_key}",
             )
-        
+
         # Count queries while we have the file
         num_queries = _count_queries_in_csv(temp_queries_path)
-        
+
         # Copy to a new temp file that won't be auto-deleted
-        new_temp_file = tempfile.NamedTemporaryFile(mode="w+b", suffix=".csv", delete=False)
+        new_temp_file = tempfile.NamedTemporaryFile(
+            mode="w+b", suffix=".csv", delete=False
+        )
         new_temp_path = new_temp_file.name
         new_temp_file.close()
-        
+
         # Copy the contents
         shutil.copy2(temp_queries_path, new_temp_path)
-        
+
         return new_temp_path, False, num_queries, queries_s3_key
 
 
@@ -192,9 +181,7 @@ async def _handle_query_generation(
 
     num_queries = _count_queries_in_csv(final_queries_path)
     if num_queries is None:
-        num_queries = (
-            query_gen_config.queries_per_corpus * query_gen_config.num_rounds
-        )
+        num_queries = query_gen_config.queries_per_corpus * query_gen_config.num_rounds
 
     if not upload_file(final_queries_path, queries_s3_key):
         logger.warning("Failed to upload queries to S3: %s", queries_s3_key)

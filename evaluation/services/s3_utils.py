@@ -166,9 +166,7 @@ def download_file_temp(s3_key: str, suffix: str | None = None, delete: bool = Tr
             try:
                 os.unlink(temp_path)
             except Exception as e:
-                logger.warning(
-                    "Failed to delete temporary file %s: %s", temp_path, e
-                )
+                logger.warning("Failed to delete temporary file %s: %s", temp_path, e)
 
 
 def exists(s3_key: str) -> bool:
@@ -273,10 +271,10 @@ def get_queries_s3_key(document_id: str) -> str:
         document_id: Document identifier (with or without .txt extension)
 
     Returns:
-        S3 key in format: queries/{document_id}/llm_queries_{document_id}.csv
+        S3 key in format: queries/{document_id}.csv
     """
     # Remove .txt extension if present
     if document_id.endswith(".txt"):
         document_id = document_id[:-4]
 
-    return f"queries/{document_id}/llm_queries_{document_id}.csv"
+    return f"queries/{document_id}.csv"
