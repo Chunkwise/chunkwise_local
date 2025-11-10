@@ -1,0 +1,248 @@
+:root {
+  --bg: #f6f7fb;
+  --panel: #ffffff;
+  --muted: #666;
+  --accent: #2b6cb0;
+  --border: #e3e6ee;
+}
+
+* {
+  box-sizing: border-box;
+}
+body,
+html,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: var(--bg);
+  color: #111;
+}
+
+.app-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px;
+}
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.title {
+  margin: 0;
+  font-size: 20px;
+}
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* layout */
+.main-layout {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.sidebar {
+  width: 320px;
+}
+
+.main-content {
+  flex: 1;
+  min-height: 60vh;
+}
+
+.box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.placeholder {
+  padding: 40px;
+  border: 1px dashed var(--border);
+  background: #fff;
+  border-radius: 6px;
+  color: var(--muted);
+}
+
+/* workflow list */
+.workflow-list-header {
+  margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
+}
+.workflow-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.workflow-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.workflow-item.selected {
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(43, 108, 176, 0.08);
+}
+.wi-left {
+  display: flex;
+  flex-direction: column;
+}
+.wi-name {
+  font-weight: 600;
+}
+.wi-meta {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.create-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.input {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.select {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.btn {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+}
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  border: none;
+}
+.btn-sm {
+  padding: 4px 6px;
+  font-size: 12px;
+}
+.btn-ghost {
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+
+/* details */
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.details-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.section-title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.file-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.file-label {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  background: #fff;
+}
+.file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-preview {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.file-name {
+  font-weight: 600;
+}
+.muted {
+  color: var(--muted);
+  padding: 8px 0;
+}
+
+.error {
+  color: #9b2c2c;
+  background: #fff5f5;
+  border: 1px solid #f8c6c6;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+/* config */
+.config-area {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.config-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.label {
+  min-width: 160px;
+  font-size: 14px;
+}
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.section-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 12px;
+}
