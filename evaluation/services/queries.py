@@ -75,7 +75,7 @@ def _download_queries(queries_s3_key: str) -> tuple[str, bool, int | None, str]:
 
     Args:
         queries_s3_key: S3 key for the queries CSV file
-        
+
     Returns:
         Tuple of (temp_queries_path, queries_generated, num_queries, queries_s3_key)
     """
@@ -164,7 +164,7 @@ async def _handle_query_generation(
         temp_document_path: Path to temporary document file to generate queries from
         canonical_corpus_id: Canonical corpus identifier (without .txt extension)
         queries_s3_key: S3 key where generated queries CSV should be uploaded
-        
+
     Returns:
         Tuple of (final_queries_path, queries_generated, num_queries, queries_s3_key)
     """
