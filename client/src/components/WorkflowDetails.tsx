@@ -1,23 +1,15 @@
 import { useEffect, useState } from "react";
 import type { Workflow, Config } from "../types";
-import ChooseDocument from "./ChooseDocument";
+import ChooseFile from "./ChooseFile";
 import ChunkerForm from "./ChunkerForm";
 
 type Props = {
   workflow?: Workflow;
   configs: Config[];
-  sampleDoc: { name: string; text: string };
   onUpdate: (patch: Partial<Workflow>) => void;
 };
 
-const MAX_BYTES = 50 * 1024; // 50kb
-
-const WorkflowDetails = ({
-  workflow,
-  configs,
-  sampleDoc,
-  onUpdate,
-}: Props) => {
+const WorkflowDetails = ({ workflow, configs, onUpdate }: Props) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,44 +19,23 @@ const WorkflowDetails = ({
   if (!workflow) {
     return (
       <div className="placeholder">
-        Select or create a workflow to configure documents and chunkers.
+        Select or create a workflow to upload/choose a file and configure
+        chunkers.
       </div>
     );
   }
 
-  function handleFileUpload(file: File | null) {
+  function handleFileChange(fileId: string | undefined) {
     setError(null);
-    if (!file) {
-      onUpdate({ file: undefined });
-      return;
+    if (!fileId) {
+      onUpdate({
+        fileId: undefined,
+        chunker: undefined,
+        chunkingConfig: undefined,
+      });
+    } else {
+      onUpdate({ fileId: fileId });
     }
-    if (!file.name.toLowerCase().endsWith(".txt")) {
-      setError("Only .txt files are allowed!");
-      return;
-    }
-    if (file.size > MAX_BYTES) {
-      setError("File too large! Max 50KB allowed.");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = String(reader.result);
-      onUpdate({ file: { name: file.name, text } });
-    };
-    reader.readAsText(file);
-  }
-
-  function setSampleDocument() {
-    onUpdate({ file: { name: sampleDoc.name, text: sampleDoc.text } });
-  }
-
-  function removeFile() {
-    onUpdate({
-      file: undefined,
-      chunker: undefined,
-      chunkingConfig: undefined,
-    });
   }
 
   const selectedConfig = configs.find(
@@ -79,12 +50,11 @@ const WorkflowDetails = ({
     }
 
     const initial: Record<string, number> = {};
-    initial["chunk_size"] = config.chunk_size.default;
-    if (config.chunk_overlap)
-      initial["chunk_overlap"] = config.chunk_overlap.default;
-    if (config.min_characters_per_chunk)
-      initial["min_characters_per_chunk"] =
-        config.min_characters_per_chunk.default;
+    for (const [key, value] of Object.entries(config)) {
+      if (typeof value !== "string") {
+        initial[key] = value.default;
+      }
+    }
     onUpdate({ chunker: name, chunkingConfig: initial });
   }
 
@@ -96,15 +66,13 @@ const WorkflowDetails = ({
 
   return (
     <div className="details">
-      <ChooseDocument
+      <ChooseFile
         workflow={workflow}
-        onFileUpload={handleFileUpload}
-        onSetSample={setSampleDocument}
-        onRemoveFile={removeFile}
+        onFileChange={handleFileChange}
         error={error}
       />
 
-      {workflow.file && (
+      {workflow.fileId && (
         <ChunkerForm
           workflow={workflow}
           configs={configs}

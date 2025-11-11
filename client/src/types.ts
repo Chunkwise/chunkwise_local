@@ -9,9 +9,7 @@ export interface ConfigOption {
 
 export interface Config {
   name: string;
-  chunk_size: ConfigOption;
-  chunk_overlap?: ConfigOption;
-  min_characters_per_chunk?: ConfigOption;
+  [key: string]: string | ConfigOption;
 }
 
 export interface StoredFile {
@@ -24,7 +22,7 @@ export interface Workflow {
   name: string;
   createdAt: string;
   stage: Stage;
-  file?: StoredFile;
+  fileId?: string;
   chunker?: string;
   chunkingConfig?: Record<string, number>;
 }

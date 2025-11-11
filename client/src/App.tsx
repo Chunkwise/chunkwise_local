@@ -6,8 +6,7 @@ import WorkflowDetails from "./components/WorkflowDetails";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { State } from "./reducers/workflowReducer";
 import { workflowReducer } from "./reducers/workflowReducer";
-import { getConfigs } from "./services/getConfigs";
-import sampleText from "./assets/about_git_sample_text.txt?raw";
+import { getConfigs } from "./services/configs";
 
 const STORAGE_KEY = "chunkwise_workflows_v1";
 
@@ -24,7 +23,6 @@ export default function App() {
     selectedWorkflowId: stored.selectedWorkflowId,
   } as State);
   const [configs, setConfigs] = useState<Config[]>([]);
-  const sampleDoc = { name: "about_git.txt", text: sampleText };
 
   useEffect(() => {
     getConfigs()
@@ -81,7 +79,6 @@ export default function App() {
           <WorkflowDetails
             workflow={selectedWorkflow}
             configs={configs}
-            sampleDoc={sampleDoc}
             onUpdate={(patch) =>
               selectedWorkflow && updateWorkflow(selectedWorkflow.id, patch)
             }
