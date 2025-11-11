@@ -1,3 +1,4 @@
+import json
 import psycopg2
 from psycopg2 import OperationalError
 from configparser import ConfigParser
@@ -49,6 +50,7 @@ def create_workflow() -> int:
         query = "INSERT INTO workflow DEFAULT VALUES RETURNING id;"
         cursor.execute(query)
         print(query)
+
         result = cursor.fetchone()[0]
         return result
     except Exception as e:
@@ -71,6 +73,7 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
         query = "YOUR QUERY HERE"
         cursor.execute(query)
         print(query)
+
         result = cursor.fetchone()
         return result
     except Exception as e:
@@ -93,6 +96,7 @@ def delete_workflow(workflow_id: int) -> bool:
         query = "DELETE FROM workflow WHERE id = %s"
         cursor.execute(query, (workflow_id,))
         print(query)
+
         return cursor.rowcount > 0
     except Exception as e:
         print(("Error deleting workflow.", e))
@@ -113,6 +117,7 @@ def get_all_workflows() -> list[list]:
         query = "SELECT * FROM workflow"
         cursor.execute(query)
         print(query)
+
         result = cursor.fetchall()
         return result
     except Exception as e:
@@ -131,11 +136,13 @@ def get_chunker_configuration(workflow_id) -> ChunkerConfig:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        query = "YOUR QUERY HERE"
-        cursor.execute(query)
+        query = "SELECT chunking_strategy FROM workflow WHERE id = %s"
+        cursor.execute(query, (workflow_id,))
         print(query)
+
         result = cursor.fetchone()
-        return result
+        chunker_config = json.loads(result[0])
+        return chunker_config
     except Exception as e:
         print(("Error retrieving chunker configuration.", e))
     finally:
