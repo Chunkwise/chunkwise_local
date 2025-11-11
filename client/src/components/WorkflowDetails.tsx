@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import type { Workflow, Config } from "../types";
-import ChooseDocument from "./ChooseDocument";
+import ChooseFile from "./ChooseFile";
 import ChunkerForm from "./ChunkerForm";
 
 type Props = {
   workflow?: Workflow;
   configs: Config[];
-  sampleDoc: { name: string; text: string };
+  sampleFile: { name: string; text: string };
   onUpdate: (patch: Partial<Workflow>) => void;
 };
 
 const MAX_BYTES = 50 * 1024; // 50kb
 
-const WorkflowDetails = ({ workflow, configs, sampleDoc, onUpdate }: Props) => {
+const WorkflowDetails = ({ workflow, configs, sampleFile, onUpdate }: Props) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ const WorkflowDetails = ({ workflow, configs, sampleDoc, onUpdate }: Props) => {
   if (!workflow) {
     return (
       <div className="placeholder">
-        Select or create a workflow to configure documents and chunkers.
+        Select or create a workflow to upload/choose a file and configure chunkers.
       </div>
     );
   }
@@ -50,8 +50,8 @@ const WorkflowDetails = ({ workflow, configs, sampleDoc, onUpdate }: Props) => {
     reader.readAsText(file);
   }
 
-  function setSampleDocument() {
-    onUpdate({ file: { name: sampleDoc.name, text: sampleDoc.text } });
+  function setSampleFile() {
+    onUpdate({ file: { name: sampleFile.name, text: sampleFile.text } });
   }
 
   function removeFile() {
@@ -90,10 +90,10 @@ const WorkflowDetails = ({ workflow, configs, sampleDoc, onUpdate }: Props) => {
 
   return (
     <div className="details">
-      <ChooseDocument
+      <ChooseFile
         workflow={workflow}
         onFileUpload={handleFileUpload}
-        onSetSample={setSampleDocument}
+        onSetSampleFile={setSampleFile}
         onRemoveFile={removeFile}
         error={error}
       />

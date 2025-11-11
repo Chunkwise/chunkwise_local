@@ -24,7 +24,7 @@ export default function App() {
     selectedWorkflowId: stored.selectedWorkflowId,
   } as State);
   const [configs, setConfigs] = useState<Config[]>([]);
-  const sampleDoc = { name: "about_git.txt", text: sampleText };
+  const sampleFile = { name: "about_git.txt", text: sampleText };
 
   useEffect(() => {
     getConfigs()
@@ -81,7 +81,7 @@ export default function App() {
           <WorkflowDetails
             workflow={selectedWorkflow}
             configs={configs}
-            sampleDoc={sampleDoc}
+            sampleFile={sampleFile}
             onUpdate={(patch) =>
               selectedWorkflow && updateWorkflow(selectedWorkflow.id, patch)
             }

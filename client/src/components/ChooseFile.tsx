@@ -3,21 +3,21 @@ import type { Workflow } from "../types";
 interface ChooseDocumentProps {
   workflow: Workflow;
   onFileUpload: (file: File | null) => void;
-  onSetSample: () => void;
+  onSetSampleFile: () => void;
   onRemoveFile: () => void;
   error: string | null;
 }
 
-const ChooseDocument = ({
+const ChooseFile = ({
   workflow,
   onFileUpload,
-  onSetSample,
+  onSetSampleFile,
   onRemoveFile,
   error,
 }: ChooseDocumentProps) => {
   return (
     <div className="details-row">
-      <h2 className="section-title">Document</h2>
+      <h2 className="section-title">File</h2>
       <div className="box">
         <div className="file-controls">
           <label className="file-label">
@@ -34,8 +34,8 @@ const ChooseDocument = ({
             />
           </label>
 
-          <button className="btn" onClick={onSetSample}>
-            Use sample document
+          <button className="btn" onClick={onSetSampleFile}>
+            Use sample file
           </button>
         </div>
 
@@ -53,7 +53,7 @@ const ChooseDocument = ({
           </div>
         ) : (
           <div className="muted">
-            No document attached! Upload or accept the sample.
+            No file attached! Upload or accept the sample.
           </div>
         )}
       </div>
@@ -61,4 +61,4 @@ const ChooseDocument = ({
   );
 };
 
-export default ChooseDocument;
+export default ChooseFile;
