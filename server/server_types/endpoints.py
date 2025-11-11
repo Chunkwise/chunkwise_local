@@ -1,6 +1,5 @@
-# from typing import Literal, Optional
 from pydantic import BaseModel
-from chunkwise_core import ChunkerConfig, Chunk, EvaluationResponse
+from chunkwise_core import ChunkerConfig, Chunk, EvaluationResponse, EvaluationMetrics
 
 
 class ChunkStatistics(BaseModel):
@@ -14,17 +13,6 @@ class ChunkStatistics(BaseModel):
     smallest_chunk_chars: int
     smallest_text: str
     avg_chars: float
-
-
-class Evaluations(BaseModel):
-    """
-    Metrics sent to the frontend about a chunking configurations evaluation.
-    """
-
-    omega_precision: float
-    precision: float
-    recall: float
-    iou: float
 
 
 class VisualizeRequest(BaseModel):

@@ -1,14 +1,13 @@
+"""Class for visualizing chunks"""
+
 # Adapted from:
 # Minhas, Bhavnick AND Nigam, Shreyash (2025)
 # "Chonkie: A no-nonsense fast, lightweight, and efficient text chunking library"
 # https://github.com/chonkie-inc/chonkie/blob/55edbad3457043573ed576c6be7e60ff64525a29/src/chonkie/__init__.py
 
-"""Module for visualizing Chonkie."""
-
 import html
 import warnings
-from typing import List, Optional, Union
-from chunkwise_core import Chunk
+from server_types import Chunk
 
 # light themes
 LIGHT_THEMES = {
@@ -79,13 +78,9 @@ DARK_THEMES = {
     ],
 }
 
-# light mode colors
-BODY_BACKGROUND_COLOR_LIGHT = "#F0F2F5"
-CONTENT_BACKGROUND_COLOR_LIGHT = "#FFFFFF"
+# light mode color
 TEXT_COLOR_LIGHT = "#333333"
-# dark mode colors
-BODY_BACKGROUND_COLOR_DARK = "#121212"
-CONTENT_BACKGROUND_COLOR_DARK = "#1E1E1E"
+# dark mode color
 TEXT_COLOR_DARK = "#FFFFFF"
 
 MAIN_TEMPLATE = """
@@ -98,24 +93,19 @@ MAIN_TEMPLATE = """
 class Visualizer:
     """Visualizer class for Chonkie.
 
-    This class can take in Chonkie Chunks and visualize them on the terminal
-    or save them as a standalone HTML file.
-
     Attributes:
         theme (str): The theme to use for the visualizer (default is "pastel")
 
     Methods:
-        print(chunks: List[Chunk], full_text: Optional[str] = None) -> None:
-            Print the chunks to the terminal, with rich highlights!
-        save(filename: str, chunks: List[Chunk], full_text: Optional[str] = None, title: str = "Chunk Visualization") -> None:
+        get_html
 
     """
 
-    def __init__(self, theme: Union[str, List[str]] = "pastel") -> None:
+    def __init__(self, theme: str | list[str] = "pastel") -> None:
         """Initialize the Visualizer.
 
         Args:
-            theme (Union[str, List[str]]): The theme to use for the visualizer (default is PASTEL_THEME)
+            theme: The theme to use for the visualizer (default is PASTEL_THEME)
 
         """
 
@@ -130,7 +120,7 @@ class Visualizer:
             self.theme_name = "custom"
 
     # NOTE: This is a helper function to manage the theme
-    def _get_theme(self, theme: str) -> tuple[List[str], str]:
+    def _get_theme(self, theme: str) -> tuple[list[str], str]:
         """Get the theme from the theme name."""
         if theme in DARK_THEMES:
             return DARK_THEMES[theme], TEXT_COLOR_DARK
@@ -143,7 +133,7 @@ class Visualizer:
         """Cycles through the appropriate color list."""
         return self.theme[index % len(self.theme)]
 
-    def _reconstruct_text_from_chunks(self, chunks: List[Chunk]) -> str:
+    def _reconstruct_text_from_chunks(self, chunks: list[Chunk]) -> str:
         """Reconstruct the full text from a list of chunks, handling overlaps."""
         # Sort chunks by start_index to handle overlaps correctly
         sorted_chunks = sorted(chunks, key=lambda x: x.start_index)
@@ -196,17 +186,17 @@ class Visualizer:
             print(f"Warning: Could not darken color {hex_color}: {e}")
             return "#808080"
 
-    def get_HTML(
+    def get_html(
         self,
-        chunks: List[Chunk],
-        full_text: Optional[str] = None,
+        chunks: list[Chunk],
+        full_text: str | None = None,
     ) -> str:
         """
         Returns HTML visualization of chunks as a string
 
         Args:
-            chunks (List[Chunk]): A list of chunk objects with 'start_index' and 'end_index'.
-            full_text (Optional[str]): The complete original text. If None, it attempts reconstruction.
+            chunks: A list of chunk objects with 'start_index' and 'end_index'.
+            full_text: The complete original text. If None, it attempts reconstruction.
             title (str): The title for the browser tab.
 
         """

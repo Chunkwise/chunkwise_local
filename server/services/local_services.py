@@ -33,22 +33,6 @@ async def get_chunks(chunker_config, document) -> list[Chunk]:
     return chunks
 
 
-async def get_visualization(chunks: list[Chunk]) -> str:
-    """
-    Takes a list of chunks and returns the HTML to visualize those
-    chunks, gotten from the visualization server.
-    """
-    # Send chunks to visualization service
-    visualization_response = requests.post(
-        f"{VISUALIZATION_SERVICE_URL}/visualize", json=chunks, timeout=10
-    )
-    visualization_response.raise_for_status()
-
-    # Get the text from the response
-    visualization_html = visualization_response.text
-    return visualization_html
-
-
 async def get_evaluation(chunker_config, document_id) -> EvaluationResponse:
     """
     Takes a chunking configuration and a documet id, returns an
