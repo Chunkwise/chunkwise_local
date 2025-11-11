@@ -1,4 +1,4 @@
-import type { Workflow, Config } from "../types";
+import type { Workflow, Config, ConfigOption } from "../types";
 
 interface ChunkerFormProps {
   workflow: Workflow;
@@ -40,75 +40,32 @@ const ChunkerForm = ({
             <div className="muted">
               Configure chunker options (defaults pre-selected)
             </div>
-
-            <div className="config-row">
-              <label className="label">Chunk size</label>
-              <input
-                type="number"
-                className="input"
-                value={
-                  workflow.chunkingConfig?.chunk_size ??
-                  selectedConfig.chunk_size.default
-                }
-                min={selectedConfig.chunk_size.min}
-                max={selectedConfig.chunk_size.max}
-                onChange={(e) =>
-                  onConfigChange("chunk_size", Number(e.target.value))
-                }
-              />
-              <small className="hint">
-                min {selectedConfig.chunk_size.min} — max{" "}
-                {selectedConfig.chunk_size.max}
-              </small>
-            </div>
-
-            {selectedConfig.chunk_overlap && (
-              <div className="config-row">
-                <label className="label">Chunk overlap</label>
-                <input
-                  type="number"
-                  className="input"
-                  value={
-                    workflow.chunkingConfig?.chunk_overlap ??
-                    selectedConfig.chunk_overlap.default
-                  }
-                  min={selectedConfig.chunk_overlap.min}
-                  max={selectedConfig.chunk_overlap.max}
-                  onChange={(e) =>
-                    onConfigChange("chunk_overlap", Number(e.target.value))
-                  }
-                />
-                <small className="hint">
-                  min {selectedConfig.chunk_overlap.min} — max{" "}
-                  {selectedConfig.chunk_overlap.max}
-                </small>
-              </div>
-            )}
-
-            {selectedConfig.min_characters_per_chunk && (
-              <div className="config-row">
-                <label className="label">Min chars per chunk</label>
-                <input
-                  type="number"
-                  className="input"
-                  value={
-                    workflow.chunkingConfig?.min_characters_per_chunk ??
-                    selectedConfig.min_characters_per_chunk.default
-                  }
-                  min={selectedConfig.min_characters_per_chunk.min}
-                  max={selectedConfig.min_characters_per_chunk.max}
-                  onChange={(e) =>
-                    onConfigChange(
-                      "min_characters_per_chunk",
-                      Number(e.target.value)
-                    )
-                  }
-                />
-                <small className="hint">
-                  min {selectedConfig.min_characters_per_chunk.min} — max{" "}
-                  {selectedConfig.min_characters_per_chunk.max}
-                </small>
-              </div>
+            {Object.keys(selectedConfig).map((key) =>
+              typeof selectedConfig[key] === "string" ? (
+                ""
+              ) : (
+                <div key={key} className="config-row">
+                  <label className="label">{key}</label>
+                  <input
+                    type="number"
+                    step={selectedConfig[key]?.type === "int" ? 1 : 0.01}
+                    className="input"
+                    value={
+                      workflow.chunkingConfig?.[key] ??
+                      selectedConfig[key]?.default
+                    }
+                    min={selectedConfig[key]?.min}
+                    max={selectedConfig[key]?.max}
+                    onChange={(e) =>
+                      onConfigChange(key, Number(e.target.value))
+                    }
+                  />
+                  <small className="hint">
+                    min {selectedConfig[key]?.min} - max{" "}
+                    {selectedConfig[key]?.max}
+                  </small>
+                </div>
+              )
             )}
           </div>
         ) : (
