@@ -65,7 +65,7 @@ sample response 1:
 sample request 2:
 {
   "chunker_config": {
-    "chunker_type": "langchain_token",
+    "chunker_type": "token",
     "provider": "langchain",
     "chunk_size": "200",
     "chunk_overlap": "20"
