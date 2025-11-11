@@ -1,4 +1,6 @@
+import os
 from typing import Any
+from dotenv import load_dotenv
 from langchain_text_splitters import (
     RecursiveCharacterTextSplitter,
     TokenTextSplitter,
@@ -11,6 +13,8 @@ from chonkie.chunker import (
     SemanticChunker,
     SlumberChunker,
 )
+from chonkie.embeddings import OpenAIEmbeddings
+from chonkie.genie import OpenAIGenie
 from ..types.chunker_config import (
     ChunkerConfig,
     LangChainCharacterConfig,
@@ -23,10 +27,17 @@ from ..types.chunker_config import (
     ChonkieSlumberConfig,
 )
 
+load_dotenv()
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 
 def create_chunker(
     config: ChunkerConfig,
 ) -> Any:
+    """Create a chunker from a config."""
+    if config is None:
+        return None
     match config:
         case LangChainRecursiveConfig():
             return RecursiveCharacterTextSplitter(
@@ -80,8 +91,11 @@ def create_chunker(
                 include_delim=config.include_delim,
             )
         case ChonkieSemanticConfig():
+            embedding_model = config.embedding_model
+            if embedding_model is None:
+                embedding_model = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
             return SemanticChunker(
-                embedding_model=config.embedding_model,
+                embedding_model=embedding_model,
                 threshold=config.threshold,
                 chunk_size=config.chunk_size,
                 similarity_window=config.similarity_window,
@@ -89,8 +103,11 @@ def create_chunker(
                 min_characters_per_sentence=config.min_characters_per_sentence,
             )
         case ChonkieSlumberConfig():
+            genie = config.genie
+            if genie is None:
+                genie = OpenAIGenie(api_key=OPENAI_API_KEY)
             return SlumberChunker(
-                genie=config.genie,
+                genie=genie,
                 tokenizer=config.tokenizer,
                 chunk_size=config.chunk_size,
                 rules=config.rules,
