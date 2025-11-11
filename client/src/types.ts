@@ -22,7 +22,7 @@ export interface Workflow {
   name: string;
   createdAt: string;
   stage: Stage;
-  file?: StoredFile;
+  fileId?: string;
   chunker?: string;
   chunkingConfig?: Record<string, number>;
 }

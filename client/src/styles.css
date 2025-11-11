@@ -179,6 +179,20 @@ html,
   align-items: center;
   flex-wrap: wrap;
 }
+.file-select {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+.file-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .file-label {
   display: inline-block;
   position: relative;
