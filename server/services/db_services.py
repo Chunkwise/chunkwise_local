@@ -70,9 +70,12 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        query = "YOUR QUERY HERE"
-        cursor.execute(query)
-        print(query)
+        for column in updated_columns:
+            query = "UPDATE workflow SET %s = %s WHERE id = %s"
+            cursor.execute(query, (column, updated_columns[column], workflow_id))
+            print(query)
+
+        cursor.execute("SELECT * FROM workflow WHERE id = %s", (workflow_id,))
 
         result = cursor.fetchone()
         return result
