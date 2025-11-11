@@ -1,8 +1,37 @@
 import json
 import psycopg2
-from psycopg2 import OperationalError
+from psycopg2 import OperationalError, sql
 from configparser import ConfigParser
 from server_types import Workflow, ChunkerConfig
+
+COLUMN_NAMES = (
+    "id",
+    "document_title",
+    "chunking_strategy",
+    "chunks_stats",
+    "visualization_html",
+    "evaluation_metrics",
+)
+
+
+def format_workflow(workflow):
+    formatted_result = zip(COLUMN_NAMES, workflow)
+    formatted_result = dict(formatted_result)
+
+    if type(formatted_result["chunking_strategy"]) == str:
+        formatted_result["chunking_strategy"] = json.loads(
+            formatted_result["chunking_strategy"]
+        )
+
+    if type(formatted_result["chunks_stats"]) == str:
+        formatted_result["chunks_stats"] = json.loads(formatted_result["chunks_stats"])
+
+    if type(formatted_result["evaluation_metrics"]) == str:
+        formatted_result["evaluation_metrics"] = json.loads(
+            formatted_result["evaluation_metrics"]
+        )
+
+    return formatted_result
 
 
 def get_db_info(filename, section):
@@ -71,14 +100,29 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
         cursor = connection.cursor()
 
         for column in updated_columns:
-            query = "UPDATE workflow SET %s = %s WHERE id = %s"
-            cursor.execute(query, (column, updated_columns[column], workflow_id))
+            if updated_columns[column] == None:
+                # Column update not sent
+                continue
+            elif (
+                column == "chunking_strategy"
+                or column == "chunks_stats"
+                or column == "evaluation_metrics"
+            ):
+                # Stringify object columns
+                updated_columns[column] = json.dumps(updated_columns[column].__dict__)
+
+            query = sql.SQL(
+                "UPDATE workflow SET {column_name} = %s WHERE id = %s;"
+            ).format(column_name=sql.Identifier(column))
+            cursor.execute(query, (updated_columns[column], workflow_id))
             print(query)
 
         cursor.execute("SELECT * FROM workflow WHERE id = %s", (workflow_id,))
 
         result = cursor.fetchone()
-        return result
+        formatted_result = format_workflow(result)
+
+        return formatted_result
     except Exception as e:
         print(("Error updating workflow.", e))
     finally:
@@ -122,7 +166,10 @@ def get_all_workflows() -> list[list]:
         print(query)
 
         result = cursor.fetchall()
-        return result
+
+        formatted_result = [format_workflow(row) for row in result]
+
+        return formatted_result
     except Exception as e:
         print(("Error retrieving workflows.", e))
     finally:

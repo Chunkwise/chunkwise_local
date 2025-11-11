@@ -7,6 +7,7 @@ from .endpoints import (
     Evaluations,
     EvaluationResponse,
     Workflow,
+    DocumentUpload,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "Evaluations",
     "EvaluationResponse",
     "Workflow",
+    "DocumentUpload",
 ]

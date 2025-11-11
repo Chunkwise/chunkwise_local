@@ -21,10 +21,10 @@ class Evaluations(BaseModel):
     Metrics sent to the frontend about a chunking configurations evaluation.
     """
 
-    omega_precision: float
-    precision: float
-    recall: float
-    iou: float
+    omega_precision: float | int
+    precision: float | int
+    recall: float | int
+    iou: float | int
 
 
 class VisualizeRequest(BaseModel):
@@ -46,9 +46,14 @@ class VisualizeResponse(BaseModel):
 
 
 class Workflow(BaseModel):
-    id: Optional[int]
-    document_title: Optional[str]
-    chunking_strategy: Optional[ChunkerConfig]
-    chunks_stats: Optional[ChunkStatistics]
-    visualization_html: Optional[str]
-    eval_metrics: Optional[Evaluations]
+    id: Optional[int] = None
+    document_title: Optional[str] = None
+    chunking_strategy: Optional[ChunkerConfig] = None
+    chunks_stats: Optional[ChunkStatistics] = None
+    visualization_html: Optional[str] = None
+    evaluation_metrics: Optional[Evaluations] = None
+
+
+class DocumentUpload(BaseModel):
+    document_title: str
+    document_content: str

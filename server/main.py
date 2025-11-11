@@ -9,6 +9,8 @@ from server_types import (
     ChunkerConfig,
     VisualizeResponse,
     Evaluations,
+    DocumentUpload,
+    Workflow,
 )
 from utils import (
     calculate_chunk_stats,
@@ -77,68 +79,68 @@ def configs():
     return adjustable_configs
 
 
-@router.get("/{document_id}/visualization")
-@handle_endpoint_exceptions
-async def visualize(
-    document_id: str, chunker_config: ChunkerConfig = Body(...)
-) -> VisualizeResponse:
-    """
-    Receives chunking parameters and text from client, sends them to the chunking service,
-    then sends the chunks to the visualization service and returns the HTML and statistics.
-    """
+# @router.get("/workflows/{workflow_id}/visualization")
+# @handle_endpoint_exceptions
+# async def visualize(
+#     document_id: str, chunker_config: ChunkerConfig = Body(...)
+# ) -> VisualizeResponse:
+#     """
+#     Receives chunking parameters and text from client, sends them to the chunking service,
+#     then sends the chunks to the visualization service and returns the HTML and statistics.
+#     """
 
-    await download_s3_file(document_id)
+#     await download_s3_file(document_id)
 
-    # Make document contents into a string
-    with open(f"documents/{document_id}", "r", encoding="utf8") as file:
-        document = file.read()
-        file.close()
+#     # Make document contents into a string
+#     with open(f"documents/{document_id}", "r", encoding="utf8") as file:
+#         document = file.read()
+#         file.close()
 
-    chunks = await get_chunks(chunker_config, document)
-    stats = calculate_chunk_stats(chunks)
-    html = await get_visualization(chunks)
+#     chunks = await get_chunks(chunker_config, document)
+#     stats = calculate_chunk_stats(chunks)
+#     html = await get_visualization(chunks)
 
-    delete_file(f"documents/{document_id}")
+#     delete_file(f"documents/{document_id}")
 
-    # Return dict with stats and HTML
-    return {"stats": stats, "html": html}
-
-
-@router.get("/{document_id}/evaluation")
-@handle_endpoint_exceptions
-async def evaluate(
-    document_id: str, chunker_config: ChunkerConfig = Body(...)
-) -> list[Evaluations]:
-    """
-    Receives chunker configs and a document_id from the client, which it then
-    sends to the evaluation server. Once it receives a response, it gets the necessary
-    data from it and sends that back to the clisent.
-    """
-
-    evaluation = await get_evaluation(chunker_config, document_id)
-    metrics = extract_metrics(evaluation)
-
-    return metrics
+#     # Return dict with stats and HTML
+#     return {"stats": stats, "html": html}
 
 
-@router.post("/")
-@handle_endpoint_exceptions
-async def upload_document(document: str = Body(...)) -> dict:
-    """
-    This endpoint receives a string and uses it to create a txt file.
-    It then sends the file to S3 and returns the path/url of the created resource.
-    """
+# @router.get("/workflows/{workflow_id}/evaluation")
+# @handle_endpoint_exceptions
+# async def evaluate(
+#     document_id: str, chunker_config: ChunkerConfig = Body(...)
+# ) -> list[Evaluations]:
+#     """
+#     Receives chunker configs and a document_id from the client, which it then
+#     sends to the evaluation server. Once it receives a response, it gets the necessary
+#     data from it and sends that back to the clisent.
+#     """
 
-    # Create a temp file
-    document_id = create_file(document)
-    await upload_s3_file(document_id)
-    delete_file(f"documents/{document_id}")
+#     evaluation = await get_evaluation(chunker_config, document_id)
+#     metrics = extract_metrics(evaluation)
 
-    # Return the name of the file
-    return {"document_id": document_id}
+#     return metrics
 
 
-@router.get("/")
+# @router.post("/documents")
+# @handle_endpoint_exceptions
+# async def upload_document(document_title: DocumentUpload = Body(...), document_content: DocumentUpload = Body(...)) -> dict:
+#     """
+#     This endpoint receives a string and uses it to create a txt file.
+#     It then sends the file to S3 and returns the path/url of the created resource.
+#     """
+
+#     # Create a temp file
+#     document_id = create_file(document)
+#     await upload_s3_file(document_id)
+#     delete_file(f"documents/{document_id}")
+
+#     # Return the name of the file
+#     return {"document_id": document_id}
+
+
+@router.get("/documents")
 @handle_endpoint_exceptions
 async def get_documents() -> list[str]:
     """
@@ -152,14 +154,14 @@ async def get_documents() -> list[str]:
     return file_names
 
 
-@router.delete("/{document_id}")
+@router.delete("/documents/{document_title}")
 @handle_endpoint_exceptions
-async def delete_document(document_id: str) -> dict:
+async def delete_document(document_title: str) -> dict:
     """
     This endpoint deletes a resource from the S3 store
     """
 
-    await delete_s3_file(document_id)
+    await delete_s3_file(document_title)
 
     # Return the name of the file
     return {"detail": "deleted"}
@@ -176,6 +178,14 @@ async def get_workflows():
 @handle_endpoint_exceptions
 async def insert_workflow():
     result = create_workflow()
+    return {"id": result}
+
+
+@router.put("/workflows/{workflow_id}")
+@handle_endpoint_exceptions
+async def change_workflow(workflow_id: int, workflow_update: Workflow = Body(...)):
+    update_dict = workflow_update.__dict__
+    result = update_workflow(workflow_id, update_dict)
     return result
 
 
