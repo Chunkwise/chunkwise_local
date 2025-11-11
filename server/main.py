@@ -172,6 +172,19 @@ async def insert_workflow():
     return result
 
 
+@router.delete("/workflows/{workflow_id}")
+@handle_endpoint_exceptions
+async def remove_workflow(workflow_id: int):
+    result = delete_workflow(workflow_id)
+
+    if result == True:
+        return {"detail": "successfully deleted workflow."}
+    else:
+        return JSONResponse(
+            status_code=400, content={"detail": "Error deleting workflow"}
+        )
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(_request, _exc):
     """

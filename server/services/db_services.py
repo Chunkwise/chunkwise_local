@@ -90,11 +90,10 @@ def delete_workflow(workflow_id: int) -> bool:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        query = "YOUR QUERY HERE"
-        cursor.execute(query)
+        query = "DELETE FROM workflow WHERE id = %s"
+        cursor.execute(query, (workflow_id,))
         print(query)
-        result = cursor.fetchone()
-        return result
+        return cursor.rowcount > 0
     except Exception as e:
         print(("Error deleting workflow.", e))
     finally:
