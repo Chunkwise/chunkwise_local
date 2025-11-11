@@ -114,7 +114,7 @@ def download_file(s3_key: str, local_path: str) -> bool:
 
 
 @contextmanager
-def download_file_temp(s3_key: str, suffix: str | None = None):
+def download_file_temp(s3_key: str, suffix: str | None = None, delete: bool = True):
     """
     Download a file from S3 to a temporary file (context manager).
 
@@ -124,6 +124,7 @@ def download_file_temp(s3_key: str, suffix: str | None = None):
     Args:
         s3_key: S3 object key (path within bucket)
         suffix: Optional file suffix (e.g., '.txt', '.csv')
+        delete: Whether to delete the temp file on exit (default: True)
 
     Yields:
         str: Path to the temporary file, or None if download failed
@@ -160,11 +161,11 @@ def download_file_temp(s3_key: str, suffix: str | None = None):
         logger.error("AWS credentials not found")
         yield None
     finally:
-        # Always clean up temporary file
-        if temp_path and os.path.exists(temp_path):
+        # Clean up temporary file only if delete=True
+        if delete and temp_path and os.path.exists(temp_path):
             try:
                 os.unlink(temp_path)
-            except Exception as e:
+            except OSError as e:
                 logger.warning("Failed to delete temporary file %s: %s", temp_path, e)
 
 

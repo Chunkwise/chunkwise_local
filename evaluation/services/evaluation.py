@@ -48,7 +48,9 @@ async def evaluate(request: EvaluationRequest, embedding_func) -> EvaluationResp
             )
 
         # Download document
-        with download_file_temp(document_s3_key, suffix=".txt") as temp_doc_path:
+        with download_file_temp(
+            document_s3_key, suffix=".txt", delete=False
+        ) as temp_doc_path:
             if temp_doc_path is None:
                 raise HTTPException(
                     status_code=500, detail="Failed to download document from S3"
@@ -87,20 +89,30 @@ async def evaluate(request: EvaluationRequest, embedding_func) -> EvaluationResp
         if temp_doc_path and os.path.exists(temp_doc_path):
             try:
                 os.unlink(temp_doc_path)
-            except Exception as e:
+            except OSError as e:
                 logger.warning("Failed to clean up temp document: %s", e)
 
         if temp_queries_path and os.path.exists(temp_queries_path):
             try:
                 os.unlink(temp_queries_path)
-            except Exception as e:
+            except OSError as e:
                 logger.warning("Failed to clean up temp queries: %s", e)
 
 
 def run_evaluations(
     evaluation: BaseEvaluation, chunking_configs: list[ChunkerConfig], embedding_func
 ) -> tuple[list[str], list[EvaluationMetrics]]:
-    """Run evaluation for all chunking configurations."""
+    """
+    Run evaluation for all chunking configurations.
+
+    Args:
+        evaluation: Initialized BaseEvaluation instance with queries and document corpus
+        chunking_configs: List of chunker configurations to evaluate
+        embedding_func: Embedding function to use for vector similarity calculations
+        
+    Returns:
+        Tuple of (chunker_names, results)
+    """
     results = []
     chunker_names = []
 
