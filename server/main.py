@@ -85,7 +85,7 @@ async def visualize(
     await download_s3_file(document_id)
 
     # Make document contents into a string
-    with open(f"documents/{document_id}", "r", encoding="utf8") as file:
+    with open(f"documents/{document_id}.txt", "r", encoding="utf8") as file:
         document = file.read()
         file.close()
 
@@ -94,7 +94,7 @@ async def visualize(
     viz = Visualizer()
     html = viz.get_html(chunks, document)
 
-    delete_file(f"documents/{document_id}")
+    delete_file(f"documents/{document_id}.txt")
 
     # Return dict with stats and HTML
     return {"stats": stats, "html": html}
