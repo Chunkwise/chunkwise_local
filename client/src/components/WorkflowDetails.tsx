@@ -12,12 +12,7 @@ type Props = {
 
 const MAX_BYTES = 50 * 1024; // 50kb
 
-const WorkflowDetails = ({
-  workflow,
-  configs,
-  sampleDoc,
-  onUpdate,
-}: Props) => {
+const WorkflowDetails = ({ workflow, configs, sampleDoc, onUpdate }: Props) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -79,12 +74,11 @@ const WorkflowDetails = ({
     }
 
     const initial: Record<string, number> = {};
-    initial["chunk_size"] = config.chunk_size.default;
-    if (config.chunk_overlap)
-      initial["chunk_overlap"] = config.chunk_overlap.default;
-    if (config.min_characters_per_chunk)
-      initial["min_characters_per_chunk"] =
-        config.min_characters_per_chunk.default;
+    for (const [key, value] of Object.entries(config)) {
+      if (typeof value !== "string") {
+        initial[key] = value.default;
+      }
+    }
     onUpdate({ chunker: name, chunkingConfig: initial });
   }
 
