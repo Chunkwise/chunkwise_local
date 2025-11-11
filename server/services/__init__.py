@@ -1,4 +1,4 @@
-from .local_services import get_chunks, get_visualization, get_evaluation
+from .local_services import get_chunks, get_evaluation
 from .s3_services import (
     download_s3_file,
     upload_s3_file,
@@ -8,7 +8,6 @@ from .s3_services import (
 
 __all__ = [
     "get_chunks",
-    "get_visualization",
     "get_evaluation",
     "download_s3_file",
     "upload_s3_file",
