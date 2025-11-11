@@ -23,57 +23,117 @@ def get_db_info(filename, section):
 
 
 def get_db_connection():
+    """
+    Creates and returns a connection object for the database.
+    """
     try:
         db_info = get_db_info("db_info.ini", "chunkwise-db")
         db_connection = psycopg2.connect(**db_info)
         print("Successfully connected to database.")
+        return db_connection
 
     except OperationalError:
         print("Error connecting to the database.")
 
-    return db_connection
-
 
 def create_workflow() -> int:
+    """
+    Creates a row in the workflow table and returns the id of the
+    created workflow.
+    """
     try:
-        pass
-    except:
-        pass
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        query = "INSERT INTO workflow (chunking_strategy) VALUES (null)"
+        cursor.execute(query)
+        result = cursor.fetchone()
+        return result
+    except Exception as e:
+        print(("Error creating workflow.", e))
     finally:
-        pass
+        if connection:
+            connection.close()
+            print("Database connection closed.")
 
 
-def update_workflow(workflow_id: int, updated_columns) -> Workflow:
+def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
+    """
+    Takes an id and an object with Workflow properties and sets the
+    corresponding columns in the database to match.
+    """
     try:
-        pass
-    except:
-        pass
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        query = "YOUR QUERY HERE"
+        cursor.execute(query)
+        result = cursor.fetchone()
+        return result
+    except Exception as e:
+        print(("Error updating workflow.", e))
     finally:
-        pass
+        if connection:
+            connection.close()
+            print("Database connection closed.")
 
 
 def delete_workflow(workflow_id: int) -> bool:
+    """
+    Deletes a workflow and returns a boolean representing whether the
+    operation was successful.
+    """
     try:
-        pass
-    except:
-        pass
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        query = "YOUR QUERY HERE"
+        cursor.execute(query)
+        result = cursor.fetchone()
+        return result
+    except Exception as e:
+        print(("Error deleting workflow.", e))
     finally:
-        pass
+        if connection:
+            connection.close()
+            print("Database connection closed.")
 
 
 def get_all_workflows() -> list[Workflow]:
+    """
+    Returns a list containing all of the workflows stored in the database.
+    """
     try:
-        pass
-    except:
-        pass
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        query = "YOUR QUERY HERE"
+        cursor.execute(query)
+        result = cursor.fetchone()
+        return result
+    except Exception as e:
+        print(("Error retrieving workflows.", e))
     finally:
-        pass
+        if connection:
+            connection.close()
+            print("Database connection closed.")
 
 
 def get_chunker_configuration(workflow_id) -> ChunkerConfig:
+    """
+    Takes an id and returns the chunking_strategy column for that row.
+    """
     try:
-        pass
-    except:
-        pass
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        query = "YOUR QUERY HERE"
+        cursor.execute(query)
+        result = cursor.fetchone()
+        return result
+    except Exception as e:
+        print(("Error retrieving chunker configuration.", e))
     finally:
-        pass
+        if connection:
+            connection.close()
+            print("Database connection closed.")
