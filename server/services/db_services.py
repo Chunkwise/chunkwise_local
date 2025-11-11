@@ -102,7 +102,7 @@ def delete_workflow(workflow_id: int) -> bool:
             print("Database connection closed.")
 
 
-def get_all_workflows() -> list[Workflow]:
+def get_all_workflows() -> list[list]:
     """
     Returns a list containing all of the workflows stored in the database.
     """
@@ -110,10 +110,10 @@ def get_all_workflows() -> list[Workflow]:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        query = "YOUR QUERY HERE"
+        query = "SELECT * FROM workflow"
         cursor.execute(query)
         print(query)
-        result = cursor.fetchone()
+        result = cursor.fetchall()
         return result
     except Exception as e:
         print(("Error retrieving workflows.", e))

@@ -165,6 +165,13 @@ async def delete_document(document_id: str) -> dict:
     return {"detail": "deleted"}
 
 
+@router.get("/workflows")
+@handle_endpoint_exceptions
+async def get_workflows():
+    result = get_all_workflows()
+    return result
+
+
 @router.post("/workflows")
 @handle_endpoint_exceptions
 async def insert_workflow():
