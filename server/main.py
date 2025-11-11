@@ -17,20 +17,20 @@ from utils import (
     extract_metrics,
     handle_endpoint_exceptions,
     Visualizer,
+    get_chunks_with_metadata,
 )
 from services import (
     upload_s3_file,
     download_s3_file,
     delete_s3_file,
     get_s3_file_names,
-    get_chunks,
     get_evaluation,
 )
 from fastapi import FastAPI, APIRouter, Body
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from chunkwise_core import adjustable_configs
+from chunkwise_core import adjustable_configs, create_chunker
 
 
 app = FastAPI()
@@ -89,7 +89,10 @@ async def visualize(
         document = file.read()
         file.close()
 
-    chunks = await get_chunks(chunker_config, document)
+    chunker = create_chunker(chunker_config)
+    chunks = get_chunks_with_metadata(chunker, document)
+    print("CHUNKS")
+    print(chunks)
     stats = calculate_chunk_stats(chunks)
     viz = Visualizer()
     html = viz.get_html(chunks, document)
