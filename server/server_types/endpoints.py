@@ -47,8 +47,8 @@ class VisualizeResponse(BaseModel):
 
 class Workflow(BaseModel):
     id: Optional[int]
-    document_id: Optional[int]
+    document_title: Optional[str]
     chunking_strategy: Optional[ChunkerConfig]
     chunks_stats: Optional[ChunkStatistics]
     visualization_html: Optional[str]
-    eval_metrics: Optional[EvaluationResponse]
+    eval_metrics: Optional[Evaluations]
