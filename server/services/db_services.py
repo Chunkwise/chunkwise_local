@@ -199,3 +199,25 @@ def get_chunker_configuration(workflow_id) -> ChunkerConfig:
         if connection:
             connection.close()
             print("Database connection closed.")
+
+
+def get_document_title(workflow_id):
+    """
+    Takes an id and returns the document_title column for that row.
+    """
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        query = "SELECT document_title FROM workflow WHERE id = %s"
+        cursor.execute(query, (workflow_id,))
+        print(query)
+
+        result = cursor.fetchone()
+        return result[0]
+    except Exception as e:
+        print(("Error retrieving chunker configuration.", e))
+    finally:
+        if connection:
+            connection.close()
+            print("Database connection closed.")

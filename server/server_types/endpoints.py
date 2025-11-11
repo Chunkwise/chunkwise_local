@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 from chunkwise_core import ChunkerConfig, Chunk, EvaluationResponse, EvaluationMetrics
 
@@ -39,7 +40,7 @@ class Workflow(BaseModel):
     chunking_strategy: Optional[ChunkerConfig] = None
     chunks_stats: Optional[ChunkStatistics] = None
     visualization_html: Optional[str] = None
-    evaluation_metrics: Optional[Evaluations] = None
+    evaluation_metrics: Optional[EvaluationMetrics] = None
 
 
 class DocumentUpload(BaseModel):

@@ -11,10 +11,10 @@ def extract_metrics(evaluation_response: EvaluationResponse) -> list[EvaluationM
     """
     return [
         {
-            "omega_precision": evals["precision_omega_mean"],
-            "precision": evals["precision_mean"],
-            "recall": evals["recall_mean"],
-            "iou": evals["iou_mean"],
+            "precision_omega_mean": evals["precision_omega_mean"],
+            "precision_mean": evals["precision_mean"],
+            "recall_mean": evals["recall_mean"],
+            "iou_mean": evals["iou_mean"],
         }
         for evals in evaluation_response["results"]
     ]

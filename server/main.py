@@ -32,6 +32,7 @@ from services import (
     delete_workflow,
     get_all_workflows,
     get_chunker_configuration,
+    get_document_title,
 )
 from fastapi import FastAPI, APIRouter, Body
 from fastapi.responses import JSONResponse
@@ -81,18 +82,18 @@ def configs():
 
 @router.get("/workflows/{workflow_id}/visualization")
 @handle_endpoint_exceptions
-async def visualize(
-    document_id: str, chunker_config: ChunkerConfig = Body(...)
-) -> VisualizeResponse:
+async def visualize(workflow_id: int) -> VisualizeResponse:
     """
     Receives chunking parameters and text from client, sends them to the chunking service,
     then sends the chunks to the visualization service and returns the HTML and statistics.
     """
 
-    await download_s3_file(document_id)
+    document_title = get_document_title(workflow_id)
+    chunker_config = get_chunker_configuration(workflow_id)
+    await download_s3_file(document_title)
 
     # Make document contents into a string
-    with open(f"documents/{document_id}.txt", "r", encoding="utf8") as file:
+    with open(f"documents/{document_title}.txt", "r", encoding="utf8") as file:
         document = file.read()
         file.close()
 
@@ -101,7 +102,7 @@ async def visualize(
     viz = Visualizer()
     html = viz.get_html(chunks, document)
 
-    delete_file(f"documents/{document_id}.txt")
+    delete_file(f"documents/{document_title}.txt")
 
     # Return dict with stats and HTML
     return {"stats": stats, "html": html}
@@ -116,28 +117,32 @@ async def evaluate(workflow_id: int) -> list[EvaluationMetrics]:
     data from it and sends that back to the clisent.
     """
 
+    document_title = get_document_title(workflow_id)
+    chunker_config = get_chunker_configuration(workflow_id)
+    evaluation = await get_evaluation(chunker_config, document_title)
+    metrics = extract_metrics(evaluation)
 
-#     evaluation = await get_evaluation(chunker_config, document_id)
-#     metrics = extract_metrics(evaluation)
-
-#     return metrics
+    return metrics
 
 
-# @router.post("/documents")
-# @handle_endpoint_exceptions
-# async def upload_document(document_title: DocumentUpload = Body(...), document_content: DocumentUpload = Body(...)) -> dict:
-#     """
-#     This endpoint receives a string and uses it to create a txt file.
-#     It then sends the file to S3 and returns the path/url of the created resource.
-#     """
+@router.post("/documents")
+@handle_endpoint_exceptions
+async def upload_document(
+    document_title: DocumentUpload = Body(...),
+    document_content: DocumentUpload = Body(...),
+) -> dict:
+    """
+    This endpoint receives a string and uses it to create a txt file.
+    It then sends the file to S3.
+    """
 
-#     # Create a temp file
-#     document_id = create_file(document)
-#     await upload_s3_file(document_id)
-#     delete_file(f"documents/{document_id}")
+    # Create a temp file
+    document_id = create_file(document_title, document_content)
+    await upload_s3_file(document_title)
+    delete_file(f"documents/{document_title}")
 
-#     # Return the name of the file
-#     return {"document_id": document_id}
+    # Return the name of the file
+    return {"detail": f"Successfully uploaded {document_title}"}
 
 
 @router.get("/documents")

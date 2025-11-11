@@ -1,4 +1,4 @@
-from .chunkwise_services import get_chunks, get_visualization, get_evaluation
+from .chunkwise_services import get_chunks, get_evaluation
 from .s3_services import (
     download_s3_file,
     upload_s3_file,
@@ -11,6 +11,7 @@ from .db_services import (
     delete_workflow,
     get_all_workflows,
     get_chunker_configuration,
+    get_document_title,
 )
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "delete_workflow",
     "get_all_workflows",
     "get_chunker_configuration",
+    "get_document_title",
 ]
