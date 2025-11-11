@@ -4,7 +4,7 @@ from .endpoints import (
     VisualizeResponse,
     Chunk,
     ChunkerConfig,
-    Evaluations,
+    EvaluationMetrics,
     EvaluationResponse,
 )
 
@@ -14,6 +14,6 @@ __all__ = [
     "VisualizeResponse",
     "ChunkerConfig",
     "VisualizeRequest",
-    "Evaluations",
+    "EvaluationMetrics",
     "EvaluationResponse",
 ]
