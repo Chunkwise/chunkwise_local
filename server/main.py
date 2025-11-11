@@ -8,7 +8,7 @@ import logging
 from server_types import (
     ChunkerConfig,
     VisualizeResponse,
-    Evaluations,
+    EvaluationMetrics,
 )
 from utils import (
     calculate_chunk_stats,
@@ -16,6 +16,7 @@ from utils import (
     create_file,
     extract_metrics,
     handle_endpoint_exceptions,
+    Visualizer,
 )
 from services import (
     upload_s3_file,
@@ -24,7 +25,6 @@ from services import (
     get_s3_file_names,
     get_chunks,
     get_evaluation,
-    get_visualization,
 )
 from fastapi import FastAPI, APIRouter, Body
 from fastapi.responses import JSONResponse
@@ -91,7 +91,8 @@ async def visualize(
 
     chunks = await get_chunks(chunker_config, document)
     stats = calculate_chunk_stats(chunks)
-    html = await get_visualization(chunks)
+    viz = Visualizer()
+    html = viz.get_html(chunks, document)
 
     delete_file(f"documents/{document_id}")
 
@@ -103,7 +104,7 @@ async def visualize(
 @handle_endpoint_exceptions
 async def evaluate(
     document_id: str, chunker_config: ChunkerConfig = Body(...)
-) -> list[Evaluations]:
+) -> list[EvaluationMetrics]:
     """
     Receives chunker configs and a document_id from the client, which it then
     sends to the evaluation server. Once it receives a response, it gets the necessary
