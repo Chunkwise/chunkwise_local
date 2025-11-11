@@ -29,6 +29,7 @@ def get_db_connection():
     try:
         db_info = get_db_info("db_info.ini", "chunkwise-db")
         db_connection = psycopg2.connect(**db_info)
+        db_connection.autocommit = True
         print("Successfully connected to database.")
         return db_connection
 
@@ -45,10 +46,10 @@ def create_workflow() -> int:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        query = "INSERT INTO workflow (chunking_strategy) VALUES (null)"
+        query = "INSERT INTO workflow DEFAULT VALUES RETURNING id;"
         cursor.execute(query)
         print(query)
-        result = cursor.fetchone()
+        result = cursor.fetchone()[0]
         return result
     except Exception as e:
         print(("Error creating workflow.", e))
