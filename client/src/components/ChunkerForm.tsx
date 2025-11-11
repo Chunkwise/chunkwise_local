@@ -1,4 +1,4 @@
-import type { Workflow, Config, ConfigOption } from "../types";
+import type { Workflow, Config } from "../types";
 
 interface ChunkerFormProps {
   workflow: Workflow;
