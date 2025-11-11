@@ -418,6 +418,9 @@ files = [
 [package.dependencies]
 loguru = ">=0.7.0"
 numpy = ">=2.0.0"
+openai = {version = ">=1.0.0", optional = true, markers = "extra == \"openai\""}
+pydantic = {version = ">=2.0.0", optional = true, markers = "extra == \"openai\""}
+tiktoken = {version = ">=0.5.0", optional = true, markers = "extra == \"openai\""}
 tqdm = ">=4.64.0"
 
 [package.extras]
@@ -538,9 +541,10 @@ files = []
 develop = true
 
 [package.dependencies]
-chonkie = ">=1.4.0,<2.0.0"
+chonkie = {version = "^1.4.1", extras = ["openai"]}
 langchain-text-splitters = ">=1.0.0,<2.0.0"
 pydantic = ">=2.12.3,<3.0.0"
+python-dotenv = "^1.2.1"
 
 [package.source]
 type = "directory"

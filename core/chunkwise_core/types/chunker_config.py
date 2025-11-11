@@ -139,12 +139,12 @@ class ChonkieSentenceConfig(ChonkieBaseConfig):
 
 class ChonkieSemanticConfig(ChonkieBaseConfig):
     chunker_type: Literal["semantic"] = "semantic"
-    embedding_model: str | OpenAIEmbeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
-    threshold: float = Field(default=0.8, ge=0, le=1)
-    chunk_size: int = Field(default=2048, ge=1)
-    similarity_window: int = Field(default=3, ge=1)
-    min_sentences_per_chunk: int = Field(default=1, ge=1)
-    min_characters_per_sentence: int = Field(default=24, ge=1)
+    embedding_model: str | OpenAIEmbeddings | None = None
+    threshold: float = 0.8
+    chunk_size: int = 2048
+    similarity_window: int = 3
+    min_sentences_per_chunk: int = 1
+    min_characters_per_sentence: int = 24
     delim: str | list[str] = [". ", "! ", "? ", "\n"]
     include_delim: Literal["prev", "next"] | None = "prev"
     skip_window: int = 0
@@ -165,7 +165,7 @@ class ChonkieSemanticConfig(ChonkieBaseConfig):
 
 class ChonkieSlumberConfig(ChonkieBaseConfig):
     chunker_type: Literal["slumber"] = "slumber"
-    genie: OpenAIGenie | None = OpenAIGenie(api_key=OPENAI_API_KEY)
+    genie: OpenAIGenie | None = None
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     chunk_size: int = Field(default=2048, ge=1)
     rules: RecursiveRules = RecursiveRules()

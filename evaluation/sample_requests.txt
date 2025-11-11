@@ -7,7 +7,7 @@
   "document_id": "sample_document_small",
   "query_generation_config": {
     "num_rounds": 1,
-    "queries_per_corpus": 3,
+    "queries_per_corpus": 3
   },
   "chunking_configs": [
     {
@@ -21,23 +21,23 @@
 
 >> response 1: 
 {
-  "embedding_model": "openai.text-embedding-3-large",
-  "corpus_id": "sample_document_small",
-  "document_s3_key": "documents/sample_document_small.txt",
-  "queries_s3_key": "queries/sample_document_small/llm_queries_sample_document_small.csv",
-  "queries_generated": true,
-  "num_queries": 2,
-  "chunkers_evaluated": [
-    "langchain recursive"
-  ],
-  "results": [
-    {
-      "iou_mean": 0.2017241379310345,
-      "recall_mean": 1.0,
-      "precision_mean": 0.2017241379310345,
-      "precision_omega_mean": 0.6003401360544218
-    }
-  ]
+    "embedding_model": "openai.text-embedding-3-large",
+    "corpus_id": "sample_document_small",
+    "document_s3_key": "documents/sample_document_small.txt",
+    "queries_s3_key": "queries/sample_document_small.csv",
+    "queries_generated": true,
+    "num_queries": 2,
+    "chunkers_evaluated": [
+        "langchain recursive"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.20287356321839078,
+            "recall_mean": 1.0,
+            "precision_mean": 0.20287356321839078,
+            "precision_omega_mean": 0.6037765621712603
+        }
+    ]
 }
 
 -----------------------
@@ -48,7 +48,6 @@
 
 {
   "document_id": "sample_document_small",
-  "queries_id": "llm_queries_sample_document_small",
   "chunking_configs": [
     {
       "provider": "chonkie",
@@ -64,7 +63,7 @@
   "embedding_model": "openai.text-embedding-3-large",
   "corpus_id": "sample_document_small",
   "document_s3_key": "documents/sample_document_small.txt",
-  "queries_s3_key": "queries/sample_document_small/llm_queries_sample_document_small.csv",
+  "queries_s3_key": "queries/sample_document_small.csv",
   "queries_generated": false,
   "num_queries": 2,
   "chunkers_evaluated": [
@@ -103,7 +102,7 @@
     "embedding_model": "openai.text-embedding-3-large",
     "corpus_id": "test_document",
     "document_s3_key": "documents/test_document.txt",
-    "queries_s3_key": "queries/test_document/llm_queries_test_document.csv",
+    "queries_s3_key": "queries/test_document.csv",
     "queries_generated": true,
     "num_queries": 3,
     "chunkers_evaluated": [
