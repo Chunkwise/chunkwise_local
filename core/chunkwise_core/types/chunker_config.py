@@ -141,10 +141,10 @@ class ChonkieSemanticConfig(ChonkieBaseConfig):
     chunker_type: Literal["semantic"] = "semantic"
     embedding_model: str | OpenAIEmbeddings | None = None
     threshold: float = 0.8
-    chunk_size: int = 2048
-    similarity_window: int = 3
-    min_sentences_per_chunk: int = 1
-    min_characters_per_sentence: int = 24
+    chunk_size: int = Field(default=2048, ge=1)
+    min_sentences_per_chunk: int = Field(default=1, ge=1)
+    min_characters_per_sentence: int = Field(default=24, ge=1)
+    similarity_window: int = Field(default=3, ge=1)
     delim: str | list[str] = [". ", "! ", "? ", "\n"]
     include_delim: Literal["prev", "next"] | None = "prev"
     skip_window: int = 0
