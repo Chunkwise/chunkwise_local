@@ -25,6 +25,11 @@ from services import (
     get_chunks,
     get_evaluation,
     get_visualization,
+    create_workflow,
+    update_workflow,
+    delete_workflow,
+    get_all_workflows,
+    get_chunker_configuration,
 )
 from fastapi import FastAPI, APIRouter, Body
 from fastapi.responses import JSONResponse
@@ -160,6 +165,13 @@ async def delete_document(document_id: str) -> dict:
     return {"detail": "deleted"}
 
 
+@router.post("/workflows")
+@handle_endpoint_exceptions
+async def insert_workflow():
+    result = create_workflow()
+    return result
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(_request, _exc):
     """
@@ -169,4 +181,4 @@ async def global_exception_handler(_request, _exc):
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
-app.include_router(router, prefix="/api/documents")
+app.include_router(router, prefix="/api")

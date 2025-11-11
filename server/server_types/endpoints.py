@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, Optional
+from pydantic import BaseModel
 from chunkwise_core import ChunkerConfig, Chunk, EvaluationResponse
 
 

@@ -32,8 +32,8 @@ def get_db_connection():
         print("Successfully connected to database.")
         return db_connection
 
-    except OperationalError:
-        print("Error connecting to the database.")
+    except OperationalError as e:
+        print(("Error connecting to the database.", e))
 
 
 def create_workflow() -> int:
@@ -47,6 +47,7 @@ def create_workflow() -> int:
 
         query = "INSERT INTO workflow (chunking_strategy) VALUES (null)"
         cursor.execute(query)
+        print(query)
         result = cursor.fetchone()
         return result
     except Exception as e:
@@ -68,6 +69,7 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
 
         query = "YOUR QUERY HERE"
         cursor.execute(query)
+        print(query)
         result = cursor.fetchone()
         return result
     except Exception as e:
@@ -89,6 +91,7 @@ def delete_workflow(workflow_id: int) -> bool:
 
         query = "YOUR QUERY HERE"
         cursor.execute(query)
+        print(query)
         result = cursor.fetchone()
         return result
     except Exception as e:
@@ -109,6 +112,7 @@ def get_all_workflows() -> list[Workflow]:
 
         query = "YOUR QUERY HERE"
         cursor.execute(query)
+        print(query)
         result = cursor.fetchone()
         return result
     except Exception as e:
@@ -129,6 +133,7 @@ def get_chunker_configuration(workflow_id) -> ChunkerConfig:
 
         query = "YOUR QUERY HERE"
         cursor.execute(query)
+        print(query)
         result = cursor.fetchone()
         return result
     except Exception as e:
