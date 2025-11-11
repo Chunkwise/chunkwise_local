@@ -1,17 +1,11 @@
-import os
 from typing import Literal, Callable, Annotated
-from dotenv import load_dotenv
 from pydantic import BaseModel, Field, ConfigDict, model_validator, field_serializer
 from chonkie.types import RecursiveRules
 from chonkie.genie import OpenAIGenie
 from chonkie.embeddings import OpenAIEmbeddings
 
-load_dotenv()
-
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # ChunkerConfig models using Pydantic v2
-# Only considering 4 chunkers for now
 class LangChainBaseConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
     provider: Literal["langchain"] = "langchain"
@@ -23,7 +17,7 @@ class LangChainBaseConfig(BaseModel):
     strip_whitespace: bool = True
 
     @model_validator(mode="after")
-    def validate(self) -> "LangChainBaseConfig":
+    def validate_config(self) -> "LangChainBaseConfig":
         if self.chunk_size < 1:
             raise ValueError("chunk_size must be greater than or equal to one")
         if self.chunk_overlap < 0:
@@ -75,11 +69,13 @@ class ChonkieRecursiveConfig(ChonkieBaseConfig):
     min_characters_per_chunk: int = Field(default=24, ge=1)
 
     @model_validator(mode="after")
-    def validate(self) -> "ChonkieRecursiveConfig":
+    def validate_config(self) -> "ChonkieRecursiveConfig":
         if self.chunk_size <= 0:
             raise ValueError("chunk_size must be greater than or equal to one")
         if self.min_characters_per_chunk <= 0:
-            raise ValueError("min_characters_per_chunk must be greater than or equal to one")
+            raise ValueError(
+                "min_characters_per_chunk must be greater than or equal to one"
+            )
         if self.min_characters_per_chunk >= self.chunk_size:
             raise ValueError(
                 f"chunk_overlap ({self.min_characters_per_chunk}) must be less than "
@@ -95,7 +91,7 @@ class ChonkieTokenConfig(ChonkieBaseConfig):
     chunk_overlap: int | float = Field(default=0, ge=0)
 
     @model_validator(mode="after")
-    def validate(self) -> "ChonkieTokenConfig":
+    def validate_config(self) -> "ChonkieTokenConfig":
         if self.chunk_size <= 0:
             raise ValueError("chunk_size must be greater than or equal to one")
         if self.chunk_overlap < 0:
@@ -120,7 +116,7 @@ class ChonkieSentenceConfig(ChonkieBaseConfig):
     include_delim: Literal["prev", "next"] | None = "prev"
 
     @model_validator(mode="after")
-    def validate(self) -> "ChonkieSentenceConfig":
+    def validate_config(self) -> "ChonkieSentenceConfig":
         if self.chunk_size < 1:
             raise ValueError("chunk_size must be greater than or equal to one")
         if self.chunk_overlap < 0:
@@ -131,9 +127,13 @@ class ChonkieSentenceConfig(ChonkieBaseConfig):
                 f"chunk_size ({self.chunk_size})"
             )
         if self.min_sentences_per_chunk < 1:
-            raise ValueError("min_sentences_per_chunk must be greater than or equal to one")
+            raise ValueError(
+                "min_sentences_per_chunk must be greater than or equal to one"
+            )
         if self.min_characters_per_sentence < 1:
-            raise ValueError("min_characters_per_sentence must be greater than or equal to one")
+            raise ValueError(
+                "min_characters_per_sentence must be greater than or equal to one"
+            )
         return self
 
 
@@ -141,10 +141,10 @@ class ChonkieSemanticConfig(ChonkieBaseConfig):
     chunker_type: Literal["semantic"] = "semantic"
     embedding_model: str | OpenAIEmbeddings | None = None
     threshold: float = 0.8
-    chunk_size: int = 2048
-    similarity_window: int = 3
-    min_sentences_per_chunk: int = 1
-    min_characters_per_sentence: int = 24
+    chunk_size: int = Field(default=2048, ge=1)
+    min_sentences_per_chunk: int = Field(default=1, ge=1)
+    min_characters_per_sentence: int = Field(default=24, ge=1)
+    similarity_window: int = Field(default=3, ge=1)
     delim: str | list[str] = [". ", "! ", "? ", "\n"]
     include_delim: Literal["prev", "next"] | None = "prev"
     skip_window: int = 0
@@ -153,13 +153,17 @@ class ChonkieSemanticConfig(ChonkieBaseConfig):
     filter_tolerance: float = 0.2
 
     @model_validator(mode="after")
-    def validate(self) -> "ChonkieSemanticConfig":
+    def validate_config(self) -> "ChonkieSemanticConfig":
         if self.chunk_size < 1:
             raise ValueError("chunk_size must be greater than or equal to one")
         if self.min_sentences_per_chunk < 1:
-            raise ValueError("min_sentences_per_chunk must be greater than or equal to one")
+            raise ValueError(
+                "min_sentences_per_chunk must be greater than or equal to one"
+            )
         if self.min_characters_per_sentence < 1:
-            raise ValueError("min_characters_per_sentence must be greater than or equal to one")
+            raise ValueError(
+                "min_characters_per_sentence must be greater than or equal to one"
+            )
         return self
 
 
@@ -174,11 +178,13 @@ class ChonkieSlumberConfig(ChonkieBaseConfig):
     verbose: bool = True
 
     @model_validator(mode="after")
-    def validate(self) -> "ChonkieSlumberConfig":
+    def validate_config(self) -> "ChonkieSlumberConfig":
         if self.chunk_size <= 0:
             raise ValueError("chunk_size must be greater than or equal to one")
         if self.min_characters_per_chunk <= 0:
-            raise ValueError("min_characters_per_chunk must be greater than or equal to one")
+            raise ValueError(
+                "min_characters_per_chunk must be greater than or equal to one"
+            )
         if self.min_characters_per_chunk >= self.chunk_size:
             raise ValueError(
                 f"chunk_overlap ({self.min_characters_per_chunk}) must be less than "

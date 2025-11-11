@@ -8,14 +8,16 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 
-BUCKET_NAME = "chunkwise-test"
+BUCKET_NAME = "chunkwise-sample"
 
 
 async def upload_s3_file(document_id):
     """Upload a file to s3"""
     try:
         s3_client = boto3.client("s3")
-        s3_client.upload_file(f"documents/{document_id}", BUCKET_NAME, document_id)
+        s3_client.upload_file(
+            f"documents/{document_id}.txt", BUCKET_NAME, f"documents/{document_id}.txt"
+        )
         return True
 
     except ClientError:
@@ -26,7 +28,9 @@ async def download_s3_file(document_id):
     """Download a file from s3"""
     try:
         s3_client = boto3.client("s3")
-        s3_client.download_file(BUCKET_NAME, document_id, f"documents/{document_id}")
+        s3_client.download_file(
+            BUCKET_NAME, f"documents/{document_id}.txt", f"documents/{document_id}.txt"
+        )
         return True
 
     except ClientError:

@@ -8,7 +8,7 @@ import logging
 from server_types import (
     ChunkerConfig,
     VisualizeResponse,
-    Evaluations,
+    EvaluationMetrics,
     DocumentUpload,
     Workflow,
 )
@@ -18,6 +18,7 @@ from utils import (
     create_file,
     extract_metrics,
     handle_endpoint_exceptions,
+    Visualizer,
 )
 from services import (
     upload_s3_file,
@@ -26,7 +27,6 @@ from services import (
     get_s3_file_names,
     get_chunks,
     get_evaluation,
-    get_visualization,
     create_workflow,
     update_workflow,
     delete_workflow,
@@ -79,43 +79,43 @@ def configs():
     return adjustable_configs
 
 
-# @router.get("/workflows/{workflow_id}/visualization")
-# @handle_endpoint_exceptions
-# async def visualize(
-#     document_id: str, chunker_config: ChunkerConfig = Body(...)
-# ) -> VisualizeResponse:
-#     """
-#     Receives chunking parameters and text from client, sends them to the chunking service,
-#     then sends the chunks to the visualization service and returns the HTML and statistics.
-#     """
+@router.get("/workflows/{workflow_id}/visualization")
+@handle_endpoint_exceptions
+async def visualize(
+    document_id: str, chunker_config: ChunkerConfig = Body(...)
+) -> VisualizeResponse:
+    """
+    Receives chunking parameters and text from client, sends them to the chunking service,
+    then sends the chunks to the visualization service and returns the HTML and statistics.
+    """
 
-#     await download_s3_file(document_id)
+    await download_s3_file(document_id)
 
-#     # Make document contents into a string
-#     with open(f"documents/{document_id}", "r", encoding="utf8") as file:
-#         document = file.read()
-#         file.close()
+    # Make document contents into a string
+    with open(f"documents/{document_id}.txt", "r", encoding="utf8") as file:
+        document = file.read()
+        file.close()
 
-#     chunks = await get_chunks(chunker_config, document)
-#     stats = calculate_chunk_stats(chunks)
-#     html = await get_visualization(chunks)
+    chunks = await get_chunks(chunker_config, document)
+    stats = calculate_chunk_stats(chunks)
+    viz = Visualizer()
+    html = viz.get_html(chunks, document)
 
-#     delete_file(f"documents/{document_id}")
+    delete_file(f"documents/{document_id}.txt")
 
-#     # Return dict with stats and HTML
-#     return {"stats": stats, "html": html}
+    # Return dict with stats and HTML
+    return {"stats": stats, "html": html}
 
 
-# @router.get("/workflows/{workflow_id}/evaluation")
-# @handle_endpoint_exceptions
-# async def evaluate(
-#     document_id: str, chunker_config: ChunkerConfig = Body(...)
-# ) -> list[Evaluations]:
-#     """
-#     Receives chunker configs and a document_id from the client, which it then
-#     sends to the evaluation server. Once it receives a response, it gets the necessary
-#     data from it and sends that back to the clisent.
-#     """
+@router.get("/workflows/{workflow_id}/evaluation")
+@handle_endpoint_exceptions
+async def evaluate(workflow_id: int) -> list[EvaluationMetrics]:
+    """
+    Receives chunker configs and a document_id from the client, which it then
+    sends to the evaluation server. Once it receives a response, it gets the necessary
+    data from it and sends that back to the clisent.
+    """
+
 
 #     evaluation = await get_evaluation(chunker_config, document_id)
 #     metrics = extract_metrics(evaluation)

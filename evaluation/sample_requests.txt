@@ -118,6 +118,148 @@
     ]
 }
 
+-----------------------
+>> request body 4 (langchain character)
+{
+  "document_id": "sample_document_small",
+  "chunking_configs": [
+    {
+      "provider": "langchain",
+      "chunker_type": "character",
+      "chunk_size": 400,
+      "chunk_overlap": 20
+    }
+  ]
+}
+
+>> response 4:
+{
+    "embedding_model": "openai.text-embedding-3-large",
+    "corpus_id": "sample_document_small",
+    "document_s3_key": "documents/sample_document_small.txt",
+    "queries_s3_key": "queries/sample_document_small.csv",
+    "queries_generated": false,
+    "num_queries": 2,
+    "chunkers_evaluated": [
+        "langchain character"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.20287356321839078,
+            "recall_mean": 1.0,
+            "precision_mean": 0.20287356321839078,
+            "precision_omega_mean": 0.6037765621712603
+        }
+    ]
+}
+
+-------------------
+>> request body 5 (chonkie sentence):
+{
+  "document_id": "sample_document_medium",
+  "chunking_configs": [
+    {
+      "provider": "chonkie",
+      "chunker_type": "sentence",
+      "chunk_size": 400,
+      "chunk_overlap": 20,
+      "min_sentences_per_chunk": 3
+    }
+  ]
+}
+
+>> response 5:
+{
+  "embedding_model": "openai.text-embedding-3-large",
+  "corpus_id": "sample_document_medium",
+  "document_s3_key": "documents/sample_document_medium.txt",
+  "queries_s3_key": "queries/sample_document_medium.csv",
+  "queries_generated": true,
+  "num_queries": 5,
+  "chunkers_evaluated": [
+    "chonkie sentence"
+  ],
+  "results": [
+    {
+      "iou_mean": 0.11259697729212119,
+      "recall_mean": 0.8533333333333333,
+      "precision_mean": 0.1152623476694162,
+      "precision_omega_mean": 0.3856579779722213
+    }
+  ]
+}
+
+-----------------
+>> request body 6 (chonkie semantic):
+{
+  "document_id": "sample_document_medium",
+  "chunking_configs": [
+    {
+      "provider": "chonkie",
+      "chunker_type": "semantic",
+      "chunk_size": 400,
+      "chunk_overlap": 20,
+      "min_sentences_per_chunk": 3,
+      "min_characters_per_sentence": 50
+    }
+  ]
+}
+
+>> response 6:
+{
+    "embedding_model": "openai.text-embedding-3-large",
+    "corpus_id": "sample_document_medium",
+    "document_s3_key": "documents/sample_document_medium.txt",
+    "queries_s3_key": "queries/sample_document_medium.csv",
+    "queries_generated": false,
+    "num_queries": 5,
+    "chunkers_evaluated": [
+        "chonkie semantic"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.08392418545807205,
+            "recall_mean": 0.757904761904762,
+            "precision_mean": 0.08903936643857821,
+            "precision_omega_mean": 0.2868478920703101
+        }
+    ]
+}
+
+------------------
+>> request body 7 (chonkie slumber):
+{
+  "document_id": "test_document",
+  "chunking_configs": [
+    {
+      "provider": "chonkie",
+      "chunker_type": "slumber",
+      "chunk_size": 400,
+      "min_characters_per_chunk": 80
+    }
+  ]
+}
+
+>> response 7:
+{
+    "embedding_model": "openai.text-embedding-3-large",
+    "corpus_id": "test_document",
+    "document_s3_key": "documents/test_document.txt",
+    "queries_s3_key": "queries/test_document.csv",
+    "queries_generated": false,
+    "num_queries": 5,
+    "chunkers_evaluated": [
+        "chonkie slumber"
+    ],
+    "results": [
+        {
+            "iou_mean": 0.10176496176781272,
+            "recall_mean": 0.8990859232175502,
+            "precision_mean": 0.10719182005828995,
+            "precision_omega_mean": 0.48315932913084847
+        }
+    ]
+}
 
 -----------------------Legacy sample requests (local file storage)-----------------------
 

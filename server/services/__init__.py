@@ -15,7 +15,6 @@ from .db_services import (
 
 __all__ = [
     "get_chunks",
-    "get_visualization",
     "get_evaluation",
     "download_s3_file",
     "upload_s3_file",
