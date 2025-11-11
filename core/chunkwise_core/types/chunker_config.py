@@ -108,7 +108,7 @@ class ChonkieSentenceConfig(ChonkieBaseConfig):
 
 class ChonkieSemanticConfig(ChonkieBaseConfig):
     chunker_type: Literal["semantic"] = "semantic"
-    embedding_model: str | OpenAIEmbeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
+    embedding_model: str | OpenAIEmbeddings | None = None
     threshold: float = 0.8
     chunk_size: int = 2048
     similarity_window: int = 3
@@ -124,7 +124,7 @@ class ChonkieSemanticConfig(ChonkieBaseConfig):
 
 class ChonkieSlumberConfig(ChonkieBaseConfig):
     chunker_type: Literal["slumber"] = "slumber"
-    genie: OpenAIGenie | None = OpenAIGenie(api_key=OPENAI_API_KEY)
+    genie: OpenAIGenie | None = None
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     chunk_size: int = 2048
     rules: RecursiveRules = RecursiveRules()
