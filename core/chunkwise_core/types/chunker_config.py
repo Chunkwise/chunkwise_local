@@ -23,8 +23,11 @@ class LangChainBaseConfig(BaseModel):
     strip_whitespace: bool = True
 
     @model_validator(mode="after")
-    def validate_overlap(self) -> "LangChainBaseConfig":
-        """Validate that chunk_overlap < chunk_size."""
+    def validate(self) -> "LangChainBaseConfig":
+        if self.chunk_size < 1:
+            raise ValueError("chunk_size must be greater than or equal to one")
+        if self.chunk_overlap < 0:
+            raise ValueError("chunk_overlap must be greater than or equal to zero")
         if self.chunk_overlap >= self.chunk_size:
             raise ValueError(
                 f"chunk_overlap ({self.chunk_overlap}) must be less than "
@@ -68,28 +71,39 @@ class ChonkieRecursiveConfig(ChonkieBaseConfig):
     chunker_type: Literal["recursive"] = "recursive"
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     rules: RecursiveRules = Field(default_factory=RecursiveRules)
-    chunk_size: int = Field(default=2048, gt=0)
-    min_characters_per_chunk: int = Field(default=24, gt=0)
+    chunk_size: int = Field(default=2048, ge=1)
+    min_characters_per_chunk: int = Field(default=24, ge=1)
+
+    @model_validator(mode="after")
+    def validate(self) -> "ChonkieRecursiveConfig":
+        if self.chunk_size <= 0:
+            raise ValueError("chunk_size must be greater than or equal to one")
+        if self.min_characters_per_chunk <= 0:
+            raise ValueError("min_characters_per_chunk must be greater than or equal to one")
+        if self.min_characters_per_chunk >= self.chunk_size:
+            raise ValueError(
+                f"chunk_overlap ({self.min_characters_per_chunk}) must be less than "
+                f"chunk_size ({self.chunk_size})"
+            )
+        return self
 
 
 class ChonkieTokenConfig(ChonkieBaseConfig):
     chunker_type: Literal["token"] = "token"
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
-    chunk_size: int = Field(default=2048, gt=0)
+    chunk_size: int = Field(default=2048, ge=1)
     chunk_overlap: int | float = Field(default=0, ge=0)
 
     @model_validator(mode="after")
-    def validate_overlap(self) -> "ChonkieTokenConfig":
-        if (
-            isinstance(self.chunk_overlap, int)
-            and self.chunk_overlap >= self.chunk_size
-        ):
+    def validate(self) -> "ChonkieTokenConfig":
+        if self.chunk_size <= 0:
+            raise ValueError("chunk_size must be greater than or equal to one")
+        if self.chunk_overlap < 0:
+            raise ValueError("chunk_overlap must be greater than or equal to zero")
+        if self.chunk_overlap >= self.chunk_size:
             raise ValueError(
-                f"chunk_overlap ({self.chunk_overlap}) must be less than chunk_size ({self.chunk_size})"
-            )
-        if isinstance(self.chunk_overlap, float) and not (0 <= self.chunk_overlap < 1):
-            raise ValueError(
-                f"float chunk_overlap ({self.chunk_overlap}) should be a proportion in [0, 1)."
+                f"chunk_overlap ({self.chunk_overlap}) must be less than "
+                f"chunk_size ({self.chunk_size})"
             )
         return self
 
@@ -97,18 +111,35 @@ class ChonkieTokenConfig(ChonkieBaseConfig):
 class ChonkieSentenceConfig(ChonkieBaseConfig):
     chunker_type: Literal["sentence"] = "sentence"
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
-    chunk_size: int = 2048
-    chunk_overlap: int = 0
-    min_sentences_per_chunk: int = 1
-    min_characters_per_sentence: int = 12
+    chunk_size: int = Field(default=2048, ge=1)
+    chunk_overlap: int | float = Field(default=0, ge=0)
+    min_sentences_per_chunk: int = Field(default=1, ge=1)
+    min_characters_per_sentence: int = Field(default=24, ge=1)
     approximate: bool = False
     delim: str | list[str] = [". ", "! ", "? ", "\n"]
     include_delim: Literal["prev", "next"] | None = "prev"
 
+    @model_validator(mode="after")
+    def validate(self) -> "ChonkieSentenceConfig":
+        if self.chunk_size < 1:
+            raise ValueError("chunk_size must be greater than or equal to one")
+        if self.chunk_overlap < 0:
+            raise ValueError("chunk_overlap must be greater than or equal to zero")
+        if self.chunk_overlap >= self.chunk_size:
+            raise ValueError(
+                f"chunk_overlap ({self.chunk_overlap}) must be less than "
+                f"chunk_size ({self.chunk_size})"
+            )
+        if self.min_sentences_per_chunk < 1:
+            raise ValueError("min_sentences_per_chunk must be greater than or equal to one")
+        if self.min_characters_per_sentence < 1:
+            raise ValueError("min_characters_per_sentence must be greater than or equal to one")
+        return self
+
 
 class ChonkieSemanticConfig(ChonkieBaseConfig):
     chunker_type: Literal["semantic"] = "semantic"
-    embedding_model: str | OpenAIEmbeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
+    embedding_model: str | OpenAIEmbeddings | None = None
     threshold: float = 0.8
     chunk_size: int = 2048
     similarity_window: int = 3
@@ -121,16 +152,39 @@ class ChonkieSemanticConfig(ChonkieBaseConfig):
     filter_polyorder: int = 3
     filter_tolerance: float = 0.2
 
+    @model_validator(mode="after")
+    def validate(self) -> "ChonkieSemanticConfig":
+        if self.chunk_size < 1:
+            raise ValueError("chunk_size must be greater than or equal to one")
+        if self.min_sentences_per_chunk < 1:
+            raise ValueError("min_sentences_per_chunk must be greater than or equal to one")
+        if self.min_characters_per_sentence < 1:
+            raise ValueError("min_characters_per_sentence must be greater than or equal to one")
+        return self
+
 
 class ChonkieSlumberConfig(ChonkieBaseConfig):
     chunker_type: Literal["slumber"] = "slumber"
-    genie: OpenAIGenie | None = OpenAIGenie(api_key=OPENAI_API_KEY)
+    genie: OpenAIGenie | None = None
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
-    chunk_size: int = 2048
+    chunk_size: int = Field(default=2048, ge=1)
     rules: RecursiveRules = RecursiveRules()
-    candidate_size: int = 128
-    min_characters_per_chunk: int = 24
+    candidate_size: int = Field(default=128, ge=1)
+    min_characters_per_chunk: int = Field(default=24, ge=1)
     verbose: bool = True
+
+    @model_validator(mode="after")
+    def validate(self) -> "ChonkieSlumberConfig":
+        if self.chunk_size <= 0:
+            raise ValueError("chunk_size must be greater than or equal to one")
+        if self.min_characters_per_chunk <= 0:
+            raise ValueError("min_characters_per_chunk must be greater than or equal to one")
+        if self.min_characters_per_chunk >= self.chunk_size:
+            raise ValueError(
+                f"chunk_overlap ({self.min_characters_per_chunk}) must be less than "
+                f"chunk_size ({self.chunk_size})"
+            )
+        return self
 
 
 LangChainConfigs = Annotated[
