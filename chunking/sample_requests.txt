@@ -1,7 +1,7 @@
 sample request body 1:
 {
   "chunker_config": {
-    "chunker_type": "chonkie_token",
+    "chunker_type": "token",
     "provider": "chonkie",
     "chunk_size": "500",
     "chunk_overlap": "50"
