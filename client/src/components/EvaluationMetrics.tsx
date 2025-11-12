@@ -28,9 +28,14 @@ const EvaluationMetrics = ({ metrics }: EvaluationMetricsProps) => {
   const precisionPercent = (metrics.precision_mean * 100).toFixed(1);
   const recallPercent = (metrics.recall_mean * 100).toFixed(1);
   const iouPercent = (metrics.iou_mean * 100).toFixed(1);
+  const precisionOmegaPercent = (metrics.precision_omega_mean * 100).toFixed(1);
 
   const overallRating = getRating(
-    (metrics.precision_mean + metrics.recall_mean + metrics.iou_mean) / 3
+    (metrics.precision_mean +
+      metrics.recall_mean +
+      metrics.iou_mean +
+      metrics.precision_omega_mean) /
+      4
   );
 
   return (
@@ -61,6 +66,25 @@ const EvaluationMetrics = ({ metrics }: EvaluationMetricsProps) => {
                 width: `${precisionPercent}%`,
                 backgroundColor: getRatingColor(
                   getRating(metrics.precision_mean)
+                ),
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="metric-item">
+          <div className="metric-header">
+            <span className="metric-name">Precision Omega</span>
+            <span className="metric-value">{precisionOmegaPercent}%</span>
+          </div>
+          <p className="metric-description">Weighted precision metric</p>
+          <div className="progress-bar">
+            <div
+              className="progress-fill"
+              style={{
+                width: `${precisionOmegaPercent}%`,
+                backgroundColor: getRatingColor(
+                  getRating(metrics.precision_omega_mean)
                 ),
               }}
             />
