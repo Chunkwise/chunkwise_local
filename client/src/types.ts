@@ -12,7 +12,7 @@ export interface ConfigOption {
   default: number;
 }
 
-export interface Config {
+export interface Chunker {
   name: string;
   [key: string]: string | ConfigOption;
 }

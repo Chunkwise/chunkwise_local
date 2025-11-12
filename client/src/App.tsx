@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
-import type { Workflow, Config } from "./types";
+import type { Workflow, Chunker } from "./types";
 import Header from "./components/Header";
 import WorkflowList from "./components/WorkflowList";
 import WorkflowDetails from "./components/WorkflowDetails";
@@ -29,7 +29,7 @@ export default function App() {
     workflows: stored.workflows,
     selectedWorkflowId: stored.selectedWorkflowId,
   } as State);
-  const [configs, setConfigs] = useState<Config[]>([]);
+  const [chunkers, setChunkers] = useState<Chunker[]>([]);
 
   useEffect(() => {
     setStored(state);
@@ -37,7 +37,7 @@ export default function App() {
 
   useEffect(() => {
     getConfigs()
-      .then((data) => setConfigs(data))
+      .then((data) => setChunkers(data))
       .catch((error) => {
         console.error(error);
       });
@@ -88,7 +88,7 @@ export default function App() {
 
         <main className="main-content">
           <WorkflowDetails
-            configs={configs}
+            chunkers={chunkers}
             workflow={selectedWorkflow}
             onUpdateWorkflow={(patch) =>
               state.selectedWorkflowId &&

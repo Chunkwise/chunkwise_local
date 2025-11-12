@@ -1,17 +1,17 @@
-import type { Workflow, Config } from "../types";
+import type { Workflow, Chunker } from "../types";
 
 interface ChunkerFormProps {
   workflow: Workflow;
-  configs: Config[];
-  selectedConfig?: Config;
+  chunkers: Chunker[];
+  selectedChunkerConfig?: Chunker;
   onChunkerChange: (chunker: string) => void;
   onConfigChange: (option: string, value: number) => void;
 }
 
 const ChunkerForm = ({
   workflow,
-  configs,
-  selectedConfig,
+  chunkers,
+  selectedChunkerConfig,
   onChunkerChange,
   onConfigChange,
 }: ChunkerFormProps) => {
@@ -27,42 +27,50 @@ const ChunkerForm = ({
             onChange={(event) => onChunkerChange(event.target.value)}
           >
             <option value="">-- choose chunker --</option>
-            {configs.map((config) => (
-              <option key={config.name} value={config.name}>
-                {config.name}
+            {chunkers.map((chunker) => (
+              <option key={chunker.name} value={chunker.name}>
+                {chunker.name}
               </option>
             ))}
           </select>
         </div>
 
-        {workflow.chunker && selectedConfig ? (
+        {workflow.chunker && selectedChunkerConfig ? (
           <div className="config-area">
             <div className="muted">
               Configure chunker options (defaults pre-selected)
             </div>
-            {Object.keys(selectedConfig).map((key) =>
-              typeof selectedConfig[key] === "string" ? (
+            {Object.keys(selectedChunkerConfig).map((key) =>
+              typeof selectedChunkerConfig[key] === "string" ? (
                 ""
               ) : (
                 <div key={key} className="config-row">
                   <label className="label">{key}</label>
-                  <input
-                    type="number"
-                    step={selectedConfig[key]?.type === "int" ? 1 : 0.01}
-                    className="input"
-                    value={
-                      workflow.chunkingConfig?.[key] ??
-                      selectedConfig[key]?.default
-                    }
-                    min={selectedConfig[key]?.min}
-                    max={selectedConfig[key]?.max}
-                    onChange={(e) =>
-                      onConfigChange(key, Number(e.target.value))
-                    }
-                  />
+                  <div className="slider-container">
+                    <input
+                      type="range"
+                      step={
+                        selectedChunkerConfig[key]?.type === "int" ? 1 : 0.01
+                      }
+                      className="slider"
+                      value={
+                        workflow.chunkingConfig?.[key] ??
+                        selectedChunkerConfig[key]?.default
+                      }
+                      min={selectedChunkerConfig[key]?.min}
+                      max={selectedChunkerConfig[key]?.max}
+                      onChange={(event) =>
+                        onConfigChange(key, Number(event.target.value))
+                      }
+                    />
+                    <span className="slider-value">
+                      {workflow.chunkingConfig?.[key] ??
+                        selectedChunkerConfig[key]?.default}
+                    </span>
+                  </div>
                   <small className="hint">
-                    min {selectedConfig[key]?.min} - max{" "}
-                    {selectedConfig[key]?.max}
+                    min {selectedChunkerConfig[key]?.min} - max{" "}
+                    {selectedChunkerConfig[key]?.max}
                   </small>
                 </div>
               )
