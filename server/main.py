@@ -6,10 +6,8 @@ services and it will eventually manage the database(s) and document storage.
 import os
 import logging
 from server_types import (
-    ChunkerConfig,
     VisualizeResponse,
     EvaluationMetrics,
-    DocumentUpload,
     Workflow,
 )
 from utils import (
@@ -105,10 +103,11 @@ async def visualize(workflow_id: int) -> VisualizeResponse:
 
     delete_file(f"documents/{document_title}.txt")
 
-    update_workflow(workflow_id, {"chunks_stats": stats, "visualization_html": html})
+    workflow_update = Workflow(chunks_stats=stats, visualization_html=html)
+    update_workflow(workflow_id, workflow_update)
 
     # Return dict with stats and HTML
-    return {"stats": stats, "html": html}
+    return VisualizeResponse(stats=stats, html=html)
 
 
 @router.get("/workflows/{workflow_id}/evaluation")
@@ -125,7 +124,8 @@ async def evaluate(workflow_id: int) -> list[EvaluationMetrics]:
     evaluation = await get_evaluation(chunker_config, document_title)
     metrics = extract_metrics(evaluation)
 
-    update_workflow(workflow_id, {"evaluation_metrics": metrics[0]})
+    workflow_update = Workflow(evaluation_metrics=metrics[0])
+    update_workflow(workflow_id, workflow_update)
 
     return metrics
 
@@ -142,7 +142,7 @@ async def upload_document(
     """
 
     # Create a temp file
-    document_id = create_file(document_title, document_content)
+    create_file(document_title, document_content)
     await upload_s3_file(document_title)
     delete_file(f"documents/{document_title}")
 
@@ -161,6 +161,8 @@ async def get_documents() -> list[str]:
     file_names = await get_s3_file_names()
 
     # Return the name of the file
+    if file_names is None:
+        return []
     return file_names
 
 
@@ -215,12 +217,10 @@ async def change_workflow(workflow_id: int, workflow_update: Workflow = Body(...
 async def remove_workflow(workflow_id: int):
     result = delete_workflow(workflow_id)
 
-    if result == True:
+    if result is True:
         return {"detail": "successfully deleted workflow."}
-    else:
-        return JSONResponse(
-            status_code=400, content={"detail": "Error deleting workflow"}
-        )
+
+    return JSONResponse(status_code=400, content={"detail": "Error deleting workflow"})
 
 
 @app.exception_handler(Exception)
