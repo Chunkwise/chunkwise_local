@@ -1,4 +1,4 @@
-// import { useState, useEffect } from "react";
+// import { useState } from "react";
 import type { Workflow, Chunker } from "../types";
 import ChooseFile from "./ChooseFile";
 import ChunkerForm from "./ChunkerForm";
@@ -9,13 +9,14 @@ import ChunkerForm from "./ChunkerForm";
 
 type Props = {
   chunkers: Chunker[];
+  availableFiles: string[];
   workflow?: Workflow;
   onUpdateWorkflow: (patch: Partial<Workflow>) => void;
 };
 
-const WorkflowDetails = ({ chunkers, workflow, onUpdateWorkflow }: Props) => {
+const WorkflowDetails = ({ chunkers, availableFiles, workflow, onUpdateWorkflow }: Props) => {
   // const [visualization, setVisualization] =
-    // useState<VisualizationResponse | null>(null);
+  // useState<VisualizationResponse | null>(null);
   // const [isLoadingViz, setIsLoadingViz] = useState(false);
 
   // Throttling to avoid excessive API calls
@@ -74,6 +75,7 @@ const WorkflowDetails = ({ chunkers, workflow, onUpdateWorkflow }: Props) => {
     <div className="details">
       <ChooseFile
         workflow={workflow}
+        availableFiles={availableFiles}
         onFileChange={handleFileChange}
       />
 

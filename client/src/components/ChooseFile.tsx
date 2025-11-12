@@ -1,26 +1,28 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Workflow } from "../types";
-import { getFiles, uploadFile } from "../services/documents";
+import { uploadFile } from "../services/documents";
 
 interface ChooseFileProps {
   workflow: Workflow;
+  availableFiles: string[];
   onFileChange: (fileId: string | undefined) => void;
 }
 
-const ChooseFile = ({ workflow, onFileChange }: ChooseFileProps) => {
-  const [availableFiles, setAvailableFiles] = useState<string[]>([]);
+const UPLOAD_OPTION_VALUE = "__upload__";
+
+const ChooseFile = ({
+  workflow,
+  availableFiles,
+  onFileChange,
+}: ChooseFileProps) => {
+  const [files, setFiles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load available files on mount
+  // Sync with availableFiles
   useEffect(() => {
-    getFiles()
-      .then((files) => setAvailableFiles(files))
-      .catch((error) => {
-        console.error("Failed to load files:", error);
-        setError("Failed to load files from the server");
-      });
-  }, []);
+    setFiles(availableFiles);
+  }, [availableFiles]);
 
   // Handle file upload
   const handleFileUpload = async (file: File | null) => {
@@ -32,7 +34,7 @@ const ChooseFile = ({ workflow, onFileChange }: ChooseFileProps) => {
       const title = file.name;
       const text = await file.text();
       await uploadFile({ document_title: title, document_content: text });
-      setAvailableFiles((prev) => [...prev, title]);
+      setFiles((prev) => (prev.includes(title) ? prev : [...prev, title]));
       onFileChange(title);
     } catch (error) {
       console.error("Upload failed:", error);
@@ -46,7 +48,7 @@ const ChooseFile = ({ workflow, onFileChange }: ChooseFileProps) => {
   const handleSelectChange = (value: string) => {
     if (value === "") {
       onFileChange(undefined);
-    } else if (value === "__upload__") {
+    } else if (value === UPLOAD_OPTION_VALUE) {
       document.getElementById("file-upload-input")?.click();
     } else {
       onFileChange(value);
@@ -65,12 +67,12 @@ const ChooseFile = ({ workflow, onFileChange }: ChooseFileProps) => {
             disabled={isLoading}
           >
             <option value="">-- Select a file --</option>
-            {availableFiles.map((fileTitle) => (
-              <option key={fileTitle} value={fileTitle}>
-                {fileTitle}
+            {files.map((title) => (
+              <option key={title} value={title}>
+                {title}
               </option>
             ))}
-            <option value="__upload__">+ Upload new file</option>
+            <option value={UPLOAD_OPTION_VALUE}>+ Upload new file</option>
           </select>
 
           <input

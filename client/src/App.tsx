@@ -6,6 +6,7 @@ import WorkflowDetails from "./components/WorkflowDetails";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { State } from "./reducers/workflowReducer";
 import { getChunkers } from "./services/chunkers";
+import { getFiles } from "./services/documents";
 import {
   workflowReducer,
   createWorkflowAction,
@@ -30,6 +31,7 @@ export default function App() {
     selectedWorkflowId: stored.selectedWorkflowId,
   } as State);
   const [chunkers, setChunkers] = useState<Chunker[]>([]);
+  const [availableFiles, setAvailableFiles] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,6 +45,17 @@ export default function App() {
       .catch((error) => {
         console.error(error);
         setError("Failed to load chunkers from the server");
+      });
+  }, []);
+
+  // Load available files on mount
+  useEffect(() => {
+    console.log("Useffect called - loading files");
+    getFiles()
+      .then((files) => setAvailableFiles([...files]))
+      .catch((error) => {
+        console.error("Failed to load files:", error);
+        setError("Failed to load files from the server");
       });
   }, []);
 
@@ -106,6 +119,7 @@ export default function App() {
         <main className="main-content">
           <WorkflowDetails
             chunkers={chunkers}
+            availableFiles={availableFiles}
             workflow={selectedWorkflow}
             onUpdateWorkflow={(patch) =>
               state.selectedWorkflowId &&
