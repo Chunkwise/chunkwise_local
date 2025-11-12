@@ -219,6 +219,9 @@ async def insert_workflow(body: dict = Body(...)):
 async def change_workflow(workflow_id: int, workflow_update: Workflow = Body(...)):
     update_dict = workflow_update.__dict__
 
+    if workflow_id < 1:
+        return JSONResponse(status_code=400, content={"detail": "Invalid workflow id"})
+
     if (
         not workflow_update.chunking_strategy is None
         or not workflow_update.document_title is None
@@ -236,10 +239,13 @@ async def change_workflow(workflow_id: int, workflow_update: Workflow = Body(...
 async def remove_workflow(workflow_id: int):
     result = delete_workflow(workflow_id)
 
+    if workflow_id < 1:
+        return JSONResponse(status_code=400, content={"detail": "Invalid workflow id"})
+
     if result is True:
         return {"detail": "successfully deleted workflow."}
-
-    return JSONResponse(status_code=400, content={"detail": "Error deleting workflow"})
+    else:
+        return JSONResponse(status_code=400, content={"detail": "Invalid workflow id"})
 
 
 @app.exception_handler(Exception)
