@@ -106,7 +106,8 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
     Takes an id and an object with Workflow properties and sets the
     corresponding columns in the database to match.
     """
-    updated_columns = Workflow.model_dump(updated_columns)
+    if not isinstance(updated_columns, dict):
+        updated_columns = Workflow.model_dump(updated_columns)
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
