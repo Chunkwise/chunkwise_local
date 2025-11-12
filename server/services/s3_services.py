@@ -4,11 +4,15 @@ uploading a file, downloading a file, deleting a file, and getting the
 ids of files in a bucket.
 """
 
+import os
 import logging
+import dotenv
 import boto3
 from botocore.exceptions import ClientError
 
-BUCKET_NAME = "chunkwise-test"
+dotenv.load_dotenv()
+
+BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
 
 async def upload_s3_file(document_id):
