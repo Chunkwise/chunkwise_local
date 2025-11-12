@@ -110,8 +110,6 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        print(updated_columns)
-
         for column in updated_columns:
             if updated_columns[column] == None:
                 # Column update not sent

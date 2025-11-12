@@ -1,6 +1,5 @@
-from typing import Literal, Callable, Annotated
-from pydantic import BaseModel, Field, ConfigDict, model_validator, field_serializer
-from chonkie.types import RecursiveRules
+from typing import Literal, Annotated
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 from chonkie.genie import OpenAIGenie
 from chonkie.embeddings import OpenAIEmbeddings
 
@@ -11,7 +10,6 @@ class LangChainBaseConfig(BaseModel):
     provider: Literal["langchain"] = "langchain"
     chunk_size: int = Field(default=4000, ge=1)
     chunk_overlap: int = Field(default=200, ge=0)
-    length_function: Callable[[str], int] = len
     keep_separator: bool | Literal["start", "end"] = False
     add_start_index: bool = False
     strip_whitespace: bool = True
@@ -28,10 +26,6 @@ class LangChainBaseConfig(BaseModel):
                 f"chunk_size ({self.chunk_size})"
             )
         return self
-
-    @field_serializer("length_function")
-    def _serialize_length_fn(self, fn):
-        return getattr(fn, "__name__", "<callable>")
 
 
 class LangChainCharacterConfig(LangChainBaseConfig):
@@ -64,7 +58,6 @@ class ChonkieBaseConfig(BaseModel):
 class ChonkieRecursiveConfig(ChonkieBaseConfig):
     chunker_type: Literal["recursive"] = "recursive"
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
-    rules: RecursiveRules = Field(default_factory=RecursiveRules)
     chunk_size: int = Field(default=2048, ge=1)
     min_characters_per_chunk: int = Field(default=24, ge=1)
 
@@ -172,7 +165,6 @@ class ChonkieSlumberConfig(ChonkieBaseConfig):
     genie: OpenAIGenie | None = None
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     chunk_size: int = Field(default=2048, ge=1)
-    rules: RecursiveRules = RecursiveRules()
     candidate_size: int = Field(default=128, ge=1)
     min_characters_per_chunk: int = Field(default=24, ge=1)
     verbose: bool = True
