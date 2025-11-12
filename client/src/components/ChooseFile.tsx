@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import type { Workflow } from "../types";
 import { getFiles, uploadFile } from "../services/documents";
 
@@ -10,39 +10,39 @@ interface ChooseFileProps {
 const ChooseFile = ({ workflow, onFileChange }: ChooseFileProps) => {
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
+  // Load available files on mount
   useEffect(() => {
-    (async () => {
-      try {
-        const files = await getFiles();
-        setAvailableFiles(files);
-      } catch (error) {
+    getFiles()
+      .then((files) => setAvailableFiles(files))
+      .catch((error) => {
         console.error("Failed to load files:", error);
-        setUploadError("Failed to load files from server");
-      }
-    })();
+        setError("Failed to load files from the server");
+      });
   }, []);
 
+  // Handle file upload
   const handleFileUpload = async (file: File | null) => {
     if (!file) return;
-    setUploadError(null);
+    setError(null);
     setIsLoading(true);
 
     try {
+      const title = file.name;
       const text = await file.text();
-      const fileDetails = await uploadFile(text);
-      const fileId = fileDetails.document_id;
-      setAvailableFiles((prev) => [...prev, fileId]);
-      onFileChange(fileId);
+      await uploadFile({ document_title: title, document_content: text });
+      setAvailableFiles((prev) => [...prev, title]);
+      onFileChange(title);
     } catch (error) {
       console.error("Upload failed:", error);
-      setUploadError("Failed to upload file");
+      setError("Failed to upload file");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Handle selection change
   const handleSelectChange = (value: string) => {
     if (value === "") {
       onFileChange(undefined);
@@ -60,14 +60,14 @@ const ChooseFile = ({ workflow, onFileChange }: ChooseFileProps) => {
         <div className="file-controls">
           <select
             className="file-select"
-            value={workflow.fileId || ""}
+            value={workflow.fileTitle || ""}
             onChange={(event) => handleSelectChange(event.target.value)}
             disabled={isLoading}
           >
             <option value="">-- Select a file --</option>
-            {availableFiles.map((fileId) => (
-              <option key={fileId} value={fileId}>
-                {fileId}
+            {availableFiles.map((fileTitle) => (
+              <option key={fileTitle} value={fileTitle}>
+                {fileTitle}
               </option>
             ))}
             <option value="__upload__">+ Upload new file</option>
@@ -86,13 +86,13 @@ const ChooseFile = ({ workflow, onFileChange }: ChooseFileProps) => {
           />
         </div>
 
-        {uploadError && <div className="error">{uploadError}</div>}
+        {error && <div className="error">{error}</div>}
 
         {isLoading && <div className="muted">Uploading...</div>}
 
-        {workflow.fileId ? (
+        {workflow.fileTitle ? (
           <div className="file-preview">
-            <div className="file-name">Selected: {workflow.fileId}</div>
+            <div className="file-name">Selected: {workflow.fileTitle}</div>
             <button
               className="btn btn-sm"
               onClick={() => onFileChange(undefined)}

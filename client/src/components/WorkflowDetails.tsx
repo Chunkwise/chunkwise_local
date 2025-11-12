@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { Workflow, Chunker, VisualizationResponse } from "../types";
+// import { useState, useEffect } from "react";
+import type { Workflow, Chunker } from "../types";
 import ChooseFile from "./ChooseFile";
 import ChunkerForm from "./ChunkerForm";
 // import ChunkStats from "./ChunkStats";
@@ -14,9 +14,8 @@ type Props = {
 };
 
 const WorkflowDetails = ({ chunkers, workflow, onUpdateWorkflow }: Props) => {
-  // const [error, setError] = useState<string | null>(null);
   // const [visualization, setVisualization] =
-    useState<VisualizationResponse | null>(null);
+    // useState<VisualizationResponse | null>(null);
   // const [isLoadingViz, setIsLoadingViz] = useState(false);
 
   // Throttling to avoid excessive API calls
@@ -31,17 +30,17 @@ const WorkflowDetails = ({ chunkers, workflow, onUpdateWorkflow }: Props) => {
     );
   }
 
-  function handleFileChange(fileId: string | undefined) {
-    if (!fileId) {
+  function handleFileChange(fileTitle: string | undefined) {
+    if (!fileTitle) {
       onUpdateWorkflow({
-        fileId: undefined,
+        fileTitle: undefined,
         chunker: undefined,
         chunkingConfig: undefined,
         stats: undefined,
         visualizationHtml: undefined,
       });
     } else {
-      onUpdateWorkflow({ fileId: fileId });
+      onUpdateWorkflow({ fileTitle: fileTitle });
     }
   }
 
@@ -78,7 +77,7 @@ const WorkflowDetails = ({ chunkers, workflow, onUpdateWorkflow }: Props) => {
         onFileChange={handleFileChange}
       />
 
-      {workflow.fileId && (
+      {workflow.fileTitle && (
         <ChunkerForm
           workflow={workflow}
           chunkers={chunkers}

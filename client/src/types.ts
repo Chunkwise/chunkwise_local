@@ -1,8 +1,8 @@
 export type Stage = "Draft" | "Configured" | "Evaluated";
 
 export interface File {
-  name?: string;
-  document_id: string;
+  document_title: string;
+  document_content: string;
 }
 
 export interface ConfigOption {
@@ -36,7 +36,7 @@ export interface Workflow {
   name: string;
   createdAt: string;
   stage: Stage;
-  fileId?: string;
+  fileTitle?: string;
   chunker?: string;
   chunkingConfig?: Record<string, number>;
   stats?: ChunkStatistics;

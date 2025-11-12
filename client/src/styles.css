@@ -45,6 +45,41 @@ html,
   color: var(--muted);
 }
 
+/* Error Banner */
+.error-banner {
+  background: #fff5f5;
+  border: 1px solid #f8c6c6;
+  border-left: 4px solid #e53e3e;
+  color: #9b2c2c;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 16px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.error-close {
+  background: none;
+  border: none;
+  color: #9b2c2c;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+.error-close:hover {
+  background: rgba(229, 62, 62, 0.1);
+}
+
 /* layout */
 .main-layout {
   display: flex;

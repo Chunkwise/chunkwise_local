@@ -5,7 +5,7 @@ import WorkflowList from "./components/WorkflowList";
 import WorkflowDetails from "./components/WorkflowDetails";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { State } from "./reducers/workflowReducer";
-import { getConfigs } from "./services/configs";
+import { getChunkers } from "./services/chunkers";
 import {
   workflowReducer,
   createWorkflowAction,
@@ -30,16 +30,19 @@ export default function App() {
     selectedWorkflowId: stored.selectedWorkflowId,
   } as State);
   const [chunkers, setChunkers] = useState<Chunker[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setStored(state);
   }, [state, setStored]);
 
+  // Load chunkers on mount
   useEffect(() => {
-    getConfigs()
+    getChunkers()
       .then((data) => setChunkers(data))
       .catch((error) => {
         console.error(error);
+        setError("Failed to load chunkers from the server");
       });
   }, []);
 
@@ -75,6 +78,20 @@ export default function App() {
   return (
     <div className="app-root">
       <Header />
+
+      {error && (
+        <div className="error-banner">
+          <span>{error}</span>
+          <button
+            className="error-close"
+            onClick={() => setError(null)}
+            aria-label="Dismiss error"
+          >
+            x
+          </button>
+        </div>
+      )}
+
       <div className="main-layout">
         <aside className="sidebar">
           <WorkflowList
