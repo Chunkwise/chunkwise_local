@@ -56,9 +56,12 @@ async def get_s3_file_names():
     """Get the list of resources from a bucket"""
     try:
         s3_client = boto3.client("s3")
-        resources = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
-        # Create a list of the files names of a bucket
-        file_names = [resource["Key"] for resource in resources["Contents"]]
+        resources = s3_client.list_objects_v2(Bucket=BUCKET_NAME, Prefix="documents")
+
+        # Create a list of the files names of a bucket, remove the beginning path
+        file_names = [
+            resource["Key"].lstrip("documents/") for resource in resources["Contents"]
+        ]
         return file_names
 
     except ClientError:
