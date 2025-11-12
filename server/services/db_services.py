@@ -68,6 +68,7 @@ def get_db_connection():
 
     except OperationalError as e:
         print(("Error connecting to the database.", e))
+        raise e
 
 
 def create_workflow(workflow_title: str) -> int:
@@ -95,6 +96,7 @@ def create_workflow(workflow_title: str) -> int:
         return formatted_result
     except Exception as e:
         print(("Error creating workflow.", e))
+        raise e
     finally:
         if connection:
             connection.close()
@@ -142,6 +144,7 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
         return formatted_result
     except Exception as e:
         print(("Error updating workflow.", e))
+        raise e
     finally:
         if connection:
             connection.close()
@@ -164,6 +167,7 @@ def delete_workflow(workflow_id: int) -> bool:
         return cursor.rowcount > 0
     except Exception as e:
         print(("Error deleting workflow.", e))
+        raise e
     finally:
         if connection:
             connection.close()
@@ -189,6 +193,7 @@ def get_all_workflows() -> list[list]:
         return formatted_result
     except Exception as e:
         print(("Error retrieving workflows.", e))
+        raise e
     finally:
         if connection:
             connection.close()
@@ -225,6 +230,7 @@ def get_workflow_info(workflow_id) -> tuple[str, ChunkerConfig]:
 
     except Exception as e:
         print("Error retrieving workflow info:", e)
+        raise e
     finally:
         if connection:
             connection.close()
