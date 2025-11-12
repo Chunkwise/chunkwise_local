@@ -6,8 +6,10 @@ services and it will eventually manage the database(s) and document storage.
 import os
 import logging
 from server_types import (
+    ChunkerConfig,
     VisualizeResponse,
     EvaluationMetrics,
+    DocumentUpload,
     Workflow,
 )
 from utils import (
@@ -103,11 +105,10 @@ async def visualize(workflow_id: int) -> VisualizeResponse:
 
     delete_file(f"documents/{document_title}.txt")
 
-    workflow_update = Workflow(chunks_stats=stats, visualization_html=html)
-    update_workflow(workflow_id, workflow_update)
+    update_workflow(workflow_id, {"chunks_stats": stats, "visualization_html": html})
 
     # Return dict with stats and HTML
-    return VisualizeResponse(stats=stats, html=html)
+    return {"stats": stats, "html": html}
 
 
 @router.get("/workflows/{workflow_id}/evaluation")
@@ -124,8 +125,7 @@ async def evaluate(workflow_id: int) -> list[EvaluationMetrics]:
     evaluation = await get_evaluation(chunker_config, document_title)
     metrics = extract_metrics(evaluation)
 
-    workflow_update = Workflow(evaluation_metrics=metrics[0])
-    update_workflow(workflow_id, workflow_update)
+    update_workflow(workflow_id, {"evaluation_metrics": metrics[0]})
 
     return metrics
 
@@ -142,7 +142,7 @@ async def upload_document(
     """
 
     # Create a temp file
-    create_file(document_title, document_content)
+    document_id = create_file(document_title, document_content)
     await upload_s3_file(document_title)
     delete_file(f"documents/{document_title}")
 
@@ -161,8 +161,6 @@ async def get_documents() -> list[str]:
     file_names = await get_s3_file_names()
 
     # Return the name of the file
-    if file_names is None:
-        return []
     return file_names
 
 
@@ -196,7 +194,8 @@ async def insert_workflow(body: dict = Body(...)):
 @router.put("/workflows/{workflow_id}")
 @handle_endpoint_exceptions
 async def change_workflow(workflow_id: int, workflow_update: Workflow = Body(...)):
-    result = update_workflow(workflow_id, workflow_update)
+    update_dict = workflow_update.__dict__
+    result = update_workflow(workflow_id, update_dict)
     return result
 
 
@@ -205,10 +204,12 @@ async def change_workflow(workflow_id: int, workflow_update: Workflow = Body(...
 async def remove_workflow(workflow_id: int):
     result = delete_workflow(workflow_id)
 
-    if result is True:
+    if result == True:
         return {"detail": "successfully deleted workflow."}
-
-    return JSONResponse(status_code=400, content={"detail": "Error deleting workflow"})
+    else:
+        return JSONResponse(
+            status_code=400, content={"detail": "Error deleting workflow"}
+        )
 
 
 @app.exception_handler(Exception)
