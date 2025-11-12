@@ -17,6 +17,16 @@ From the projects root directory use these commands:
 Then setup the database connection in `/server/services/db_info.ini` to use your
 preferred username and password.
 
+It should have this format:
+[chunkwise-db]
+dbname=chunkwise
+user={username}
+password={password}
+host=localhost
+port=5432
+
+And the file should be in the `/chunkwise_local/server` file, not `/chunkwise_local/server/services`
+
 ## To run each server:
 
 From each server's root directory use these commands:
