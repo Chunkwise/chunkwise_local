@@ -14,7 +14,7 @@ From the projects root directory use these commands:
 1. createdb chunkwise
 2. psql chunkwise < schema.sql
 
-Then setup the database connection in `/server/services/db_info.ini` to use your
+Then setup the database connection in `/server/db_info.ini` to use your
 preferred username and password.
 
 It should have this format:
