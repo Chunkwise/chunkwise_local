@@ -193,47 +193,36 @@ def get_all_workflows() -> list[list]:
             print("Database connection closed.")
 
 
-def get_chunker_configuration(workflow_id) -> ChunkerConfig:
+def get_workflow_info(workflow_id) -> tuple[str, ChunkerConfig]:
     """
-    Takes an id and returns the chunking_strategy column for that row.
+    Retrieves both the document_title and chunking_strategy (as a ChunkerConfig)
+    for a given workflow_id.
     """
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        query = "SELECT chunking_strategy FROM workflow WHERE id = %s"
+        query = """
+            SELECT document_title, chunking_strategy
+            FROM workflow
+            WHERE id = %s
+        """
         cursor.execute(query, (workflow_id,))
         print(query)
 
         result = cursor.fetchone()
+        if not result:
+            raise ValueError(f"No workflow found with id {workflow_id}")
+
+        document_title, chunking_strategy_json = result
 
         adapter = TypeAdapter(ChunkerConfig)
-        chunker_config = adapter.validate_json(result[0])
-        return chunker_config
+        chunker_config = adapter.validate_json(chunking_strategy_json)
+
+        return document_title, chunker_config
+
     except Exception as e:
-        print(("Error retrieving chunker configuration.", e))
-    finally:
-        if connection:
-            connection.close()
-            print("Database connection closed.")
-
-
-def get_document_title(workflow_id):
-    """
-    Takes an id and returns the document_title column for that row.
-    """
-    try:
-        connection = get_db_connection()
-        cursor = connection.cursor()
-
-        query = "SELECT document_title FROM workflow WHERE id = %s"
-        cursor.execute(query, (workflow_id,))
-        print(query)
-
-        result = cursor.fetchone()
-        return result[0]
-    except Exception as e:
-        print(("Error retrieving chunker configuration.", e))
+        print("Error retrieving workflow info:", e)
     finally:
         if connection:
             connection.close()

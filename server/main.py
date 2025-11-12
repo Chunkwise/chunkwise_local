@@ -29,8 +29,7 @@ from services import (
     update_workflow,
     delete_workflow,
     get_all_workflows,
-    get_chunker_configuration,
-    get_document_title,
+    get_workflow_info,
 )
 from fastapi import FastAPI, APIRouter, Body
 from fastapi.responses import JSONResponse
@@ -86,8 +85,7 @@ async def visualize(workflow_id: int) -> VisualizeResponse:
     then sends the chunks to the visualization service and returns the HTML and statistics.
     """
 
-    document_title = get_document_title(workflow_id)
-    chunker_config = get_chunker_configuration(workflow_id)
+    document_title, chunker_config = get_workflow_info(workflow_id)
     await download_s3_file(document_title)
 
     # Make document contents into a string
@@ -119,8 +117,7 @@ async def evaluate(workflow_id: int) -> list[EvaluationMetrics]:
     data from it and sends that back to the clisent.
     """
 
-    document_title = get_document_title(workflow_id)
-    chunker_config = get_chunker_configuration(workflow_id)
+    document_title, chunker_config = get_workflow_info(workflow_id)
     evaluation = await get_evaluation(chunker_config, document_title)
     metrics = extract_metrics(evaluation)
 

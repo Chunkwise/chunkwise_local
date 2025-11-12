@@ -10,8 +10,7 @@ from .db_services import (
     update_workflow,
     delete_workflow,
     get_all_workflows,
-    get_chunker_configuration,
-    get_document_title,
+    get_workflow_info,
 )
 
 __all__ = [
@@ -24,6 +23,5 @@ __all__ = [
     "update_workflow",
     "delete_workflow",
     "get_all_workflows",
-    "get_chunker_configuration",
-    "get_document_title",
+    "get_workflow_info",
 ]
