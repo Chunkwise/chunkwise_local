@@ -100,3 +100,162 @@ sample response:
         "token_count": null
     }
 ]
+
+---------------
+sample request 3:
+{
+  "chunker_config": {
+    "chunker_type": "slumber",
+    "provider": "chonkie",
+    "chunk_size": "200",
+    "min_characters_per_chunk": 80
+  },
+  "text": "In addition to the figurines and other artifacts from the 1500 - 300 BCE era, human and animal remains have been found, some of which could be as much as 25,000 years old. [citation needed]\nThe most controversial findings in Tlapacoya are artifacts which have been dated by some researchers to as early as 25,000 BP. If verified, these would be some of the earliest dates for human habitation in the Americas and would discredit prevailing theories of the timing of settlement of the New World. [citation needed]\nThe evidence for these much-earlier dates consists of the bones of black bear and two species of deer which appeared in middens associated with 22,000-year-old hearths, as well as a curved obsidian blade which was found beneath a buried tree trunk. The bones were 24,000 years BP (± 4000 years) and 21,700 years BP (± 500 years).[2] The obsidian blade was found under a tree trunk which dated to 24,000 years BP (± 1000 years) and was itself dated, using the obsidian hydration method, to between 21,250 and 25,000 years BP.[citation needed]\nThe site was uncovered during the construction of a Mexico City-Puebla freeway and has since been almost obliterated by freeway construction.[citation needed] In 1955, Beatriz Barba, 'the first Mexican woman to obtain the title of archaeologist', earned her master's degree with a study of the site. Her thesis, Tlapacoya: un sitio preclásico de transición (Tlapacoya: a pre-classic transitional site) evaluated the social development and religious practices of the Tlatilco culture.[3] Barba's evaluation of the site was one of the first to evaluate the socio-economic and political life of the inhabitants of Tlapacoya within the context of the history of the region, as well as their trade relationships and the influence of other groups upon the development of the Tlatilco people.[4]The company was founded in London in 1946 as Ove N. Arup Consulting Engineers by Sir Ove Arup. Arup had established himself in the 1930s as an expert in reinforced concrete, known for projects such as the Penguin Pool at London Zoo.[10] According to the architectural author Ian Volner, Arup's vision when establishing the company came out of a combination of his wartime experiences and a progressive-minded philosophy broadly aligning with early modernism, was for the organisation to be a force for peace and social betterment in the postwar world.[6] To this end, it would employ professionals of diverse disciplines that could work together to produce projects of greater quality than was achievable by them working in isolation, a concept known as 'Total Design'.[6][11][12]1970 was a particularly transformative year for the firm; 24 years after founding the company, Arup opted to retire from actively leading the company. At the time, the firm (then Ove Arup & Partners) was made up of several independent practices spread across the globe, so prior to his departure, Arup delivered his 'Key Speech' on 9 July in Winchester to all his partners from the various practices.[21] The speech set out the aims of the firm and identified the principles of governance by which they might be achieved. These included quality of work, total architecture, humane organisation, straight and honorable dealings, social usefulness, and the reasonable prosperity of its members.[6]"
+}
+
+[
+  {
+    "text": "In addition to the figurines and other artifacts from the 1500 - 300 BCE era, human and animal remains have been found, some of which could be as much as 25,000 years old. [citation needed]\n",
+    "start_index": 0,
+    "end_index": 190,
+    "token_count": 190
+  },
+  {
+    "text": "The most controversial findings in Tlapacoya are artifacts which have been dated by some researchers to as early as 25,000 BP. ",
+    "start_index": 190,
+    "end_index": 317,
+    "token_count": 127
+  },
+  {
+    "text": "Ifverified,thesewouldbesomeoftheearliestdatesforhumanhabitationintheAmericasandwoulddiscreditprevailingtheoriesofthetimingofsettlementoftheNewWorld.[citation needed]\n",
+    "start_index": 317,
+    "end_index": 513,
+    "token_count": 166
+  },
+  {
+    "text": "Theevidenceforthesemuch-earlierdatesconsistsofthebonesofblackbearandtwospeciesof",
+    "start_index": 513,
+    "end_index": 593,
+    "token_count": 80
+  },
+  {
+    "text": "deerwhichappearedinmiddensassociatedwith22,",
+    "start_index": 593,
+    "end_index": 636,
+    "token_count": 43
+  },
+  {
+    "text": "000-year-old hearths, as well as a curved obsidian blade which was found beneath a buried tree trunk. The bones were 24,000 years BP (± 4000 years) and 21,700 years BP (± 500 years).[",
+    "start_index": 660,
+    "end_index": 843,
+    "token_count": 183
+  },
+  {
+    "text": "2] The obsidian blade was found under a tree trunk which dated to 24,000 years BP (± 1000 years) and was itself dated, using the obsidian hydration method, to between 21,",
+    "start_index": 843,
+    "end_index": 1013,
+    "token_count": 170
+  },
+  {
+    "text": "250 and 25,000 years BP.[citation needed]\nThesitewasuncoveredduringtheconstructionofaMexicoCity-Pueblafreewayandhassincebeenalmostobliteratedbyfreewayconstruction.[",
+    "start_index": 1013,
+    "end_index": 1177,
+    "token_count": 164
+  },
+  {
+    "text": "citation needed] In 1955, Beatriz Barba, 'the first Mexican woman to obtain the title of archaeologist', earned her master's degree with a study of the site. ",
+    "start_index": 1197,
+    "end_index": 1355,
+    "token_count": 158
+  },
+  {
+    "text": "Her thesis, Tlapacoya: un sitio preclásico de transición (Tlapacoya: a pre-classic transitional site)",
+    "start_index": 1355,
+    "end_index": 1456,
+    "token_count": 101
+  },
+  {
+    "text": " evaluated the social development and religious practices of the Tlatilco culture.[3]Barba'sevaluationofthesitewasoneofthefirsttoevaluatethesocio-economicandpolitical",
+    "start_index": 1456,
+    "end_index": 1622,
+    "token_count": 166
+  },
+  {
+    "text": "lifeoftheinhabitantsofTlapacoyawithinthecontextofthehistoryoftheregion,",
+    "start_index": 1622,
+    "end_index": 1693,
+    "token_count": 71
+  },
+  {
+    "text": " as well as their trade relationships and the influence of other groups upon the development of the Tlatilco people.[",
+    "start_index": 1724,
+    "end_index": 1841,
+    "token_count": 117
+  },
+  {
+    "text": "4]The company was founded in London in 1946 as Ove N. Arup Consulting Engineers by Sir Ove Arup. Arup had established himself in the 1930s as an expert in reinforced concrete,",
+    "start_index": 1841,
+    "end_index": 2016,
+    "token_count": 175
+  },
+  {
+    "text": " known for projects such as the Penguin Pool at London Zoo.[10] According to the architectural author Ian Volner,",
+    "start_index": 2016,
+    "end_index": 2129,
+    "token_count": 113
+  },
+  {
+    "text": " Arup's vision when establishing the company came out of a combination of his wartime experiences and a progressive-mindedphilosophybroadlyaligningwithearlymodernism,wasfortheorganisationtobeaforce",
+    "start_index": 2129,
+    "end_index": 2326,
+    "token_count": 197
+  },
+  {
+    "text": "forpeaceandsocialbettermentinthepostwarworld.[",
+    "start_index": 2326,
+    "end_index": 2372,
+    "token_count": 46
+  },
+  {
+    "text": "6]Tothisend,itwouldemployprofessionalsofdiversedisciplinesthatcouldworktogethertoproduceprojectsofgreaterqualitythanwasachievablebythemworkinginisolation,",
+    "start_index": 2395,
+    "end_index": 2549,
+    "token_count": 154
+  },
+  {
+    "text": " a concept known as 'Total Design'.[6][11][12]1970 was a particularly transformative year for the firm;",
+    "start_index": 2577,
+    "end_index": 2680,
+    "token_count": 103
+  },
+  {
+    "text": " 24 years after founding the company, Arup opted to retire from actively leading the company. ",
+    "start_index": 2680,
+    "end_index": 2774,
+    "token_count": 94
+  },
+  {
+    "text": "At the time, the firm (then Ove Arup & Partners) was made up of several independent practices spread across the globe,",
+    "start_index": 2774,
+    "end_index": 2892,
+    "token_count": 118
+  },
+  {
+    "text": "sopriortohisdeparture,Arupdeliveredhis'KeySpeech'on9JulyinWinchestertoallhispartnersfromthevariouspractices.[",
+    "start_index": 2892,
+    "end_index": 3001,
+    "token_count": 109
+  },
+  {
+    "text": "21] The speech set out the aims of the firm and identified the principles of governance by which they might be achieved. ",
+    "start_index": 3024,
+    "end_index": 3145,
+    "token_count": 121
+  },
+  {
+    "text": "These included quality of work, total architecture, humane organisation, straight and honorable dealings, social usefulness, and the reasonable prosperity of its members.[6]",
+    "start_index": 3145,
+    "end_index": 3318,
+    "token_count": 173
+  }
+]
