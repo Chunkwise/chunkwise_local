@@ -106,6 +106,7 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
     Takes an id and an object with Workflow properties and sets the
     corresponding columns in the database to match.
     """
+    updated_columns = Workflow.model_dump(updated_columns)
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
@@ -120,7 +121,7 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
                 column == "chunking_strategy"
                 or column == "chunks_stats"
                 or column == "evaluation_metrics"
-            ):
+            ) and not value is None:
                 if type(value) != dict:
                     value = json.dumps(value.__dict__)
                 else:
