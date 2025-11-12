@@ -186,9 +186,9 @@ async def get_workflows():
 
 @router.post("/workflows")
 @handle_endpoint_exceptions
-async def insert_workflow():
-    result = create_workflow()
-    return {"id": result}
+async def insert_workflow(body: dict = Body(...)):
+    result = create_workflow(body["title"])
+    return result
 
 
 @router.put("/workflows/{workflow_id}")

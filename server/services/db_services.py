@@ -7,6 +7,8 @@ from pydantic import TypeAdapter
 
 COLUMN_NAMES = (
     "id",
+    "title",
+    "created_at",
     "document_title",
     "chunking_strategy",
     "chunks_stats",
@@ -68,7 +70,7 @@ def get_db_connection():
         print(("Error connecting to the database.", e))
 
 
-def create_workflow() -> int:
+def create_workflow(workflow_title: str) -> int:
     """
     Creates a row in the workflow table and returns the id of the
     created workflow.
@@ -77,12 +79,20 @@ def create_workflow() -> int:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        query = "INSERT INTO workflow DEFAULT VALUES RETURNING id;"
-        cursor.execute(query)
+        query = "INSERT INTO workflow (title) VALUES (%s) RETURNING id;"
+        cursor.execute(query, (workflow_title,))
         print(query)
 
-        result = cursor.fetchone()[0]
-        return result
+        id = cursor.fetchone()[0]
+
+        query = "SELECT * FROM workflow WHERE id = %s;"
+        cursor.execute(query, (id,))
+        print(query)
+
+        result = cursor.fetchone()
+        formatted_result = format_workflow(result)
+
+        return formatted_result
     except Exception as e:
         print(("Error creating workflow.", e))
     finally:
@@ -99,6 +109,8 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
+
+        print(updated_columns)
 
         for column in updated_columns:
             if updated_columns[column] == None:
