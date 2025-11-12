@@ -31,10 +31,10 @@ const ChooseFile = ({ workflow, onFileChange }: ChooseFileProps) => {
 
     try {
       const text = await file.text();
-      const fileId = await uploadFile(text);
-      const formatedFileId = fileId.replace(/\.txt$/, "");
-      setAvailableFiles((prev) => [...prev, formatedFileId]);
-      onFileChange(formatedFileId);
+      const fileDetails = await uploadFile(text);
+      const fileId = fileDetails.document_id;
+      setAvailableFiles((prev) => [...prev, fileId]);
+      onFileChange(fileId);
     } catch (error) {
       console.error("Upload failed:", error);
       setUploadError("Failed to upload file");

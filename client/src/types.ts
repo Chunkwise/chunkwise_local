@@ -1,5 +1,10 @@
 export type Stage = "Draft" | "Configured" | "Evaluated";
 
+export interface File {
+  name?: string;
+  document_id: string;
+}
+
 export interface ConfigOption {
   type: string;
   min: number;
