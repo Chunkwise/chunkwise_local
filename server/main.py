@@ -4,6 +4,7 @@ services and it will eventually manage the database(s) and document storage.
 """
 
 import os
+import re
 import logging
 from server_types import (
     VisualizeResponse,
@@ -141,10 +142,15 @@ async def upload_document(
     It then sends the file to S3.
     """
 
+    if len(document_title) == 0 or re.search(r"[^A-Za-z0-9-_() .,]", document_title):
+        return JSONResponse(
+            status_code=400, content={"detail": "Invalid document title"}
+        )
+
     # Create a temp file
     create_file(document_title, document_content)
     await upload_s3_file(document_title)
-    delete_file(f"documents/{document_title}")
+    delete_file(f"documents/{document_title}.txt")
 
     # Return the name of the file
     return {"detail": f"Successfully uploaded {document_title}"}
