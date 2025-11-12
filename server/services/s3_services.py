@@ -45,8 +45,13 @@ async def delete_s3_file(document_id):
     """Delete a file on s3"""
     try:
         s3_client = boto3.client("s3")
-        s3_client.delete_object(Key=document_id, Bucket=BUCKET_NAME)
-        return True
+        result = s3_client.delete_object(
+            Key=f"documents/{document_id}.txt", Bucket=BUCKET_NAME
+        )
+        if result["ResponseMetadata"]["HTTPStatusCode"] == 204:
+            return True
+        else:
+            return False
 
     except ClientError:
         logging.exception("s3 ClientError while deleting document")
