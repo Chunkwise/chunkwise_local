@@ -31,6 +31,13 @@ export interface VisualizationResponse {
   html: string;
 }
 
+export interface EvaluationMetrics {
+  iou_mean: number;
+  recall_mean: number;
+  precision_mean: number;
+  precision_omega_mean: number;
+}
+
 export interface Workflow {
   id: string;
   name: string;

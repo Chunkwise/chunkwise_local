@@ -15,8 +15,7 @@ type Props = {
 };
 
 const WorkflowDetails = ({ chunkers, availableFiles, workflow, onUpdateWorkflow }: Props) => {
-  // const [visualization, setVisualization] =
-  // useState<VisualizationResponse | null>(null);
+  // const [visualization, setVisualization] = useState<VisualizationResponse | null>(null);
   // const [isLoadingViz, setIsLoadingViz] = useState(false);
 
   // Throttling to avoid excessive API calls
@@ -95,9 +94,9 @@ const WorkflowDetails = ({ chunkers, availableFiles, workflow, onUpdateWorkflow 
             <div className="muted">Loading visualization...</div>
           </div>
         </div>
-      )}
+      )} */}
 
-      {visualization && !isLoadingViz && (
+      {/* {visualization && !isLoadingViz && (
         <>
           <ChunkStats stats={visualization.stats} />
           <VisualizationDisplay html={visualization.html} />
