@@ -8,7 +8,7 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 
-BUCKET_NAME = "chunkwise-sample"
+BUCKET_NAME = "chunkwise-test"
 
 
 async def upload_s3_file(document_id):
