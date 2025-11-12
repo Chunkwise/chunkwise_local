@@ -5,46 +5,39 @@ import { getFiles, uploadFile } from "../services/documents";
 interface ChooseFileProps {
   workflow: Workflow;
   onFileChange: (fileId: string | undefined) => void;
-  error: string | null;
 }
 
-const ChooseFile = ({
-  workflow,
-  onFileChange,
-  error,
-}: ChooseFileProps) => {
+const ChooseFile = ({ workflow, onFileChange }: ChooseFileProps) => {
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const loadFiles = async () => {
-    try {
-      const files = await getFiles();
-      setAvailableFiles(files);
-    } catch (err) {
-      console.error("Failed to load files:", err);
-      setUploadError("Failed to load files from server");
-    }
-  };
-
   useEffect(() => {
-    loadFiles();
+    (async () => {
+      try {
+        const files = await getFiles();
+        setAvailableFiles(files);
+      } catch (error) {
+        console.error("Failed to load files:", error);
+        setUploadError("Failed to load files from server");
+      }
+    })();
   }, []);
 
   const handleFileUpload = async (file: File | null) => {
     if (!file) return;
-
     setUploadError(null);
     setIsLoading(true);
 
     try {
       const text = await file.text();
       const fileId = await uploadFile(text);
-      setAvailableFiles((prev) => [...prev, fileId]);
-      onFileChange(fileId);
+      const formatedFileId = fileId.replace(/\.txt$/, "");
+      setAvailableFiles((prev) => [...prev, formatedFileId]);
+      onFileChange(formatedFileId);
     } catch (error) {
       console.error("Upload failed:", error);
-      setUploadError("Failed to upload File");
+      setUploadError("Failed to upload file");
     } finally {
       setIsLoading(false);
     }
@@ -54,7 +47,6 @@ const ChooseFile = ({
     if (value === "") {
       onFileChange(undefined);
     } else if (value === "__upload__") {
-      // Trigger file input
       document.getElementById("file-upload-input")?.click();
     } else {
       onFileChange(value);
@@ -69,7 +61,7 @@ const ChooseFile = ({
           <select
             className="file-select"
             value={workflow.fileId || ""}
-            onChange={(e) => handleSelectChange(e.target.value)}
+            onChange={(event) => handleSelectChange(event.target.value)}
             disabled={isLoading}
           >
             <option value="">-- Select a file --</option>
@@ -94,9 +86,7 @@ const ChooseFile = ({
           />
         </div>
 
-        {(error || uploadError) && (
-          <div className="error">{error || uploadError}</div>
-        )}
+        {uploadError && <div className="error">{uploadError}</div>}
 
         {isLoading && <div className="muted">Uploading...</div>}
 

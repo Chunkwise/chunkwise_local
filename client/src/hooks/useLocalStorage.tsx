@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import type { State } from "../reducers/workflowReducer";
 
-export function useLocalStorage<T>(key: string, initial: T) {
-  const [state, setState] = useState<T>(() => {
+export function useLocalStorage(key: string, initial: State) {
+  const [state, setState] = useState(() => {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : initial;
   });

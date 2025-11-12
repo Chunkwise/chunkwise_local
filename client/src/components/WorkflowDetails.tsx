@@ -8,13 +8,13 @@ import { getVisualization } from "../services/visualization";
 import { useThrottle } from "../hooks/useThrottle";
 
 type Props = {
-  workflow?: Workflow;
   configs: Config[];
-  onUpdate: (patch: Partial<Workflow>) => void;
+  workflow?: Workflow;
+  onUpdateWorkflow: (patch: Partial<Workflow>) => void;
 };
 
-const WorkflowDetails = ({ workflow, configs, onUpdate }: Props) => {
-  const [error, setError] = useState<string | null>(null);
+const WorkflowDetails = ({ configs, workflow, onUpdateWorkflow }: Props) => {
+  // const [error, setError] = useState<string | null>(null);
   const [visualization, setVisualization] =
     useState<VisualizationResponse | null>(null);
   const [isLoadingViz, setIsLoadingViz] = useState(false);
@@ -23,7 +23,7 @@ const WorkflowDetails = ({ workflow, configs, onUpdate }: Props) => {
   const throttledConfig = useThrottle(workflow?.chunkingConfig, 1000);
 
   useEffect(() => {
-    setError(null);
+    // setError(null);
     if (workflow?.stats && workflow?.visualizationHtml) {
       setVisualization({
         stats: workflow.stats,
@@ -42,7 +42,7 @@ const WorkflowDetails = ({ workflow, configs, onUpdate }: Props) => {
         !workflow?.chunkingConfig
       ) {
         setVisualization(null);
-        onUpdate({ stats: undefined, visualizationHtml: undefined });
+        onUpdateWorkflow({ stats: undefined, visualizationHtml: undefined });
         return;
       }
 
@@ -56,14 +56,14 @@ const WorkflowDetails = ({ workflow, configs, onUpdate }: Props) => {
         const result = await getVisualization(workflow.fileId, chunkerConfig);
         setVisualization(result);
         // Save to workflow state
-        onUpdate({
+        onUpdateWorkflow({
           stats: result.stats,
           visualizationHtml: result.html,
         });
       } catch (err) {
         console.error("Failed to fetch visualization:", err);
-        setError("Failed to load visualization");
-        onUpdate({ stats: undefined, visualizationHtml: undefined });
+        // setError("Failed to load visualization");
+        onUpdateWorkflow({ stats: undefined, visualizationHtml: undefined });
       } finally {
         setIsLoadingViz(false);
       }
@@ -83,9 +83,8 @@ const WorkflowDetails = ({ workflow, configs, onUpdate }: Props) => {
   }
 
   function handleFileChange(fileId: string | undefined) {
-    setError(null);
     if (!fileId) {
-      onUpdate({
+      onUpdateWorkflow({
         fileId: undefined,
         chunker: undefined,
         chunkingConfig: undefined,
@@ -93,7 +92,7 @@ const WorkflowDetails = ({ workflow, configs, onUpdate }: Props) => {
         visualizationHtml: undefined,
       });
     } else {
-      onUpdate({ fileId: fileId });
+      onUpdateWorkflow({ fileId: fileId });
     }
   }
 
@@ -104,7 +103,7 @@ const WorkflowDetails = ({ workflow, configs, onUpdate }: Props) => {
   function handleChunkerChange(name: string) {
     const config = configs.find((config) => config.name === name);
     if (!config) {
-      onUpdate({ chunker: name, chunkingConfig: undefined });
+      onUpdateWorkflow({ chunker: name, chunkingConfig: undefined });
       return;
     }
 
@@ -114,13 +113,13 @@ const WorkflowDetails = ({ workflow, configs, onUpdate }: Props) => {
         initial[key] = value.default;
       }
     }
-    onUpdate({ chunker: name, chunkingConfig: initial });
+    onUpdateWorkflow({ chunker: name, chunkingConfig: initial });
   }
 
   function handleConfigChange(key: string, value: number) {
     const updated = { ...workflow!.chunkingConfig };
     updated[key] = value;
-    onUpdate({ chunkingConfig: updated });
+    onUpdateWorkflow({ chunkingConfig: updated });
   }
 
   return (
@@ -128,7 +127,6 @@ const WorkflowDetails = ({ workflow, configs, onUpdate }: Props) => {
       <ChooseFile
         workflow={workflow}
         onFileChange={handleFileChange}
-        error={error}
       />
 
       {workflow.fileId && (

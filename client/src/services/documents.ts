@@ -6,12 +6,8 @@ export const getFiles = async (): Promise<string[]> => {
 };
 
 export const uploadFile = async (content: string): Promise<string> => {
-  const response = await axios.post("/api/documents/", content, {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  return response.data.document_id;
+  const response = await axios.post("/api/documents/", content);
+  return response.data;
 };
 
 export const deleteFile = async (documentId: string): Promise<void> => {

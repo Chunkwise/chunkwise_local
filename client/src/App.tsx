@@ -21,7 +21,7 @@ function makeId() {
 }
 
 export default function App() {
-  const [stored, setStored] = useLocalStorage<State>(STORAGE_KEY, {
+  const [stored, setStored] = useLocalStorage(STORAGE_KEY, {
     workflows: [],
     selectedWorkflowId: undefined,
   });
@@ -88,9 +88,9 @@ export default function App() {
 
         <main className="main-content">
           <WorkflowDetails
-            workflow={selectedWorkflow}
             configs={configs}
-            onUpdate={(patch) =>
+            workflow={selectedWorkflow}
+            onUpdateWorkflow={(patch) =>
               state.selectedWorkflowId &&
               handleUpdateWorkflow(state.selectedWorkflowId, patch)
             }
