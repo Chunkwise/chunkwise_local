@@ -196,14 +196,12 @@ async def change_workflow(workflow_id: int, workflow_update: Workflow = Body(...
     update_dict = workflow_update.__dict__
 
     if (
-        not workflow_update["chunking_strategy"] is None
-        or not workflow_update["document_title"] is None
+        not workflow_update.chunking_strategy is None
+        or not workflow_update.document_title is None
     ):
-        workflow_update["chunks_stats"] = ""
-        workflow_update["visualization_html"] = ""
-        workflow_update["evaluation_metrics"] = ""
-    if not workflow_update["document_title"] is None:
-        workflow_update["chunking_strategy"] = ""
+        workflow_update.chunks_stats = ""
+        workflow_update.visualization_html = ""
+        workflow_update.evaluation_metrics = ""
 
     result = update_workflow(workflow_id, update_dict)
     return result
