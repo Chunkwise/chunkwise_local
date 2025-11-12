@@ -48,4 +48,5 @@ export interface Workflow {
   chunkingConfig?: Record<string, number>;
   stats?: ChunkStatistics;
   visualizationHtml?: string;
+  evaluationMetrics?: EvaluationMetrics;
 }
