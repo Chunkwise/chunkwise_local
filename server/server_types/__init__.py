@@ -1,6 +1,5 @@
 from .endpoints import (
     ChunkStatistics,
-    VisualizeRequest,
     VisualizeResponse,
     Chunk,
     ChunkerConfig,
@@ -13,7 +12,6 @@ __all__ = [
     "ChunkStatistics",
     "VisualizeResponse",
     "ChunkerConfig",
-    "VisualizeRequest",
     "EvaluationMetrics",
     "EvaluationResponse",
 ]
