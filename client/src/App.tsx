@@ -5,8 +5,14 @@ import WorkflowList from "./components/WorkflowList";
 import WorkflowDetails from "./components/WorkflowDetails";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { State } from "./reducers/workflowReducer";
-import { workflowReducer } from "./reducers/workflowReducer";
 import { getConfigs } from "./services/configs";
+import {
+  workflowReducer,
+  createWorkflowAction,
+  selectWorkflowAction,
+  updateWorkflowAction,
+  deleteWorkflowAction,
+} from "./reducers/workflowReducer";
 
 const STORAGE_KEY = "chunkwise_workflows_v1";
 
@@ -17,12 +23,17 @@ function makeId() {
 export default function App() {
   const [stored, setStored] = useLocalStorage<State>(STORAGE_KEY, {
     workflows: [],
+    selectedWorkflowId: undefined,
   });
   const [state, dispatch] = useReducer(workflowReducer, {
     workflows: stored.workflows,
     selectedWorkflowId: stored.selectedWorkflowId,
   } as State);
   const [configs, setConfigs] = useState<Config[]>([]);
+
+  useEffect(() => {
+    setStored(state);
+  }, [state, setStored]);
 
   useEffect(() => {
     getConfigs()
@@ -36,30 +47,30 @@ export default function App() {
     (workflow) => workflow.id === state.selectedWorkflowId
   );
 
-  const createWorkflow = (name: string) => {
+  const handleCreateWorkflow = (name: string) => {
     const newWorkflow: Workflow = {
       id: makeId(),
       name,
       createdAt: new Date().toLocaleString(),
       stage: "Draft",
     };
-    dispatch({ type: "CREATE_WORKFLOW", workflow: newWorkflow });
+    dispatch(createWorkflowAction(newWorkflow));
   };
 
-  const selectWorkflow = (id: string) => {
-    dispatch({ type: "SELECT_WORKFLOW", id });
+  const handleSelectWorkflow = (id: string) => {
+    dispatch(selectWorkflowAction(id));
   };
 
-  const updateWorkflow = (id: string, patch: Partial<Workflow>) => {
+  const handleUpdateWorkflow = (id: string, patch: Partial<Workflow>) => {
     if (patch.chunker) {
       patch.stage = "Configured";
     }
-    dispatch({ type: "UPDATE_WORKFLOW", id, patch: patch });
+    dispatch(updateWorkflowAction(id, patch));
   };
 
-  useEffect(() => {
-    setStored(state);
-  }, [state, setStored]);
+  const handleDeleteWorkflow = (id: string) => {
+    dispatch(deleteWorkflowAction(id));
+  };
 
   return (
     <div className="app-root">
@@ -68,10 +79,10 @@ export default function App() {
         <aside className="sidebar">
           <WorkflowList
             workflows={state.workflows}
-            onCreate={createWorkflow}
-            onSelect={selectWorkflow}
             selectedId={state.selectedWorkflowId}
-            onDelete={(id) => dispatch({ type: "DELETE_WORKFLOW", id })}
+            onCreateWorkflow={handleCreateWorkflow}
+            onSelectWorkflow={handleSelectWorkflow}
+            onDeleteWorkflow={handleDeleteWorkflow}
           />
         </aside>
 
@@ -80,7 +91,8 @@ export default function App() {
             workflow={selectedWorkflow}
             configs={configs}
             onUpdate={(patch) =>
-              selectedWorkflow && updateWorkflow(selectedWorkflow.id, patch)
+              state.selectedWorkflowId &&
+              handleUpdateWorkflow(state.selectedWorkflowId, patch)
             }
           />
         </main>

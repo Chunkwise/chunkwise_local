@@ -12,23 +12,6 @@ export interface Config {
   [key: string]: string | ConfigOption;
 }
 
-export interface StoredFile {
-  name: string;
-  text: string;
-}
-
-export interface Workflow {
-  id: string;
-  name: string;
-  createdAt: string;
-  stage: Stage;
-  fileId?: string;
-  chunker?: string;
-  chunkingConfig?: Record<string, number>;
-  stats?: ChunkStatistics;
-  visualizationHtml?: string;
-}
-
 export interface ChunkStatistics {
   total_chunks: number;
   largest_chunk_chars: number;
@@ -41,4 +24,16 @@ export interface ChunkStatistics {
 export interface VisualizationResponse {
   stats: ChunkStatistics;
   html: string;
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  createdAt: string;
+  stage: Stage;
+  fileId?: string;
+  chunker?: string;
+  chunkingConfig?: Record<string, number>;
+  stats?: ChunkStatistics;
+  visualizationHtml?: string;
 }

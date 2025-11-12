@@ -4,24 +4,24 @@ import type { Workflow } from "../types";
 type Props = {
   workflows: Workflow[];
   selectedId?: string;
-  onCreate: (name: string) => void;
-  onSelect: (id: string) => void;
-  onDelete: (id: string) => void;
+  onCreateWorkflow: (name: string) => void;
+  onSelectWorkflow: (id: string) => void;
+  onDeleteWorkflow: (id: string) => void;
 };
 
 const WorkflowList = ({
   workflows,
   selectedId,
-  onCreate,
-  onSelect,
-  onDelete,
+  onCreateWorkflow,
+  onSelectWorkflow,
+  onDeleteWorkflow,
 }: Props) => {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
 
   const handleCreate = () => {
     const finalName = name.trim() || `Workflow ${new Date().toLocaleString()}`;
-    onCreate(finalName);
+    onCreateWorkflow(finalName);
     setCreating(false);
     setName("");
   };
@@ -72,7 +72,7 @@ const WorkflowList = ({
             className={`workflow-item ${
               selectedId === workflow.id ? "selected" : ""
             }`}
-            onClick={() => onSelect(workflow.id)}
+            onClick={() => onSelectWorkflow(workflow.id)}
           >
             <div className="wi-left">
               <div className="wi-name">{workflow.name}</div>
@@ -84,7 +84,7 @@ const WorkflowList = ({
             <div className="wi-actions">
               <button
                 className="btn btn-sm"
-                onClick={() => onDelete(workflow.id)}
+                onClick={() => onDeleteWorkflow(workflow.id)}
                 title="Delete"
               >
                 x
