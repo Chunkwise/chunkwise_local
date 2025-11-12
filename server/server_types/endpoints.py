@@ -16,15 +16,6 @@ class ChunkStatistics(BaseModel):
     avg_chars: float
 
 
-class VisualizeRequest(BaseModel):
-    """
-    Request received to visualize a document.
-    """
-
-    chunker_config: ChunkerConfig
-    text: str
-
-
 class VisualizeResponse(BaseModel):
     """
     Response to a VisualizeRequest.

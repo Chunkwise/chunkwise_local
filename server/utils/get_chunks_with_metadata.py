@@ -1,3 +1,8 @@
+"""
+Gets chunks with metadata.
+Chonkie chunks have metadata; LangChain chunks must have metadata added.
+"""
+
 # Adapted from:
 # Smith, Brandon and Troynikov, Anton. (2024).
 # "Evaluating Chunking Strategies for Retrieval."
@@ -6,7 +11,7 @@
 import re
 from typing import Tuple, Any
 from fuzzywuzzy import fuzz, process
-from chunkwise_core import Chunk
+from server_types import Chunk
 
 
 def find_query_despite_whitespace(document: str, query: str) -> Tuple[int, int] | None:
@@ -72,7 +77,7 @@ def rigorous_document_search(document: str, target: str) -> Tuple[int, int] | No
     return start_index, end_index
 
 
-def get_chunks(text: str, chunker: Any) -> list[Chunk]:
+def get_chunks_with_metadata(chunker: Any, text: str) -> list[Chunk]:
     """
     Receives text as a string and a chunker
     Adds metadata to chunks if it is a LangChain chunker
