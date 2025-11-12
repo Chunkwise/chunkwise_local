@@ -6,13 +6,13 @@ import os
 from utils import normalize_document
 
 
-def create_file(file_contents: str):
+def create_file(file_name: str, file_contents: str):
     """
     Creates a txt file with the provided contents then returns the document id.
     """
     # Create random name
     normalized_document = normalize_document(file_contents)
-    document_name = f"{os.urandom(4).hex()}"
+    document_name = file_name
     document_id = f"{document_name}.txt"
 
     # Make sure that the directory exists
