@@ -181,6 +181,11 @@ async def delete_document(document_title: str) -> dict:
     This endpoint deletes a resource from the S3 store
     """
 
+    if len(document_title) == 0 or re.search(r"[^A-Za-z0-9-_() .,]", document_title):
+        return JSONResponse(
+            status_code=400, content={"detail": "Invalid document title"}
+        )
+
     await delete_s3_file(document_title)
 
     # Return the name of the file
@@ -197,7 +202,15 @@ async def get_workflows():
 @router.post("/workflows")
 @handle_endpoint_exceptions
 async def insert_workflow(body: dict = Body(...)):
-    result = create_workflow(body["title"])
+
+    workflow_title = body["title"]
+
+    if len(workflow_title) == 0 or len(workflow_title) > 50:
+        return JSONResponse(
+            status_code=400, content={"detail": "Invalid workflow title"}
+        )
+
+    result = create_workflow(workflow_title)
     return result
 
 
