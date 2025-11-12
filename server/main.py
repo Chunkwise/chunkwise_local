@@ -146,6 +146,11 @@ async def upload_document(
         return JSONResponse(
             status_code=400, content={"detail": "Invalid document title"}
         )
+    if len(document_content) == 0:
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "Document content must have a length greater than zero"},
+        )
 
     # Create a temp file
     create_file(document_title, document_content)
