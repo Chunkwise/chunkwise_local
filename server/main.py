@@ -99,13 +99,13 @@ async def visualize(workflow_id: int) -> VisualizeResponse:
 
     chunker = create_chunker(chunker_config)
     chunks = get_chunks_with_metadata(chunker, document)
-    print("CHUNKS")
-    print(chunks)
     stats = calculate_chunk_stats(chunks)
     viz = Visualizer()
     html = viz.get_html(chunks, document)
 
     delete_file(f"documents/{document_title}.txt")
+
+    update_workflow(workflow_id, {"chunks_stats": stats, "visualization_html": html})
 
     # Return dict with stats and HTML
     return {"stats": stats, "html": html}
@@ -125,14 +125,16 @@ async def evaluate(workflow_id: int) -> list[EvaluationMetrics]:
     evaluation = await get_evaluation(chunker_config, document_title)
     metrics = extract_metrics(evaluation)
 
+    update_workflow(workflow_id, {"evaluation_metrics": metrics[0]})
+
     return metrics
 
 
 @router.post("/documents")
 @handle_endpoint_exceptions
 async def upload_document(
-    document_title: DocumentUpload = Body(...),
-    document_content: DocumentUpload = Body(...),
+    document_title: str = Body(...),
+    document_content: str = Body(...),
 ) -> dict:
     """
     This endpoint receives a string and uses it to create a txt file.

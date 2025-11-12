@@ -3,6 +3,7 @@ import psycopg2
 from psycopg2 import OperationalError, sql
 from configparser import ConfigParser
 from server_types import Workflow, ChunkerConfig
+from pydantic import TypeAdapter
 
 COLUMN_NAMES = (
     "id",
@@ -108,8 +109,12 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
                 or column == "chunks_stats"
                 or column == "evaluation_metrics"
             ):
-                # Stringify object columns
-                updated_columns[column] = json.dumps(updated_columns[column].__dict__)
+                if type(updated_columns[column]) != dict:
+                    updated_columns[column] = json.dumps(
+                        updated_columns[column].__dict__
+                    )
+                else:
+                    updated_columns[column] = json.dumps(updated_columns[column])
 
             query = sql.SQL(
                 "UPDATE workflow SET {column_name} = %s WHERE id = %s;"
@@ -191,7 +196,9 @@ def get_chunker_configuration(workflow_id) -> ChunkerConfig:
         print(query)
 
         result = cursor.fetchone()
-        chunker_config = json.loads(result[0])
+
+        adapter = TypeAdapter(ChunkerConfig)
+        chunker_config = adapter.validate_json(result[0])
         return chunker_config
     except Exception as e:
         print(("Error retrieving chunker configuration.", e))

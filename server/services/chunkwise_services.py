@@ -15,7 +15,7 @@ async def get_evaluation(chunker_config, document_id) -> EvaluationResponse:
     EvaluationResponse from the evaluation service.
     """
     request_body = {
-        "chunker_config": chunker_config.__dict__,
+        "chunking_configs": [chunker_config.__dict__],
         "document_id": document_id,
     }
 
