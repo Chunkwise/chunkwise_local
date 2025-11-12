@@ -110,26 +110,26 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        for column in updated_columns:
-            if updated_columns[column] == None:
+        for column, value in updated_columns.items():
+            if value == None:
                 # Column update not sent
                 continue
+            if value == "":
+                value = None
             elif (
                 column == "chunking_strategy"
                 or column == "chunks_stats"
                 or column == "evaluation_metrics"
             ):
-                if type(updated_columns[column]) != dict:
-                    updated_columns[column] = json.dumps(
-                        updated_columns[column].__dict__
-                    )
+                if type(value) != dict:
+                    value = json.dumps(value.__dict__)
                 else:
-                    updated_columns[column] = json.dumps(updated_columns[column])
+                    value = json.dumps(value)
 
             query = sql.SQL(
                 "UPDATE workflow SET {column_name} = %s WHERE id = %s;"
             ).format(column_name=sql.Identifier(column))
-            cursor.execute(query, (updated_columns[column], workflow_id))
+            cursor.execute(query, (value, workflow_id))
             print(query)
 
         cursor.execute("SELECT * FROM workflow WHERE id = %s", (workflow_id,))
