@@ -65,7 +65,7 @@ async def get_s3_file_names():
 
         # Create a list of the files names of a bucket, remove the beginning path
         file_names = [
-            resource["Key"].lstrip("documents/").rstrip(".txt")
+            resource["Key"].replace("documents/", "").replace(".txt", "")
             for resource in resources["Contents"]
         ]
         return file_names
