@@ -25,10 +25,12 @@ const WorkflowDetails = ({
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoadingViz, setIsLoadingViz] = useState(false);
-  const [configChangeTimer, setConfigChangeTimer] = useState<number | null>(null);
+  const [configChangeTimer, setConfigChangeTimer] = useState<number | null>(
+    null
+  );
   const [localConfig, setLocalConfig] = useState(workflow?.chunking_strategy);
 
-  // Sync local config with workflow changes (from server or chunker changes)
+  // Sync local config with workflow changes
   useEffect(() => {
     setLocalConfig(workflow?.chunking_strategy);
   }, [workflow?.chunking_strategy]);
@@ -66,13 +68,13 @@ const WorkflowDetails = ({
       if (!fileTitle) {
         const update: Record<string, string> = {
           document_title: "",
-          chunking_strategy: "",
-          chunks_stats: "",
-          visualization_html: "",
         };
         await onUpdateWorkflow(update as Partial<Workflow>);
       } else {
         await onUpdateWorkflow({ document_title: fileTitle });
+        if (workflow?.chunking_strategy) {
+          await loadVisualization();
+        }
       }
     } catch (error) {
       console.error("Failed to update file:", error);
@@ -80,33 +82,21 @@ const WorkflowDetails = ({
     }
   }
 
-  // Helper function to split chunker name
-  const splitChunkerName = (
+  // Helper function to split and format chunker name
+  const splitAndFormatChunkerName = (
     name: string
   ): { provider: string; type: string } => {
     const parts = name.split(" ");
     return {
-      provider: parts[0].toLowerCase(), // Lowercase for server
-      type: parts[1].toLowerCase(), // Lowercase for server
+      provider: parts[0].toLowerCase(),
+      type: parts[1].toLowerCase(),
     };
-  };
-
-  // Helper to capitalize first letter
-  const capitalize = (str: string): string => {
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-  };
-
-  const reconstructChunkerName = (provider: string, type: string): string => {
-    return `${capitalize(provider)} ${capitalize(type)}`;
   };
 
   const selectedChunkerConfig = chunkers.find((chunker) => {
     if (!workflow.chunking_strategy) return false;
-    const fullName = reconstructChunkerName(
-      workflow.chunking_strategy.provider,
-      workflow.chunking_strategy.chunker_type
-    );
-    return chunker.name === fullName;
+    const fullName = `${workflow.chunking_strategy.provider} ${workflow.chunking_strategy.chunker_type}`;
+    return chunker.name.toLowerCase() === fullName;
   });
 
   async function loadVisualization() {
@@ -134,7 +124,7 @@ const WorkflowDetails = ({
     setError(null);
     try {
       const config = chunkers.find((chunker) => chunker.name === name);
-      const { provider, type } = splitChunkerName(name);
+      const { provider, type } = splitAndFormatChunkerName(name);
 
       const initial: Record<string, number> = {};
       for (const [key, value] of Object.entries(config!)) {
@@ -161,10 +151,8 @@ const WorkflowDetails = ({
 
   async function handleConfigChange(key: string, value: number) {
     setError(null);
-    
     if (!workflow?.chunking_strategy) return;
 
-    // Update local state immediately for responsive UI
     const updated = {
       ...workflow.chunking_strategy,
       [key]: value,
@@ -186,7 +174,7 @@ const WorkflowDetails = ({
         await onUpdateWorkflow(update as Partial<Workflow>);
         await loadVisualization();
       }, 800) as unknown as number;
-      
+
       setConfigChangeTimer(timer);
     } catch (error) {
       console.error("Failed to update config:", error);
@@ -258,73 +246,71 @@ const WorkflowDetails = ({
         onFileChange={handleFileChange}
       />
 
-      {workflow.document_title && (
-        <>
-          <ChunkerForm
-            workflow={{ ...workflow, chunking_strategy: localConfig }}
-            chunkers={chunkers}
-            selectedChunkerConfig={selectedChunkerConfig}
-            onChunkerChange={handleChunkerChange}
-            onConfigChange={handleConfigChange}
-          />
+      <ChunkerForm
+        workflow={{ ...workflow, chunking_strategy: localConfig }}
+        chunkers={chunkers}
+        selectedChunkerConfig={selectedChunkerConfig}
+        onChunkerChange={handleChunkerChange}
+        onConfigChange={handleConfigChange}
+      />
 
-          {workflow.chunking_strategy && (
-            <div className="details-row">
-              <div className="evaluation-actions">
-                <button
-                  className="btn btn-evaluate"
-                  onClick={handleRunEvaluation}
-                  disabled={!evaluationEnabled || isEvaluating}
-                >
-                  {isEvaluating ? (
-                    <>
-                      <span className="spinner">⟳</span> Running Evaluation...
-                    </>
-                  ) : (
-                    <>⚡ Run Evaluation</>
+      {workflow.document_title && workflow.chunking_strategy && (
+        <div className="details-row">
+          <div className="evaluation-actions">
+            <button
+              className="btn btn-evaluate"
+              onClick={handleRunEvaluation}
+              disabled={!evaluationEnabled || isEvaluating}
+            >
+              {isEvaluating ? (
+                <>
+                  <span className="spinner">⟳</span> Running Evaluation...
+                </>
+              ) : (
+                <>⚡ Run Evaluation</>
+              )}
+            </button>
+          </div>
+
+          <TabView hasEvaluation={!!workflow.evaluation_metrics}>
+            {{
+              visualization: (
+                <div className="tab-panel">
+                  {isLoadingViz && (
+                    <div className="muted">
+                      <span className="spinner">⟳</span> Loading
+                      visualization...
+                    </div>
                   )}
-                </button>
-              </div>
-
-              <TabView hasEvaluation={!!workflow.evaluation_metrics}>
-                {{
-                  visualization: (
-                    <div className="tab-panel">
-                      {isLoadingViz && (
-                        <div className="muted">
-                          <span className="spinner">⟳</span> Loading visualization...
-                        </div>
-                      )}
-                      {workflow.chunks_stats &&
-                      workflow.visualization_html &&
-                      !isLoadingViz ? (
-                        <>
-                          <ChunkStats stats={workflow.chunks_stats} />
-                          <VisualizationDisplay
-                            html={workflow.visualization_html}
-                          />
-                        </>
-                      ) : !isLoadingViz ? (
-                        <p className="muted">
-                          Select a chunker and adjust configuration to see visualization
-                        </p>
-                      ) : null}
-                    </div>
-                  ),
-                  evaluation: workflow.evaluation_metrics ? (
-                    <EvaluationMetrics metrics={workflow.evaluation_metrics} />
-                  ) : (
-                    <div className="tab-panel">
-                      <p className="muted">
-                        Run evaluation to see performance metrics
-                      </p>
-                    </div>
-                  ),
-                }}
-              </TabView>
-            </div>
-          )}
-        </>
+                  {workflow.chunks_stats &&
+                  workflow.visualization_html &&
+                  !isLoadingViz ? (
+                    <>
+                      <ChunkStats stats={workflow.chunks_stats} />
+                      <VisualizationDisplay
+                        html={workflow.visualization_html}
+                      />
+                    </>
+                  ) : !isLoadingViz ? (
+                    <p className="muted">
+                      Select a chunker and adjust configuration to see
+                      visualization
+                    </p>
+                  ) : null}
+                </div>
+              ),
+              evaluation: workflow.evaluation_metrics ? (
+                <EvaluationMetrics metrics={workflow.evaluation_metrics} />
+              ) : (
+                <div className="tab-panel">
+                  <p className="muted">
+                    Run evaluation to see performance metrics
+                  </p>
+                </div>
+              ),
+            }}
+          </TabView>
+        </div>
       )}
     </div>
   );

@@ -15,20 +15,6 @@ const ChunkerForm = ({
   onChunkerChange,
   onConfigChange,
 }: ChunkerFormProps) => {
-  // Helper to capitalize first letter
-  const capitalize = (str: string): string => {
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-  };
-
-  const getSelectedChunkerName = (): string => {
-    if (!workflow.chunking_strategy) return "";
-    const { provider, chunker_type } = workflow.chunking_strategy;
-    if (provider && chunker_type) {
-      return `${capitalize(provider)} ${capitalize(chunker_type)}`;
-    }
-    return "";
-  };
-
   return (
     <div className="details-row">
       <h2 className="section-title">Chunker & configuration</h2>
@@ -37,10 +23,12 @@ const ChunkerForm = ({
           <label className="label">Chunker</label>
           <select
             className="select"
-            value={getSelectedChunkerName()}
+            value={selectedChunkerConfig ? selectedChunkerConfig.name : ""}
             onChange={(event) => onChunkerChange(event.target.value)}
           >
-            <option value="">-- choose chunker --</option>
+            <option value="" disabled={!!workflow.chunking_strategy}>
+              -- choose chunker --
+            </option>
             {chunkers.map((chunker) => (
               <option key={chunker.name} value={chunker.name}>
                 {chunker.name}
