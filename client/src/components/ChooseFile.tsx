@@ -19,17 +19,16 @@ const ChooseFile = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Helper to remove .txt extension
-  const removeExtension = (filename: string): string => {
-    return filename.endsWith(".txt") ? filename.slice(0, -4) : filename;
-  };
-
   // Sync with availableFiles
   useEffect(() => {
     setFiles(availableFiles);
   }, [availableFiles]);
 
-  // Handle file upload
+  // Helper to remove .txt extension
+  const removeExtension = (filename: string): string => {
+    return filename.endsWith(".txt") ? filename.slice(0, -4) : filename;
+  };
+
   const handleFileUpload = async (file: File | null) => {
     if (!file) return;
     setError(null);
@@ -49,7 +48,6 @@ const ChooseFile = ({
     }
   };
 
-  // Handle selection change
   const handleSelectChange = (value: string) => {
     if (value === "") {
       onFileChange(undefined);

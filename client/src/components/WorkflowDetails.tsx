@@ -24,14 +24,14 @@ const WorkflowDetails = ({
   onUpdateWorkflow,
   onLocalUpdateWorkflow,
 }: Props) => {
-  const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoadingViz, setIsLoadingViz] = useState(false);
+  const [localConfig, setLocalConfig] = useState(workflow?.chunking_strategy);
   const [configChangeTimer, setConfigChangeTimer] = useState<number | null>(
     null
   );
-  const [localConfig, setLocalConfig] = useState(workflow?.chunking_strategy);
+  const [isLoadingViz, setIsLoadingViz] = useState(false);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Sync local config with workflow changes
   useEffect(() => {
@@ -56,6 +56,7 @@ const WorkflowDetails = ({
     };
   }, [configChangeTimer]);
 
+  // Placeholder when no workflow is selected
   if (!workflow) {
     return (
       <div className="placeholder">
@@ -64,6 +65,24 @@ const WorkflowDetails = ({
       </div>
     );
   }
+
+  // Determine selected chunker config
+  const selectedChunkerConfig = chunkers.find((chunker) => {
+    if (!workflow.chunking_strategy) return false;
+    const fullName = `${workflow.chunking_strategy.provider} ${workflow.chunking_strategy.chunker_type}`;
+    return chunker.name.toLowerCase() === fullName;
+  });
+
+  // Helper function to split and format chunker name
+  const splitAndFormatChunkerName = (
+    name: string
+  ): { provider: string; type: string } => {
+    const parts = name.split(" ");
+    return {
+      provider: parts[0].toLowerCase(),
+      type: parts[1].toLowerCase(),
+    };
+  };
 
   async function handleFileChange(fileTitle: string | undefined) {
     setError(null);
@@ -85,23 +104,7 @@ const WorkflowDetails = ({
     }
   }
 
-  // Helper function to split and format chunker name
-  const splitAndFormatChunkerName = (
-    name: string
-  ): { provider: string; type: string } => {
-    const parts = name.split(" ");
-    return {
-      provider: parts[0].toLowerCase(),
-      type: parts[1].toLowerCase(),
-    };
-  };
-
-  const selectedChunkerConfig = chunkers.find((chunker) => {
-    if (!workflow.chunking_strategy) return false;
-    const fullName = `${workflow.chunking_strategy.provider} ${workflow.chunking_strategy.chunker_type}`;
-    return chunker.name.toLowerCase() === fullName;
-  });
-
+  // Load visualization data
   async function loadVisualization() {
     if (!workflow?.id) return;
 
@@ -114,7 +117,6 @@ const WorkflowDetails = ({
         chunks_stats: vizData.stats,
         visualization_html: vizData.html,
       };
-      // Only update local state
       onLocalUpdateWorkflow(update as Partial<Workflow>);
     } catch (error) {
       console.error("Failed to load visualization:", error);
@@ -154,8 +156,8 @@ const WorkflowDetails = ({
   }
 
   async function handleConfigChange(key: string, value: number) {
-    setError(null);
     if (!workflow?.chunking_strategy) return;
+    setError(null);
 
     const updated = {
       ...workflow.chunking_strategy,
@@ -173,12 +175,11 @@ const WorkflowDetails = ({
         chunking_strategy: updated,
       };
 
-      // Throttle request for update and visualization
+      // Debounce request for update and visualization
       const timer = setTimeout(async () => {
         await onUpdateWorkflow(update as Partial<Workflow>);
         await loadVisualization();
       }, 800) as unknown as number;
-
       setConfigChangeTimer(timer);
     } catch (error) {
       console.error("Failed to update config:", error);
@@ -194,7 +195,6 @@ const WorkflowDetails = ({
 
     try {
       const metrics = await getEvaluationMetrics(workflow.id);
-      // Only update local state
       onLocalUpdateWorkflow({
         evaluation_metrics: metrics,
       });
