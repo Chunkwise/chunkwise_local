@@ -25,6 +25,13 @@ const WorkflowDetails = ({
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoadingViz, setIsLoadingViz] = useState(false);
+  const [configChangeTimer, setConfigChangeTimer] = useState<number | null>(null);
+  const [localConfig, setLocalConfig] = useState(workflow?.chunking_strategy);
+
+  // Sync local config with workflow changes (from server or chunker changes)
+  useEffect(() => {
+    setLocalConfig(workflow?.chunking_strategy);
+  }, [workflow?.chunking_strategy]);
 
   // Enable evaluation button when chunker is selected
   useEffect(() => {
@@ -34,6 +41,15 @@ const WorkflowDetails = ({
       setEvaluationEnabled(false);
     }
   }, [workflow?.chunking_strategy]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (configChangeTimer) {
+        clearTimeout(configChangeTimer);
+      }
+    };
+  }, [configChangeTimer]);
 
   if (!workflow) {
     return (
@@ -93,6 +109,27 @@ const WorkflowDetails = ({
     return chunker.name === fullName;
   });
 
+  async function loadVisualization() {
+    if (!workflow?.id) return;
+
+    setIsLoadingViz(true);
+    setError(null);
+
+    try {
+      const vizData = await getVisualization(workflow.id);
+      const update: Record<string, unknown> = {
+        chunks_stats: vizData.stats,
+        visualization_html: vizData.html,
+      };
+      await onUpdateWorkflow(update as Partial<Workflow>);
+    } catch (error) {
+      console.error("Failed to load visualization:", error);
+      setError("Failed to load visualization");
+    } finally {
+      setIsLoadingViz(false);
+    }
+  }
+
   async function handleChunkerChange(name: string) {
     setError(null);
     try {
@@ -113,7 +150,9 @@ const WorkflowDetails = ({
           ...initial,
         },
       };
+
       await onUpdateWorkflow(update as Partial<Workflow>);
+      await loadVisualization();
     } catch (error) {
       console.error("Failed to update chunker:", error);
       setError("Failed to update chunker");
@@ -122,44 +161,36 @@ const WorkflowDetails = ({
 
   async function handleConfigChange(key: string, value: number) {
     setError(null);
+    
+    if (!workflow?.chunking_strategy) return;
+
+    // Update local state immediately for responsive UI
+    const updated = {
+      ...workflow.chunking_strategy,
+      [key]: value,
+    };
+    setLocalConfig(updated);
+
+    // Clear existing timer
+    if (configChangeTimer) {
+      clearTimeout(configChangeTimer);
+    }
+
     try {
-      if (!workflow?.chunking_strategy) return;
-
-      const updated = {
-        ...workflow.chunking_strategy,
-        [key]: value,
-      };
-
       const update: Record<string, unknown> = {
         chunking_strategy: updated,
       };
-      await onUpdateWorkflow(update as Partial<Workflow>);
+
+      // Throttle request for update and visualization
+      const timer = setTimeout(async () => {
+        await onUpdateWorkflow(update as Partial<Workflow>);
+        await loadVisualization();
+      }, 800) as unknown as number;
+      
+      setConfigChangeTimer(timer);
     } catch (error) {
       console.error("Failed to update config:", error);
       setError("Failed to update configuration");
-    }
-  }
-
-  async function handleLoadVisualization() {
-    if (!workflow?.id) return;
-
-    setIsLoadingViz(true);
-    setError(null);
-
-    try {
-      const vizData = await getVisualization(workflow.id);
-
-      // Update workflow with visualization data
-      const update: Record<string, unknown> = {
-        chunks_stats: vizData.stats,
-        visualization_html: vizData.html,
-      };
-      await onUpdateWorkflow(update as Partial<Workflow>);
-    } catch (error) {
-      console.error("Failed to load visualization:", error);
-      setError("Failed to load visualization");
-    } finally {
-      setIsLoadingViz(false);
     }
   }
 
@@ -230,7 +261,7 @@ const WorkflowDetails = ({
       {workflow.document_title && (
         <>
           <ChunkerForm
-            workflow={workflow}
+            workflow={{ ...workflow, chunking_strategy: localConfig }}
             chunkers={chunkers}
             selectedChunkerConfig={selectedChunkerConfig}
             onChunkerChange={handleChunkerChange}
@@ -240,21 +271,6 @@ const WorkflowDetails = ({
           {workflow.chunking_strategy && (
             <div className="details-row">
               <div className="evaluation-actions">
-                <button
-                  className="btn btn-primary"
-                  onClick={handleLoadVisualization}
-                  disabled={isLoadingViz}
-                  style={{ marginRight: "1rem" }}
-                >
-                  {isLoadingViz ? (
-                    <>
-                      <span className="spinner">⟳</span> Loading
-                      Visualization...
-                    </>
-                  ) : (
-                    <>📊 Load Visualization</>
-                  )}
-                </button>
                 <button
                   className="btn btn-evaluate"
                   onClick={handleRunEvaluation}
@@ -275,7 +291,9 @@ const WorkflowDetails = ({
                   visualization: (
                     <div className="tab-panel">
                       {isLoadingViz && (
-                        <div className="muted">Loading visualization...</div>
+                        <div className="muted">
+                          <span className="spinner">⟳</span> Loading visualization...
+                        </div>
                       )}
                       {workflow.chunks_stats &&
                       workflow.visualization_html &&
@@ -288,8 +306,7 @@ const WorkflowDetails = ({
                         </>
                       ) : !isLoadingViz ? (
                         <p className="muted">
-                          Click "Load Visualization" to view chunk statistics
-                          and visualization
+                          Select a chunker and adjust configuration to see visualization
                         </p>
                       ) : null}
                     </div>
