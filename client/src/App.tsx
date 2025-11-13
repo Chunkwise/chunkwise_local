@@ -9,6 +9,7 @@ import { getFiles } from "./services/documents";
 import {
   getWorkflows,
   createWorkflow as createWorkflowAPI,
+  updateWorkflow as updateWorkflowAPI,
   deleteWorkflow as deleteWorkflowAPI,
 } from "./services/workflows";
 import {
@@ -56,8 +57,6 @@ export default function App() {
       });
   }, []);
 
-  console.log(state.workflows);
-
   // Load chunkers on mount
   useEffect(() => {
     getChunkers()
@@ -70,7 +69,6 @@ export default function App() {
 
   // Load available files on mount
   useEffect(() => {
-    console.log("Useffect called - loading files");
     getFiles()
       .then((files) => setAvailableFiles([...files]))
       .catch((error) => {
@@ -101,8 +99,18 @@ export default function App() {
     dispatch(selectWorkflowAction(id));
   };
 
-  const handleUpdateWorkflow = (id: string, patch: Partial<Workflow>) => {
-    dispatch(updateWorkflowAction(id, patch));
+  const handleUpdateWorkflow = async (id: string, patch: Partial<Workflow>) => {
+    try {
+      const updatedWorkflow = await updateWorkflowAPI(id, patch);
+      const workflowWithStage = {
+        ...updatedWorkflow,
+        stage: computeStage(updatedWorkflow),
+      };
+      dispatch(updateWorkflowAction(id, workflowWithStage));
+    } catch (error) {
+      console.error("Failed to update workflow:", error);
+      setError("Failed to update workflow");
+    }
   };
 
   const handleDeleteWorkflow = async (id: string) => {
@@ -148,10 +156,12 @@ export default function App() {
             chunkers={chunkers}
             availableFiles={availableFiles}
             workflow={selectedWorkflow}
-            onUpdateWorkflow={(patch) =>
-              state.selectedWorkflowId &&
-              handleUpdateWorkflow(state.selectedWorkflowId, patch)
-            }
+            onUpdateWorkflow={(patch) => {
+              if (state.selectedWorkflowId) {
+                return handleUpdateWorkflow(state.selectedWorkflowId, patch);
+              }
+              return Promise.resolve();
+            }}
           />
         </main>
       </div>

@@ -15,6 +15,20 @@ const ChunkerForm = ({
   onChunkerChange,
   onConfigChange,
 }: ChunkerFormProps) => {
+  // Helper to capitalize first letter
+  const capitalize = (str: string): string => {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
+  const getSelectedChunkerName = (): string => {
+    if (!workflow.chunking_strategy) return "";
+    const { provider, chunker_type } = workflow.chunking_strategy;
+    if (provider && chunker_type) {
+      return `${capitalize(provider)} ${capitalize(chunker_type)}`;
+    }
+    return "";
+  };
+
   return (
     <div className="details-row">
       <h2 className="section-title">Chunker & configuration</h2>
@@ -23,7 +37,7 @@ const ChunkerForm = ({
           <label className="label">Chunker</label>
           <select
             className="select"
-            value={workflow.chunker ?? ""}
+            value={getSelectedChunkerName()}
             onChange={(event) => onChunkerChange(event.target.value)}
           >
             <option value="">-- choose chunker --</option>
@@ -35,7 +49,7 @@ const ChunkerForm = ({
           </select>
         </div>
 
-        {workflow.chunker && selectedChunkerConfig ? (
+        {workflow.chunking_strategy && selectedChunkerConfig ? (
           <div className="config-area">
             <div className="muted">
               Configure chunker options (defaults pre-selected)
@@ -54,7 +68,7 @@ const ChunkerForm = ({
                       }
                       className="slider"
                       value={
-                        workflow.chunkingConfig?.[key] ??
+                        (workflow.chunking_strategy?.[key] as number) ??
                         selectedChunkerConfig[key]?.default
                       }
                       min={selectedChunkerConfig[key]?.min}
@@ -64,7 +78,7 @@ const ChunkerForm = ({
                       }
                     />
                     <span className="slider-value">
-                      {workflow.chunkingConfig?.[key] ??
+                      {(workflow.chunking_strategy?.[key] as number) ??
                         selectedChunkerConfig[key]?.default}
                     </span>
                   </div>

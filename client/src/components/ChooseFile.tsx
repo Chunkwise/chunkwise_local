@@ -19,6 +19,11 @@ const ChooseFile = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper to remove .txt extension
+  const removeExtension = (filename: string): string => {
+    return filename.endsWith(".txt") ? filename.slice(0, -4) : filename;
+  };
+
   // Sync with availableFiles
   useEffect(() => {
     setFiles(availableFiles);
@@ -31,7 +36,7 @@ const ChooseFile = ({
     setIsLoading(true);
 
     try {
-      const title = file.name;
+      const title = removeExtension(file.name);
       const text = await file.text();
       await uploadFile({ document_title: title, document_content: text });
       setFiles((prev) => (prev.includes(title) ? prev : [...prev, title]));
@@ -62,7 +67,7 @@ const ChooseFile = ({
         <div className="file-controls">
           <select
             className="file-select"
-            value={workflow.fileTitle || ""}
+            value={workflow.document_title || ""}
             onChange={(event) => handleSelectChange(event.target.value)}
             disabled={isLoading}
           >
@@ -92,9 +97,9 @@ const ChooseFile = ({
 
         {isLoading && <div className="muted">Uploading...</div>}
 
-        {workflow.fileTitle ? (
+        {workflow.document_title ? (
           <div className="file-preview">
-            <div className="file-name">Selected: {workflow.fileTitle}</div>
+            <div className="file-name">Selected: {workflow.document_title}</div>
             <button
               className="btn btn-sm"
               onClick={() => onFileChange(undefined)}

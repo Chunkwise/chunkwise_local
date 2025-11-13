@@ -4,16 +4,15 @@ import ChooseFile from "./ChooseFile";
 import ChunkerForm from "./ChunkerForm";
 import TabView from "./TabView";
 import EvaluationMetrics from "./EvaluationMetrics";
-// import ChunkStats from "./ChunkStats";
-// import VisualizationDisplay from "./VisualizationDisplay";
-// import { getVisualization } from "../services/visualization";
-// import { useThrottle } from "../hooks/useThrottle";
+import ChunkStats from "./ChunkStats";
+import VisualizationDisplay from "./VisualizationDisplay";
+import { getVisualization } from "../services/visualization";
 
 type Props = {
   chunkers: Chunker[];
   availableFiles: string[];
   workflow?: Workflow;
-  onUpdateWorkflow: (patch: Partial<Workflow>) => void;
+  onUpdateWorkflow: (patch: Partial<Workflow>) => Promise<void>;
 };
 
 const WorkflowDetails = ({
@@ -24,20 +23,17 @@ const WorkflowDetails = ({
 }: Props) => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
-  // const [visualization, setVisualization] = useState<VisualizationResponse | null>(null);
-  // const [isLoadingViz, setIsLoadingViz] = useState(false);
-
-  // Throttling to avoid excessive API calls
-  // const throttledConfig = useThrottle(workflow?.chunkingConfig, 1000);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoadingViz, setIsLoadingViz] = useState(false);
 
   // Enable evaluation button when chunker is selected
   useEffect(() => {
-    if (workflow?.chunker && workflow?.chunkingConfig) {
+    if (workflow?.chunking_strategy) {
       setEvaluationEnabled(true);
     } else {
       setEvaluationEnabled(false);
     }
-  }, [workflow?.chunker, workflow?.chunkingConfig]);
+  }, [workflow?.chunking_strategy]);
 
   if (!workflow) {
     return (
@@ -48,87 +44,190 @@ const WorkflowDetails = ({
     );
   }
 
-  function handleFileChange(fileTitle: string | undefined) {
-    if (!fileTitle) {
-      onUpdateWorkflow({
-        fileTitle: undefined,
-        chunker: undefined,
-        chunkingConfig: undefined,
-        stats: undefined,
-        visualizationHtml: undefined,
-      });
-    } else {
-      onUpdateWorkflow({ fileTitle: fileTitle });
-    }
-  }
-
-  const selectedChunkerConfig = chunkers.find(
-    (chunker) => chunker.name === workflow.chunker
-  );
-
-  function handleChunkerChange(name: string) {
-    const config = chunkers.find((chunker) => chunker.name === name);
-    if (!config) {
-      onUpdateWorkflow({ chunker: name, chunkingConfig: undefined });
-      return;
-    }
-
-    const initial: Record<string, number> = {};
-    for (const [key, value] of Object.entries(config)) {
-      if (typeof value !== "string") {
-        initial[key] = value.default;
+  async function handleFileChange(fileTitle: string | undefined) {
+    setError(null);
+    try {
+      if (!fileTitle) {
+        const update: Record<string, string> = {
+          document_title: "",
+          chunking_strategy: "",
+          chunks_stats: "",
+          visualization_html: "",
+        };
+        await onUpdateWorkflow(update as Partial<Workflow>);
+      } else {
+        await onUpdateWorkflow({ document_title: fileTitle });
       }
+    } catch (error) {
+      console.error("Failed to update file:", error);
+      setError("Failed to update document selection");
     }
-    // Clear evaluation when chunker changes
-    onUpdateWorkflow({
-      chunker: name,
-      chunkingConfig: initial,
-      evaluationMetrics: undefined,
-    });
   }
 
-  function handleConfigChange(key: string, value: number) {
-    const updated = { ...workflow!.chunkingConfig };
-    updated[key] = value;
-    // Clear evaluation when config changes
-    onUpdateWorkflow({
-      chunkingConfig: updated,
-      evaluationMetrics: undefined,
-    });
+  // Helper function to split chunker name
+  const splitChunkerName = (
+    name: string
+  ): { provider: string; type: string } => {
+    const parts = name.split(" ");
+    return {
+      provider: parts[0].toLowerCase(), // Lowercase for server
+      type: parts[1].toLowerCase(), // Lowercase for server
+    };
+  };
+
+  // Helper to capitalize first letter
+  const capitalize = (str: string): string => {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
+  const reconstructChunkerName = (provider: string, type: string): string => {
+    return `${capitalize(provider)} ${capitalize(type)}`;
+  };
+
+  const selectedChunkerConfig = chunkers.find((chunker) => {
+    if (!workflow.chunking_strategy) return false;
+    const fullName = reconstructChunkerName(
+      workflow.chunking_strategy.provider,
+      workflow.chunking_strategy.chunker_type
+    );
+    return chunker.name === fullName;
+  });
+
+  async function handleChunkerChange(name: string) {
+    setError(null);
+    try {
+      const config = chunkers.find((chunker) => chunker.name === name);
+      const { provider, type } = splitChunkerName(name);
+
+      const initial: Record<string, number> = {};
+      for (const [key, value] of Object.entries(config!)) {
+        if (typeof value !== "string") {
+          initial[key] = value.default;
+        }
+      }
+
+      const update: Record<string, unknown> = {
+        chunking_strategy: {
+          chunker_type: type,
+          provider: provider,
+          ...initial,
+        },
+      };
+      await onUpdateWorkflow(update as Partial<Workflow>);
+    } catch (error) {
+      console.error("Failed to update chunker:", error);
+      setError("Failed to update chunker");
+    }
+  }
+
+  async function handleConfigChange(key: string, value: number) {
+    setError(null);
+    try {
+      if (!workflow?.chunking_strategy) return;
+
+      const updated = {
+        ...workflow.chunking_strategy,
+        [key]: value,
+      };
+
+      const update: Record<string, unknown> = {
+        chunking_strategy: updated,
+      };
+      await onUpdateWorkflow(update as Partial<Workflow>);
+    } catch (error) {
+      console.error("Failed to update config:", error);
+      setError("Failed to update configuration");
+    }
+  }
+
+  async function handleLoadVisualization() {
+    if (!workflow?.id) return;
+
+    setIsLoadingViz(true);
+    setError(null);
+
+    try {
+      const vizData = await getVisualization(workflow.id);
+
+      // Update workflow with visualization data
+      const update: Record<string, unknown> = {
+        chunks_stats: vizData.stats,
+        visualization_html: vizData.html,
+      };
+      await onUpdateWorkflow(update as Partial<Workflow>);
+    } catch (error) {
+      console.error("Failed to load visualization:", error);
+      setError("Failed to load visualization");
+    } finally {
+      setIsLoadingViz(false);
+    }
   }
 
   async function handleRunEvaluation() {
-    if (!workflow?.chunker || !workflow?.chunkingConfig) return;
+    if (!workflow?.chunking_strategy) return;
 
     setIsEvaluating(true);
     setEvaluationEnabled(false);
+    setError(null);
 
     // Simulate API call with mock data
-    setTimeout(() => {
-      const mockMetrics: Metrics = {
-        precision_mean: 0.708,
-        recall_mean: 0.715,
-        iou_mean: 0.65,
-        precision_omega_mean: 0.725,
-      };
+    setTimeout(async () => {
+      try {
+        const mockMetrics: Metrics = {
+          precision_mean: 0.708,
+          recall_mean: 0.715,
+          iou_mean: 0.65,
+          precision_omega_mean: 0.725,
+        };
 
-      onUpdateWorkflow({
-        evaluationMetrics: mockMetrics,
-        stage: "Evaluated",
-      });
-      setIsEvaluating(false);
+        await onUpdateWorkflow({
+          evaluation_metrics: mockMetrics,
+        });
+      } catch (error) {
+        console.error("Failed to save evaluation:", error);
+        setError("Failed to save evaluation results");
+      } finally {
+        setIsEvaluating(false);
+      }
     }, 1500);
   }
 
   return (
     <div className="details">
+      {error && (
+        <div
+          style={{
+            padding: "1rem",
+            backgroundColor: "#fee",
+            color: "#c00",
+            borderRadius: "4px",
+            marginBottom: "1rem",
+          }}
+        >
+          {error}
+          <button
+            onClick={() => setError(null)}
+            style={{
+              marginLeft: "1rem",
+              background: "transparent",
+              border: "none",
+              color: "#c00",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            x
+          </button>
+        </div>
+      )}
+
       <ChooseFile
         workflow={workflow}
         availableFiles={availableFiles}
         onFileChange={handleFileChange}
       />
 
-      {workflow.fileTitle && (
+      {workflow.document_title && (
         <>
           <ChunkerForm
             workflow={workflow}
@@ -138,9 +237,24 @@ const WorkflowDetails = ({
             onConfigChange={handleConfigChange}
           />
 
-          {workflow.chunker && (
+          {workflow.chunking_strategy && (
             <div className="details-row">
               <div className="evaluation-actions">
+                <button
+                  className="btn btn-primary"
+                  onClick={handleLoadVisualization}
+                  disabled={isLoadingViz}
+                  style={{ marginRight: "1rem" }}
+                >
+                  {isLoadingViz ? (
+                    <>
+                      <span className="spinner">⟳</span> Loading
+                      Visualization...
+                    </>
+                  ) : (
+                    <>📊 Load Visualization</>
+                  )}
+                </button>
                 <button
                   className="btn btn-evaluate"
                   onClick={handleRunEvaluation}
@@ -156,26 +270,32 @@ const WorkflowDetails = ({
                 </button>
               </div>
 
-              <TabView hasEvaluation={!!workflow.evaluationMetrics}>
+              <TabView hasEvaluation={!!workflow.evaluation_metrics}>
                 {{
                   visualization: (
                     <div className="tab-panel">
-                      <p className="muted">
-                        Chunk visualization will be displayed here
-                      </p>
-                      {/* {isLoadingViz && (
+                      {isLoadingViz && (
                         <div className="muted">Loading visualization...</div>
                       )}
-                      {visualization && !isLoadingViz && (
+                      {workflow.chunks_stats &&
+                      workflow.visualization_html &&
+                      !isLoadingViz ? (
                         <>
-                          <ChunkStats stats={visualization.stats} />
-                          <VisualizationDisplay html={visualization.html} />
+                          <ChunkStats stats={workflow.chunks_stats} />
+                          <VisualizationDisplay
+                            html={workflow.visualization_html}
+                          />
                         </>
-                      )} */}
+                      ) : !isLoadingViz ? (
+                        <p className="muted">
+                          Click "Load Visualization" to view chunk statistics
+                          and visualization
+                        </p>
+                      ) : null}
                     </div>
                   ),
-                  evaluation: workflow.evaluationMetrics ? (
-                    <EvaluationMetrics metrics={workflow.evaluationMetrics} />
+                  evaluation: workflow.evaluation_metrics ? (
+                    <EvaluationMetrics metrics={workflow.evaluation_metrics} />
                   ) : (
                     <div className="tab-panel">
                       <p className="muted">

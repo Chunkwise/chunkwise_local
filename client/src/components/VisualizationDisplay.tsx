@@ -9,7 +9,7 @@ const VisualizationDisplay = ({ html }: VisualizationDisplayProps) => {
       <div className="box">
         <div
           className="visualization-container"
-          dangerouslySetInnerHTML={{ __html: JSON.parse(html) }}
+          dangerouslySetInnerHTML={html ? { __html: html } : undefined}
         />
       </div>
     </div>
