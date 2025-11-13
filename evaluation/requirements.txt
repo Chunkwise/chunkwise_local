@@ -1,0 +1,6 @@
+python-dotenv 
+fastapi 
+uvicorn
+boto3
+chunking-evaluation @ git+https://github.com/Chunkwise/chunking_evaluation_refactored.git
+chunkwise-core @ git+https://github.com/Chunkwise/chunkwise_core.git
