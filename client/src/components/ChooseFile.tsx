@@ -1,50 +1,48 @@
 import { useEffect, useState } from "react";
 import type { Workflow } from "../types";
-import { getFiles, uploadFile } from "../services/documents";
+import { uploadFile } from "../services/documents";
 
 interface ChooseFileProps {
   workflow: Workflow;
+  availableFiles: string[];
   onFileChange: (fileId: string | undefined) => void;
-  error: string | null;
 }
+
+const UPLOAD_OPTION_VALUE = "__upload__";
 
 const ChooseFile = ({
   workflow,
+  availableFiles,
   onFileChange,
-  error,
 }: ChooseFileProps) => {
-  const [availableFiles, setAvailableFiles] = useState<string[]>([]);
+  const [files, setFiles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadFiles = async () => {
-    try {
-      const files = await getFiles();
-      setAvailableFiles(files);
-    } catch (err) {
-      console.error("Failed to load files:", err);
-      setUploadError("Failed to load files from server");
-    }
-  };
-
+  // Sync with availableFiles
   useEffect(() => {
-    loadFiles();
-  }, []);
+    setFiles(availableFiles);
+  }, [availableFiles]);
+
+  // Helper to remove .txt extension
+  const removeExtension = (filename: string): string => {
+    return filename.endsWith(".txt") ? filename.slice(0, -4) : filename;
+  };
 
   const handleFileUpload = async (file: File | null) => {
     if (!file) return;
-
-    setUploadError(null);
+    setError(null);
     setIsLoading(true);
 
     try {
+      const title = removeExtension(file.name);
       const text = await file.text();
-      const fileId = await uploadFile(text);
-      setAvailableFiles((prev) => [...prev, fileId]);
-      onFileChange(fileId);
+      await uploadFile({ document_title: title, document_content: text });
+      setFiles((prev) => (prev.includes(title) ? prev : [...prev, title]));
+      onFileChange(title);
     } catch (error) {
       console.error("Upload failed:", error);
-      setUploadError("Failed to upload File");
+      setError("Failed to upload file");
     } finally {
       setIsLoading(false);
     }
@@ -53,8 +51,7 @@ const ChooseFile = ({
   const handleSelectChange = (value: string) => {
     if (value === "") {
       onFileChange(undefined);
-    } else if (value === "__upload__") {
-      // Trigger file input
+    } else if (value === UPLOAD_OPTION_VALUE) {
       document.getElementById("file-upload-input")?.click();
     } else {
       onFileChange(value);
@@ -68,17 +65,17 @@ const ChooseFile = ({
         <div className="file-controls">
           <select
             className="file-select"
-            value={workflow.fileId || ""}
-            onChange={(e) => handleSelectChange(e.target.value)}
+            value={workflow.document_title || ""}
+            onChange={(event) => handleSelectChange(event.target.value)}
             disabled={isLoading}
           >
             <option value="">-- Select a file --</option>
-            {availableFiles.map((fileId) => (
-              <option key={fileId} value={fileId}>
-                {fileId}
+            {files.map((title) => (
+              <option key={title} value={title}>
+                {title}
               </option>
             ))}
-            <option value="__upload__">+ Upload new file</option>
+            <option value={UPLOAD_OPTION_VALUE}>+ Upload new file</option>
           </select>
 
           <input
@@ -94,15 +91,13 @@ const ChooseFile = ({
           />
         </div>
 
-        {(error || uploadError) && (
-          <div className="error">{error || uploadError}</div>
-        )}
+        {error && <div className="error">{error}</div>}
 
         {isLoading && <div className="muted">Uploading...</div>}
 
-        {workflow.fileId ? (
+        {workflow.document_title ? (
           <div className="file-preview">
-            <div className="file-name">Selected: {workflow.fileId}</div>
+            <div className="file-name">Selected: {workflow.document_title}</div>
             <button
               className="btn btn-sm"
               onClick={() => onFileChange(undefined)}

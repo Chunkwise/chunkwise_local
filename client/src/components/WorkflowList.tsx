@@ -4,38 +4,101 @@ import type { Workflow } from "../types";
 type Props = {
   workflows: Workflow[];
   selectedId?: string;
-  onCreate: (name: string) => void;
-  onSelect: (id: string) => void;
-  onDelete: (id: string) => void;
+  isComparing: boolean;
+  comparedWorkflowIds: string[];
+  onCreateWorkflow: (name: string) => void;
+  onSelectWorkflow: (id: string) => void;
+  onDeleteWorkflow: (id: string) => void;
+  onEnterComparison: () => void;
+  onExitComparison: () => void;
+  onToggleWorkflowComparison: (id: string) => void;
 };
 
 const WorkflowList = ({
   workflows,
   selectedId,
-  onCreate,
-  onSelect,
-  onDelete,
+  isComparing,
+  comparedWorkflowIds,
+  onCreateWorkflow,
+  onSelectWorkflow,
+  onDeleteWorkflow,
+  onEnterComparison,
+  onExitComparison,
+  onToggleWorkflowComparison,
 }: Props) => {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   const handleCreate = () => {
-    const finalName = name.trim() || `Workflow ${new Date().toLocaleString()}`;
-    onCreate(finalName);
+    const trimmedName = name.trim();
+
+    // Validate name length
+    if (trimmedName.length === 0) {
+      setValidationError("Workflow name cannot be empty");
+      return;
+    }
+    if (trimmedName.length > 50) {
+      setValidationError("Workflow name cannot exceed 50 characters");
+      return;
+    }
+
+    // Validate characters
+    if (!/^[a-zA-Z0-9\s]+$/.test(trimmedName)) {
+      setValidationError(
+        "Workflow name can only contain letters, numbers, and spaces"
+      );
+      return;
+    }
+
+    onCreateWorkflow(trimmedName);
     setCreating(false);
     setName("");
+    setValidationError(null);
   };
 
   return (
     <div className="workflow-list">
       <div className="workflow-list-header">
+        <div className="workflow-list-title">
+          <h3>Workflows</h3>
+          {isComparing && (
+            <p className="workflow-list-subtitle">
+              Select up to 3 ({comparedWorkflowIds.length}/3)
+            </p>
+          )}
+        </div>
+        {!isComparing ? (
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setCreating(!creating);
+            }}
+          >
+            + New
+          </button>
+        ) : null}
         <button
-          className="btn btn-primary"
+          className="btn btn-compare"
           onClick={() => {
-            setCreating(!creating);
+            if (isComparing) {
+              onExitComparison();
+            } else {
+              onEnterComparison();
+            }
           }}
+          disabled={workflows.length < 2}
         >
-          + Create workflow
+          {isComparing ? "Exit comparison" : "Compare"}
         </button>
       </div>
 
@@ -44,7 +107,10 @@ const WorkflowList = ({
           <input
             className="input"
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setName(event.target.value);
+              setValidationError(null);
+            }}
             placeholder="Workflow name"
           />
           <button className="btn" onClick={handleCreate}>
@@ -55,10 +121,22 @@ const WorkflowList = ({
             onClick={() => {
               setCreating(false);
               setName("");
+              setValidationError(null);
             }}
           >
             Cancel
           </button>
+          {validationError && (
+            <div
+              style={{
+                color: "red",
+                fontSize: "0.875rem",
+                marginTop: "0.5rem",
+              }}
+            >
+              {validationError}
+            </div>
+          )}
         </div>
       )}
 
@@ -70,22 +148,46 @@ const WorkflowList = ({
           <div
             key={workflow.id}
             className={`workflow-item ${
-              selectedId === workflow.id ? "selected" : ""
+              selectedId === workflow.id && !isComparing ? "selected" : ""
+            } ${
+              isComparing && comparedWorkflowIds.includes(workflow.id)
+                ? "compared"
+                : ""
             }`}
-            onClick={() => onSelect(workflow.id)}
+            onClick={() => {
+              if (isComparing) {
+                onToggleWorkflowComparison(workflow.id);
+              } else {
+                onSelectWorkflow(workflow.id);
+              }
+            }}
           >
             <div className="wi-left">
-              <div className="wi-name">{workflow.name}</div>
+              <div className="wi-name">{workflow.title}</div>
               <div className="wi-meta">
-                <span className="wi-date">{workflow.createdAt}</span>
+                <span className="wi-date">
+                  {formatDate(workflow.created_at)}
+                </span>
                 <span className="wi-stage">{workflow.stage}</span>
               </div>
             </div>
             <div className="wi-actions">
+              <input
+                type="checkbox"
+                className="workflow-checkbox"
+                checked={comparedWorkflowIds.includes(workflow.id)}
+                onChange={() => onToggleWorkflowComparison(workflow.id)}
+                onClick={(event) => event.stopPropagation()}
+                style={{ display: isComparing ? "block" : "none" }}
+              />
               <button
                 className="btn btn-sm"
-                onClick={() => onDelete(workflow.id)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDeleteWorkflow(workflow.id);
+                }}
                 title="Delete"
+                style={{ display: isComparing ? "none" : "block" }}
               >
                 x
               </button>
