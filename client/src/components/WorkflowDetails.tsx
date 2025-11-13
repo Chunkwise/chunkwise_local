@@ -14,6 +14,7 @@ type Props = {
   availableFiles: string[];
   workflow?: Workflow;
   onUpdateWorkflow: (patch: Partial<Workflow>) => Promise<void>;
+  onLocalUpdateWorkflow: (patch: Partial<Workflow>) => void;
 };
 
 const WorkflowDetails = ({
@@ -21,6 +22,7 @@ const WorkflowDetails = ({
   availableFiles,
   workflow,
   onUpdateWorkflow,
+  onLocalUpdateWorkflow,
 }: Props) => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
@@ -112,7 +114,8 @@ const WorkflowDetails = ({
         chunks_stats: vizData.stats,
         visualization_html: vizData.html,
       };
-      await onUpdateWorkflow(update as Partial<Workflow>);
+      // Only update local state
+      onLocalUpdateWorkflow(update as Partial<Workflow>);
     } catch (error) {
       console.error("Failed to load visualization:", error);
       setError("Failed to load visualization");
@@ -190,9 +193,9 @@ const WorkflowDetails = ({
     setError(null);
 
     try {
-      // Call the evaluation service (currently using mock implementation)
-      const metrics = await getEvaluationMetrics(workflow.id.toString());
-      await onUpdateWorkflow({
+      const metrics = await getEvaluationMetrics(workflow.id);
+      // Only update local state
+      onLocalUpdateWorkflow({
         evaluation_metrics: metrics,
       });
     } catch (error) {

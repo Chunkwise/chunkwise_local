@@ -1,9 +1,9 @@
 import { useEffect, useReducer, useState } from "react";
 import type { Workflow, Chunker, Stage } from "./types";
+import type { State } from "./reducers/workflowReducer";
 import Header from "./components/Header";
 import WorkflowList from "./components/WorkflowList";
 import WorkflowDetails from "./components/WorkflowDetails";
-import type { State } from "./reducers/workflowReducer";
 import { getChunkers } from "./services/chunkers";
 import { getFiles } from "./services/documents";
 import {
@@ -156,11 +156,18 @@ export default function App() {
             chunkers={chunkers}
             availableFiles={availableFiles}
             workflow={selectedWorkflow}
-            onUpdateWorkflow={(patch) => {
-              if (state.selectedWorkflowId) {
-                return handleUpdateWorkflow(state.selectedWorkflowId, patch);
-              }
-              return Promise.resolve();
+            onUpdateWorkflow={(patch) =>
+              handleUpdateWorkflow(selectedWorkflow!.id, patch)
+            }
+            onLocalUpdateWorkflow={(patch) => {
+              const updatedWorkflow = { ...selectedWorkflow!, ...patch };
+              const workflowWithStage = {
+                ...updatedWorkflow,
+                stage: computeStage(updatedWorkflow as Workflow),
+              };
+              dispatch(
+                updateWorkflowAction(selectedWorkflow!.id, workflowWithStage)
+              );
             }}
           />
         </main>
