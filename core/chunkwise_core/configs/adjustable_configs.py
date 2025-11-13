@@ -1,11 +1,13 @@
 adjustable_configs = [
     {
         "name": "Chonkie Token",
+        "description": "Split text into fixed-size token chunks with configurable overlap.",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "chunk_overlap": {"type": "int", "default": 0, "min": 0, "max": 4086},
     },
     {
         "name": "Chonkie Sentence",
+        "description": "Split text into chunks while preserving sentence boundaries.",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "chunk_overlap": {"type": "int", "default": 0, "min": 0, "max": 4086},
         "min_sentences_per_chunk": {
@@ -23,6 +25,7 @@ adjustable_configs = [
     },
     {
         "name": "Chonkie Recursive",
+        "description": "Recursively split text into smaller chunks.",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "min_characters_per_chunk": {
             "type": "int",
@@ -33,6 +36,7 @@ adjustable_configs = [
     },
     {
         "name": "Chonkie Slumber",
+        "description": "Split text using a LLM to identify optimal split points",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "min_characters_per_chunk": {
             "type": "int",
@@ -43,6 +47,7 @@ adjustable_configs = [
     },
     {
         "name": "Chonkie Semantic",
+        "description": "Split text into chunks based on semantic similarity.",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "threshold": {"type": "float", "default": 0.8, "min": 0, "max": 1},
         "similarity_window": {"type": "int", "default": 3, "min": 1, "max": 100},
@@ -61,16 +66,19 @@ adjustable_configs = [
     },
     {
         "name": "LangChain Token",
+        "description": "Split text into fixed-size token chunks with configurable overlap.",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "chunk_overlap": {"type": "int", "default": 0, "min": 0, "max": 4086},
     },
     {
         "name": "LangChain Recursive",
+        "description": "Recursively split text into smaller chunks.",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "chunk_overlap": {"type": "int", "default": 0, "min": 0, "max": 4086},
     },
     {
         "name": "LangChain Character",
+        "description": "Splits text based on a character sequence (default: \"\\n\\n\").",
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "chunk_overlap": {"type": "int", "default": 0, "min": 0, "max": 4086},
     },
