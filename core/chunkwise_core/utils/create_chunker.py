@@ -43,7 +43,6 @@ def create_chunker(
             return RecursiveCharacterTextSplitter(
                 chunk_size=config.chunk_size,
                 chunk_overlap=config.chunk_overlap,
-                length_function=config.length_function,
                 keep_separator=config.keep_separator,
                 add_start_index=config.add_start_index,
                 strip_whitespace=config.strip_whitespace,
@@ -56,8 +55,8 @@ def create_chunker(
                 chunk_overlap=config.chunk_overlap,
                 encoding_name=config.encoding_name,
                 model_name=config.model_name,
-                allowed_special=config.allowed_special,
-                disallowed_special=config.disallowed_special,
+                # allowed_special=config.allowed_special,
+                # disallowed_special=config.disallowed_special,
             )
         case LangChainCharacterConfig():
             return CharacterTextSplitter(
@@ -70,7 +69,6 @@ def create_chunker(
             return RecursiveChunker(
                 tokenizer=config.tokenizer,
                 chunk_size=config.chunk_size,
-                rules=config.rules,
                 min_characters_per_chunk=config.min_characters_per_chunk,
             )
         case ChonkieTokenConfig():
@@ -110,7 +108,6 @@ def create_chunker(
                 genie=genie,
                 tokenizer=config.tokenizer,
                 chunk_size=config.chunk_size,
-                rules=config.rules,
                 candidate_size=config.candidate_size,
                 min_characters_per_chunk=config.min_characters_per_chunk,
                 verbose=config.verbose,

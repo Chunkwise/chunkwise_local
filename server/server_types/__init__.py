@@ -5,6 +5,7 @@ from .endpoints import (
     ChunkerConfig,
     EvaluationMetrics,
     EvaluationResponse,
+    Workflow,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "ChunkerConfig",
     "EvaluationMetrics",
     "EvaluationResponse",
+    "Workflow",
 ]
