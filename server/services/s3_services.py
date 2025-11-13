@@ -4,11 +4,15 @@ uploading a file, downloading a file, deleting a file, and getting the
 ids of files in a bucket.
 """
 
+import os
 import logging
+import dotenv
 import boto3
 from botocore.exceptions import ClientError
 
-BUCKET_NAME = "chunkwise-sample"
+dotenv.load_dotenv()
+
+BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
 
 async def upload_s3_file(document_id):
@@ -41,8 +45,13 @@ async def delete_s3_file(document_id):
     """Delete a file on s3"""
     try:
         s3_client = boto3.client("s3")
-        s3_client.delete_object(Key=document_id, Bucket=BUCKET_NAME)
-        return True
+        result = s3_client.delete_object(
+            Key=f"documents/{document_id}.txt", Bucket=BUCKET_NAME
+        )
+        if result["ResponseMetadata"]["HTTPStatusCode"] == 204:
+            return True
+        else:
+            return False
 
     except ClientError:
         logging.exception("s3 ClientError while deleting document")
@@ -52,9 +61,13 @@ async def get_s3_file_names():
     """Get the list of resources from a bucket"""
     try:
         s3_client = boto3.client("s3")
-        resources = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
-        # Create a list of the files names of a bucket
-        file_names = [resource["Key"] for resource in resources["Contents"]]
+        resources = s3_client.list_objects_v2(Bucket=BUCKET_NAME, Prefix="documents")
+
+        # Create a list of the files names of a bucket, remove the beginning path
+        file_names = [
+            resource["Key"].replace("documents/", "").replace(".txt", "")
+            for resource in resources["Contents"]
+        ]
         return file_names
 
     except ClientError:

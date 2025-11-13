@@ -4,11 +4,12 @@ services and it will eventually manage the database(s) and document storage.
 """
 
 import os
+import re
 import logging
 from server_types import (
-    ChunkerConfig,
     VisualizeResponse,
     EvaluationMetrics,
+    Workflow,
 )
 from utils import (
     calculate_chunk_stats,
@@ -25,6 +26,11 @@ from services import (
     delete_s3_file,
     get_s3_file_names,
     get_evaluation,
+    create_workflow,
+    update_workflow,
+    delete_workflow,
+    get_all_workflows,
+    get_workflow_info,
 )
 from fastapi import FastAPI, APIRouter, Body
 from fastapi.responses import JSONResponse
@@ -72,72 +78,87 @@ def configs():
     return adjustable_configs
 
 
-@router.get("/{document_id}/visualization")
+@router.get("/workflows/{workflow_id}/visualization")
 @handle_endpoint_exceptions
-async def visualize(
-    document_id: str, chunker_config: ChunkerConfig = Body(...)
-) -> VisualizeResponse:
+async def visualize(workflow_id: int) -> VisualizeResponse:
     """
     Receives chunking parameters and text from client, sends them to the chunking service,
     then sends the chunks to the visualization service and returns the HTML and statistics.
     """
 
-    await download_s3_file(document_id)
+    document_title, chunker_config = get_workflow_info(workflow_id)
+    await download_s3_file(document_title)
 
     # Make document contents into a string
-    with open(f"documents/{document_id}.txt", "r", encoding="utf8") as file:
+    with open(f"documents/{document_title}.txt", "r", encoding="utf8") as file:
         document = file.read()
         file.close()
 
     chunker = create_chunker(chunker_config)
     chunks = get_chunks_with_metadata(chunker, document)
-    print("CHUNKS")
-    print(chunks)
     stats = calculate_chunk_stats(chunks)
     viz = Visualizer()
     html = viz.get_html(chunks, document)
 
-    delete_file(f"documents/{document_id}.txt")
+    delete_file(f"documents/{document_title}.txt")
+
+    workflow_update = Workflow(chunks_stats=stats, visualization_html=html)
+    update_workflow(workflow_id, workflow_update)
 
     # Return dict with stats and HTML
-    return {"stats": stats, "html": html}
+    return VisualizeResponse(stats=stats, html=html)
 
 
-@router.get("/{document_id}/evaluation")
+@router.get("/workflows/{workflow_id}/evaluation")
 @handle_endpoint_exceptions
-async def evaluate(
-    document_id: str, chunker_config: ChunkerConfig = Body(...)
-) -> list[EvaluationMetrics]:
+async def evaluate(workflow_id: int) -> list[EvaluationMetrics]:
     """
     Receives chunker configs and a document_id from the client, which it then
     sends to the evaluation server. Once it receives a response, it gets the necessary
     data from it and sends that back to the clisent.
     """
 
-    evaluation = await get_evaluation(chunker_config, document_id)
+    document_title, chunker_config = get_workflow_info(workflow_id)
+    evaluation = await get_evaluation(chunker_config, document_title)
     metrics = extract_metrics(evaluation)
+
+    workflow_update = Workflow(evaluation_metrics=metrics[0])
+    update_workflow(workflow_id, workflow_update)
 
     return metrics
 
 
-@router.post("/")
+@router.post("/documents")
 @handle_endpoint_exceptions
-async def upload_document(document: str = Body(...)) -> dict:
+async def upload_document(
+    document_title: str = Body(...),
+    document_content: str = Body(...),
+) -> dict:
     """
     This endpoint receives a string and uses it to create a txt file.
-    It then sends the file to S3 and returns the path/url of the created resource.
+    It then sends the file to S3.
     """
 
+    if len(document_title) == 0 or re.search(r"[^A-Za-z0-9-_() .,]", document_title):
+        return JSONResponse(
+            status_code=400, content={"detail": "Invalid document title"}
+        )
+    if len(document_content) == 0:
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "Document content must have a length greater than zero"},
+        )
+
     # Create a temp file
-    document_id = create_file(document)
-    await upload_s3_file(document_id)
-    delete_file(f"documents/{document_id}")
+    create_file(document_title, document_content)
+    await upload_s3_file(document_title)
+    delete_file(f"documents/{document_title}.txt")
 
     # Return the name of the file
-    return {"document_id": document_id}
+    return {"detail": f"Successfully uploaded {document_title}"}
 
 
-@router.get("/")
+@router.get("/documents")
 @handle_endpoint_exceptions
 async def get_documents() -> list[str]:
     """
@@ -148,20 +169,94 @@ async def get_documents() -> list[str]:
     file_names = await get_s3_file_names()
 
     # Return the name of the file
+    if file_names is None:
+        return []
     return file_names
 
 
-@router.delete("/{document_id}")
+@router.delete("/documents/{document_title}")
 @handle_endpoint_exceptions
-async def delete_document(document_id: str) -> dict:
+async def delete_document(document_title: str) -> dict:
     """
     This endpoint deletes a resource from the S3 store
     """
 
-    await delete_s3_file(document_id)
+    if len(document_title) == 0 or re.search(r"[^A-Za-z0-9-_() .,]", document_title):
+        return JSONResponse(
+            status_code=400, content={"detail": "Invalid document title"}
+        )
+
+    await delete_s3_file(document_title)
 
     # Return the name of the file
     return {"detail": "deleted"}
+
+
+@router.get("/workflows")
+@handle_endpoint_exceptions
+async def get_workflows():
+    """
+    Returns a list of all of the workflows.
+    """
+    result = get_all_workflows()
+    return result
+
+
+@router.post("/workflows")
+@handle_endpoint_exceptions
+async def insert_workflow(body: dict = Body(...)):
+    """
+    Creates a workflow with the given title and returns it.
+    """
+    workflow_title = body["title"]
+
+    if len(workflow_title) == 0 or len(workflow_title) > 50:
+        return JSONResponse(
+            status_code=400, content={"detail": "Invalid workflow title"}
+        )
+
+    result = create_workflow(workflow_title)
+    return result
+
+
+@router.put("/workflows/{workflow_id}")
+@handle_endpoint_exceptions
+async def change_workflow(workflow_id: int, workflow_update: Workflow = Body(...)):
+    """
+    Updates a workflow to reflect the changes made.
+    """
+    update_dict = workflow_update.__dict__
+
+    if workflow_id < 1:
+        return JSONResponse(status_code=400, content={"detail": "Invalid workflow id"})
+
+    if (
+        not workflow_update.chunking_strategy is None
+        or not workflow_update.document_title is None
+    ):
+        workflow_update.chunks_stats = ""
+        workflow_update.visualization_html = ""
+        workflow_update.evaluation_metrics = ""
+
+    result = update_workflow(workflow_id, update_dict)
+    return result
+
+
+@router.delete("/workflows/{workflow_id}")
+@handle_endpoint_exceptions
+async def remove_workflow(workflow_id: int):
+    """
+    Deletes a workflow from the database.
+    """
+    result = delete_workflow(workflow_id)
+
+    if workflow_id < 1:
+        return JSONResponse(status_code=400, content={"detail": "Invalid workflow id"})
+
+    if result is True:
+        return {"detail": "successfully deleted workflow."}
+    else:
+        return JSONResponse(status_code=400, content={"detail": "Invalid workflow id"})
 
 
 @app.exception_handler(Exception)
@@ -173,4 +268,4 @@ async def global_exception_handler(_request, _exc):
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
-app.include_router(router, prefix="/api/documents")
+app.include_router(router, prefix="/api")

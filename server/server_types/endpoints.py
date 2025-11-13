@@ -1,3 +1,7 @@
+"""
+Provides some custom types to the server.
+"""
+
 from pydantic import BaseModel
 from chunkwise_core import ChunkerConfig, Chunk, EvaluationResponse, EvaluationMetrics
 
@@ -22,3 +26,16 @@ class VisualizeResponse(BaseModel):
 
     stats: ChunkStatistics
     html: str
+
+
+class Workflow(BaseModel):
+    """
+    Shape of an object in the workflow table of the database.
+    """
+
+    id: int | None = None
+    document_title: str | None = None
+    chunking_strategy: ChunkerConfig | str | None = None
+    chunks_stats: ChunkStatistics | str | None = None
+    visualization_html: str | None = None
+    evaluation_metrics: EvaluationMetrics | str | None = None
