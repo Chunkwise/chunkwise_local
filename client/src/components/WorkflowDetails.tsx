@@ -84,6 +84,7 @@ const WorkflowDetails = ({
     };
   };
 
+  // Handler for file change
   async function handleFileChange(fileTitle: string | undefined) {
     setError(null);
     try {
@@ -126,6 +127,7 @@ const WorkflowDetails = ({
     }
   }
 
+  // Handlers for chunker and config change
   async function handleChunkerChange(name: string) {
     setError(null);
     try {
@@ -187,6 +189,7 @@ const WorkflowDetails = ({
     }
   }
 
+  // Handler for running evaluation
   async function handleRunEvaluation() {
     if (!workflow?.chunking_strategy) return;
     setIsEvaluating(true);
