@@ -4,6 +4,7 @@ import type { State } from "./reducers/workflowReducer";
 import Header from "./components/Header";
 import WorkflowList from "./components/WorkflowList";
 import WorkflowDetails from "./components/WorkflowDetails";
+import WorkflowComparison from "./components/WorkflowComparison";
 import { getChunkers } from "./services/chunkers";
 import { getFiles } from "./services/documents";
 import {
@@ -20,6 +21,12 @@ import {
   updateWorkflowAction,
   deleteWorkflowAction,
 } from "./reducers/workflowReducer";
+import {
+  comparisonReducer,
+  enterComparisonModeAction,
+  exitComparisonModeAction,
+  toggleWorkflowSelectionAction,
+} from "./reducers/comparisonReducer";
 
 // Compute workflow stage based on its properties
 function computeStage(workflow: Workflow): Stage {
@@ -33,10 +40,14 @@ function computeStage(workflow: Workflow): Stage {
 }
 
 export default function App() {
-  const [state, dispatch] = useReducer(workflowReducer, {
+  const [workflowState, workflowDispatch] = useReducer(workflowReducer, {
     workflows: [],
     selectedWorkflowId: undefined,
   } as State);
+  const [comparisonState, comparisonDispatch] = useReducer(comparisonReducer, {
+    isComparing: false,
+    selectedWorkflowIds: [],
+  });
   const [chunkers, setChunkers] = useState<Chunker[]>([]);
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +60,7 @@ export default function App() {
           ...workflow,
           stage: computeStage(workflow),
         }));
-        dispatch(setWorkflowsAction(workflowsWithStage));
+        workflowDispatch(setWorkflowsAction(workflowsWithStage));
       })
       .catch((error) => {
         console.error("Failed to load workflows:", error);
@@ -77,8 +88,12 @@ export default function App() {
       });
   }, []);
 
-  const selectedWorkflow = state.workflows.find(
-    (workflow) => workflow.id === state.selectedWorkflowId
+  const selectedWorkflow = workflowState.workflows.find(
+    (workflow) => workflow.id === workflowState.selectedWorkflowId
+  );
+
+  const comparedWorkflows = workflowState.workflows.filter((workflow) =>
+    comparisonState.selectedWorkflowIds.includes(workflow.id)
   );
 
   const handleCreateWorkflow = async (name: string) => {
@@ -88,7 +103,7 @@ export default function App() {
         ...newWorkflow,
         stage: computeStage(newWorkflow),
       };
-      dispatch(createWorkflowAction(workflowWithStage));
+      workflowDispatch(createWorkflowAction(workflowWithStage));
     } catch (error) {
       console.error("Failed to create workflow:", error);
       setError("Failed to create workflow");
@@ -96,7 +111,7 @@ export default function App() {
   };
 
   const handleSelectWorkflow = (id: string) => {
-    dispatch(selectWorkflowAction(id));
+    workflowDispatch(selectWorkflowAction(id));
   };
 
   const handleUpdateWorkflow = async (id: string, patch: Partial<Workflow>) => {
@@ -106,7 +121,7 @@ export default function App() {
         ...updatedWorkflow,
         stage: computeStage(updatedWorkflow),
       };
-      dispatch(updateWorkflowAction(id, workflowWithStage));
+      workflowDispatch(updateWorkflowAction(id, workflowWithStage));
     } catch (error) {
       console.error("Failed to update workflow:", error);
       setError("Failed to update workflow");
@@ -116,11 +131,23 @@ export default function App() {
   const handleDeleteWorkflow = async (id: string) => {
     try {
       await deleteWorkflowAPI(id);
-      dispatch(deleteWorkflowAction(id));
+      workflowDispatch(deleteWorkflowAction(id));
     } catch (error) {
       console.error("Failed to delete workflow:", error);
       setError("Failed to delete workflow");
     }
+  };
+
+  const handleEnterComparison = () => {
+    comparisonDispatch(enterComparisonModeAction());
+  };
+
+  const handleExitComparison = () => {
+    comparisonDispatch(exitComparisonModeAction());
+  };
+
+  const handleToggleWorkflowComparison = (id: string) => {
+    comparisonDispatch(toggleWorkflowSelectionAction(id));
   };
 
   return (
@@ -143,33 +170,45 @@ export default function App() {
       <div className="main-layout">
         <aside className="sidebar">
           <WorkflowList
-            workflows={state.workflows}
-            selectedId={state.selectedWorkflowId}
+            workflows={workflowState.workflows}
+            selectedId={workflowState.selectedWorkflowId}
+            isComparing={comparisonState.isComparing}
+            comparedWorkflowIds={comparisonState.selectedWorkflowIds}
             onCreateWorkflow={handleCreateWorkflow}
             onSelectWorkflow={handleSelectWorkflow}
             onDeleteWorkflow={handleDeleteWorkflow}
+            onEnterComparison={handleEnterComparison}
+            onExitComparison={handleExitComparison}
+            onToggleWorkflowComparison={handleToggleWorkflowComparison}
           />
         </aside>
 
         <main className="main-content">
-          <WorkflowDetails
-            chunkers={chunkers}
-            availableFiles={availableFiles}
-            workflow={selectedWorkflow}
-            onUpdateWorkflow={(patch) =>
-              handleUpdateWorkflow(selectedWorkflow!.id, patch)
-            }
-            onLocalUpdateWorkflow={(patch) => {
-              const updatedWorkflow = { ...selectedWorkflow!, ...patch };
-              const workflowWithStage = {
-                ...updatedWorkflow,
-                stage: computeStage(updatedWorkflow as Workflow),
-              };
-              dispatch(
-                updateWorkflowAction(selectedWorkflow!.id, workflowWithStage)
-              );
-            }}
-          />
+          {comparisonState.isComparing ? (
+            <WorkflowComparison
+              workflows={comparedWorkflows}
+              onExit={handleExitComparison}
+            />
+          ) : (
+            <WorkflowDetails
+              chunkers={chunkers}
+              availableFiles={availableFiles}
+              workflow={selectedWorkflow}
+              onUpdateWorkflow={(patch) =>
+                handleUpdateWorkflow(selectedWorkflow!.id, patch)
+              }
+              onLocalUpdateWorkflow={(patch) => {
+                const updatedWorkflow = { ...selectedWorkflow!, ...patch };
+                const workflowWithStage = {
+                  ...updatedWorkflow,
+                  stage: computeStage(updatedWorkflow as Workflow),
+                };
+                workflowDispatch(
+                  updateWorkflowAction(selectedWorkflow!.id, workflowWithStage)
+                );
+              }}
+            />
+          )}
         </main>
       </div>
     </div>

@@ -4,17 +4,27 @@ import type { Workflow } from "../types";
 type Props = {
   workflows: Workflow[];
   selectedId?: string;
+  isComparing: boolean;
+  comparedWorkflowIds: string[];
   onCreateWorkflow: (name: string) => void;
   onSelectWorkflow: (id: string) => void;
   onDeleteWorkflow: (id: string) => void;
+  onEnterComparison: () => void;
+  onExitComparison: () => void;
+  onToggleWorkflowComparison: (id: string) => void;
 };
 
 const WorkflowList = ({
   workflows,
   selectedId,
+  isComparing,
+  comparedWorkflowIds,
   onCreateWorkflow,
   onSelectWorkflow,
   onDeleteWorkflow,
+  onEnterComparison,
+  onExitComparison,
+  onToggleWorkflowComparison,
 }: Props) => {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
@@ -59,13 +69,36 @@ const WorkflowList = ({
   return (
     <div className="workflow-list">
       <div className="workflow-list-header">
+        <div className="workflow-list-title">
+          <h3>Workflows</h3>
+          {isComparing && (
+            <p className="workflow-list-subtitle">
+              Select up to 3 ({comparedWorkflowIds.length}/3)
+            </p>
+          )}
+        </div>
+        {!isComparing ? (
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setCreating(!creating);
+            }}
+          >
+            + New
+          </button>
+        ) : null}
         <button
-          className="btn btn-primary"
+          className="btn btn-compare"
           onClick={() => {
-            setCreating(!creating);
+            if (isComparing) {
+              onExitComparison();
+            } else {
+              onEnterComparison();
+            }
           }}
+          disabled={workflows.length < 2}
         >
-          + Create workflow
+          {isComparing ? "Cancel" : "Compare"}
         </button>
       </div>
 
@@ -115,10 +148,29 @@ const WorkflowList = ({
           <div
             key={workflow.id}
             className={`workflow-item ${
-              selectedId === workflow.id ? "selected" : ""
+              selectedId === workflow.id && !isComparing ? "selected" : ""
+            } ${
+              isComparing && comparedWorkflowIds.includes(workflow.id)
+                ? "compared"
+                : ""
             }`}
-            onClick={() => onSelectWorkflow(workflow.id)}
+            onClick={() => {
+              if (isComparing) {
+                onToggleWorkflowComparison(workflow.id);
+              } else {
+                onSelectWorkflow(workflow.id);
+              }
+            }}
           >
+            {isComparing && (
+              <input
+                type="checkbox"
+                className="workflow-checkbox"
+                checked={comparedWorkflowIds.includes(workflow.id)}
+                onChange={() => onToggleWorkflowComparison(workflow.id)}
+                onClick={(event) => event.stopPropagation()}
+              />
+            )}
             <div className="wi-left">
               <div className="wi-name">{workflow.title}</div>
               <div className="wi-meta">
@@ -128,15 +180,20 @@ const WorkflowList = ({
                 <span className="wi-stage">{workflow.stage}</span>
               </div>
             </div>
-            <div className="wi-actions">
-              <button
-                className="btn btn-sm"
-                onClick={() => onDeleteWorkflow(workflow.id)}
-                title="Delete"
-              >
-                x
-              </button>
-            </div>
+            {!isComparing && (
+              <div className="wi-actions">
+                <button
+                  className="btn btn-sm"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDeleteWorkflow(workflow.id);
+                  }}
+                  title="Delete"
+                >
+                  x
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

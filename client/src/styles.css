@@ -115,10 +115,36 @@ html,
 }
 
 /* workflow list */
+.workflow-list-title {
+  margin-bottom: 8px;
+}
+.workflow-list-title h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+}
+.workflow-list-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
 .workflow-list-header {
   margin-bottom: 8px;
   display: flex;
   gap: 8px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.btn-compare {
+  background: #fff;
+  color: #111;
+  border: 1px solid var(--border);
+}
+.btn-compare:hover:not(:disabled) {
+  background: #f7f7f7;
+}
+.btn-compare:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .workflow-items {
   display: flex;
@@ -136,10 +162,21 @@ html,
   border: 1px solid var(--border);
   border-radius: 6px;
   cursor: pointer;
+  gap: 8px;
 }
 .workflow-item.selected {
   border-color: var(--accent);
   box-shadow: 0 2px 6px rgba(43, 108, 176, 0.08);
+}
+.workflow-item.compared {
+  border-color: var(--accent);
+  background: #f0f7ff;
+}
+.workflow-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 .wi-left {
   display: flex;
@@ -618,4 +655,211 @@ html,
 
 .evaluation-note strong {
   color: #2d3748;
+}
+
+/* Workflow Comparison */
+.comparison-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.comparison-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.comparison-title {
+  margin: 0 0 4px 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.comparison-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.btn-exit {
+  background: #2d3748;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s ease;
+}
+
+.btn-exit:hover {
+  background: #1a202c;
+}
+
+.comparison-placeholder {
+  padding: 40px;
+  text-align: center;
+  color: var(--muted);
+  background: #fff;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.comparison-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.comparison-card-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  background: #f9fafb;
+}
+
+.comparison-card-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.comparison-card-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.comparison-badge {
+  padding: 4px 10px;
+  background: #edf2f7;
+  color: #4a5568;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.comparison-stage-badge {
+  padding: 4px 10px;
+  background: #c6f6d5;
+  color: #22543d;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.comparison-card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+.comparison-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comparison-section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d3748;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.comparison-config,
+.comparison-metrics,
+.comparison-evaluation {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comparison-config-row,
+.comparison-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f7fafc;
+  border-radius: 4px;
+}
+
+.comparison-config-label,
+.comparison-metric-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.comparison-config-value,
+.comparison-metric-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.comparison-empty {
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.comparison-eval-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.comparison-eval-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comparison-eval-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.comparison-eval-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.comparison-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.comparison-progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 3px;
 }
