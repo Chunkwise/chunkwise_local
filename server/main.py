@@ -195,6 +195,9 @@ async def delete_document(document_title: str) -> dict:
 @router.get("/workflows")
 @handle_endpoint_exceptions
 async def get_workflows():
+    """
+    Returns a list of all of the workflows.
+    """
     result = get_all_workflows()
     return result
 
@@ -202,7 +205,9 @@ async def get_workflows():
 @router.post("/workflows")
 @handle_endpoint_exceptions
 async def insert_workflow(body: dict = Body(...)):
-
+    """
+    Creates a workflow with the given title and returns it.
+    """
     workflow_title = body["title"]
 
     if len(workflow_title) == 0 or len(workflow_title) > 50:
@@ -217,6 +222,9 @@ async def insert_workflow(body: dict = Body(...)):
 @router.put("/workflows/{workflow_id}")
 @handle_endpoint_exceptions
 async def change_workflow(workflow_id: int, workflow_update: Workflow = Body(...)):
+    """
+    Updates a workflow to reflect the changes made.
+    """
     update_dict = workflow_update.__dict__
 
     if workflow_id < 1:
@@ -237,6 +245,9 @@ async def change_workflow(workflow_id: int, workflow_update: Workflow = Body(...
 @router.delete("/workflows/{workflow_id}")
 @handle_endpoint_exceptions
 async def remove_workflow(workflow_id: int):
+    """
+    Deletes a workflow from the database.
+    """
     result = delete_workflow(workflow_id)
 
     if workflow_id < 1:
