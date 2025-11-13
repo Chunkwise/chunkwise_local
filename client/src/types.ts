@@ -62,9 +62,3 @@ export interface Workflow {
   visualization_html?: string;
   evaluation_metrics?: EvaluationMetrics;
 }
-
-export type WorkflowCreate = Omit<Workflow, "id" | "createdAt"> & {
-  title: string;
-};
-
-export type WorkflowUpdate = Partial<Omit<Workflow, "id" | "createdAt">>;

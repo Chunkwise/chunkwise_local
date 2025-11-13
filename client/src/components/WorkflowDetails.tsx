@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Workflow, Chunker, EvaluationMetrics as Metrics } from "../types";
+import type { Workflow, Chunker } from "../types";
 import ChooseFile from "./ChooseFile";
 import ChunkerForm from "./ChunkerForm";
 import TabView from "./TabView";
@@ -7,6 +7,7 @@ import EvaluationMetrics from "./EvaluationMetrics";
 import ChunkStats from "./ChunkStats";
 import VisualizationDisplay from "./VisualizationDisplay";
 import { getVisualization } from "../services/visualization";
+import { getEvaluationMetrics } from "../services/evaluation";
 
 type Props = {
   chunkers: Chunker[];
@@ -184,31 +185,22 @@ const WorkflowDetails = ({
 
   async function handleRunEvaluation() {
     if (!workflow?.chunking_strategy) return;
-
     setIsEvaluating(true);
     setEvaluationEnabled(false);
     setError(null);
 
-    // Simulate API call with mock data
-    setTimeout(async () => {
-      try {
-        const mockMetrics: Metrics = {
-          precision_mean: 0.708,
-          recall_mean: 0.715,
-          iou_mean: 0.65,
-          precision_omega_mean: 0.725,
-        };
-
-        await onUpdateWorkflow({
-          evaluation_metrics: mockMetrics,
-        });
-      } catch (error) {
-        console.error("Failed to save evaluation:", error);
-        setError("Failed to save evaluation results");
-      } finally {
-        setIsEvaluating(false);
-      }
-    }, 1500);
+    try {
+      // Call the evaluation service (currently using mock implementation)
+      const metrics = await getEvaluationMetrics(workflow.id.toString());
+      await onUpdateWorkflow({
+        evaluation_metrics: metrics,
+      });
+    } catch (error) {
+      console.error("Failed to run evaluation:", error);
+      setError("Failed to run evaluation");
+    } finally {
+      setIsEvaluating(false);
+    }
   }
 
   return (
