@@ -133,7 +133,7 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
                 or column == "chunks_stats"
                 or column == "evaluation_metrics"
             ) and not value is None:
-                if isinstance(value, dict):
+                if not isinstance(value, dict):
                     value = json.dumps(value.__dict__)
                 else:
                     value = json.dumps(value)

@@ -55,8 +55,8 @@ def create_chunker(
                 chunk_overlap=config.chunk_overlap,
                 encoding_name=config.encoding_name,
                 model_name=config.model_name,
-                allowed_special=config.allowed_special,
-                disallowed_special=config.disallowed_special,
+                # allowed_special=config.allowed_special,
+                # disallowed_special=config.disallowed_special,
             )
         case LangChainCharacterConfig():
             return CharacterTextSplitter(
