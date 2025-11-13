@@ -14,6 +14,7 @@ export interface ConfigOption {
 
 export interface Chunker {
   name: string;
+  description: string;
   [key: string]: string | ConfigOption;
 }
 

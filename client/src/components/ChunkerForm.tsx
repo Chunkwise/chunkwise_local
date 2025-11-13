@@ -40,7 +40,7 @@ const ChunkerForm = ({
         {workflow.chunking_strategy && selectedChunkerConfig ? (
           <div className="config-area">
             <div>
-              {selectedConfig.description}
+              {selectedChunkerConfig.description}
             </div>
             <div className="muted">
               Configure chunker options (defaults pre-selected)
