@@ -288,8 +288,7 @@ const WorkflowDetails = ({
                     </>
                   ) : !isLoadingViz ? (
                     <p className="muted">
-                      Select a chunker and adjust configuration to see
-                      visualization
+                      Select a chunker to see visualization
                     </p>
                   ) : null}
                 </div>
