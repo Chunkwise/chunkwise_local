@@ -189,9 +189,7 @@ export default function App() {
 
         <main className="main-content">
           {comparisonState.isComparing ? (
-            <WorkflowComparison
-              workflows={comparedWorkflows}
-            />
+            <WorkflowComparison workflows={comparedWorkflows} />
           ) : (
             <WorkflowDetails
               chunkers={chunkers}
@@ -200,16 +198,6 @@ export default function App() {
               onUpdateWorkflow={(patch) =>
                 handleUpdateWorkflow(selectedWorkflow!.id, patch)
               }
-              onLocalUpdateWorkflow={(patch) => {
-                const updatedWorkflow = { ...selectedWorkflow!, ...patch };
-                const workflowWithStage = {
-                  ...updatedWorkflow,
-                  stage: computeStage(updatedWorkflow as Workflow),
-                };
-                workflowDispatch(
-                  updateWorkflowAction(selectedWorkflow!.id, workflowWithStage)
-                );
-              }}
             />
           )}
         </main>

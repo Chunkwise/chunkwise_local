@@ -14,7 +14,6 @@ type Props = {
   availableFiles: string[];
   workflow?: Workflow;
   onUpdateWorkflow: (patch: Partial<Workflow>) => Promise<void>;
-  onLocalUpdateWorkflow: (patch: Partial<Workflow>) => void;
 };
 
 const WorkflowDetails = ({
@@ -22,7 +21,6 @@ const WorkflowDetails = ({
   availableFiles,
   workflow,
   onUpdateWorkflow,
-  onLocalUpdateWorkflow,
 }: Props) => {
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
   const [localConfig, setLocalConfig] = useState(workflow?.chunking_strategy);
@@ -118,7 +116,7 @@ const WorkflowDetails = ({
         chunks_stats: vizData.stats,
         visualization_html: vizData.html,
       };
-      onLocalUpdateWorkflow(update as Partial<Workflow>);
+      onUpdateWorkflow(update as Partial<Workflow>);
     } catch (error) {
       console.error("Failed to load visualization:", error);
       setError("Failed to load visualization");
@@ -198,7 +196,7 @@ const WorkflowDetails = ({
 
     try {
       const metrics = await getEvaluationMetrics(workflow.id);
-      onLocalUpdateWorkflow({
+      onUpdateWorkflow({
         evaluation_metrics: metrics,
       });
     } catch (error) {
