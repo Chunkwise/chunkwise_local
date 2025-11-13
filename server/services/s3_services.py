@@ -65,7 +65,7 @@ async def get_s3_file_names():
 
         # Create a list of the files names of a bucket, remove the beginning path
 
-        if not hasattr(resources, "Key"):
+        if not "Contents" in resources:
             return []
 
         file_names = [
