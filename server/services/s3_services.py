@@ -64,6 +64,10 @@ async def get_s3_file_names():
         resources = s3_client.list_objects_v2(Bucket=BUCKET_NAME, Prefix="documents")
 
         # Create a list of the files names of a bucket, remove the beginning path
+
+        if not hasattr(resources, "Key"):
+            return []
+
         file_names = [
             resource["Key"].replace("documents/", "").replace(".txt", "")
             for resource in resources["Contents"]
