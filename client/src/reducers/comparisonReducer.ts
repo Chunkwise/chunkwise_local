@@ -34,11 +34,10 @@ export const comparisonReducer = (
         return {
           ...state,
           selectedWorkflowIds: state.selectedWorkflowIds.filter(
-            (wId) => wId !== id
+            (workflowId) => workflowId !== id
           ),
         };
       } else {
-        // Don't add if already at max
         if (state.selectedWorkflowIds.length >= MAX_SELECTIONS) {
           return state;
         }

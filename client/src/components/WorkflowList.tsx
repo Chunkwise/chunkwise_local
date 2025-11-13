@@ -30,6 +30,15 @@ const WorkflowList = ({
   const [name, setName] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   const handleCreate = () => {
     const trimmedName = name.trim();
 
@@ -55,15 +64,6 @@ const WorkflowList = ({
     setCreating(false);
     setName("");
     setValidationError(null);
-  };
-
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
   };
 
   return (
@@ -98,7 +98,7 @@ const WorkflowList = ({
           }}
           disabled={workflows.length < 2}
         >
-          {isComparing ? "Cancel" : "Compare"}
+          {isComparing ? "Exit comparison" : "Compare"}
         </button>
       </div>
 
@@ -162,15 +162,6 @@ const WorkflowList = ({
               }
             }}
           >
-            {isComparing && (
-              <input
-                type="checkbox"
-                className="workflow-checkbox"
-                checked={comparedWorkflowIds.includes(workflow.id)}
-                onChange={() => onToggleWorkflowComparison(workflow.id)}
-                onClick={(event) => event.stopPropagation()}
-              />
-            )}
             <div className="wi-left">
               <div className="wi-name">{workflow.title}</div>
               <div className="wi-meta">
@@ -180,20 +171,27 @@ const WorkflowList = ({
                 <span className="wi-stage">{workflow.stage}</span>
               </div>
             </div>
-            {!isComparing && (
-              <div className="wi-actions">
-                <button
-                  className="btn btn-sm"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onDeleteWorkflow(workflow.id);
-                  }}
-                  title="Delete"
-                >
-                  x
-                </button>
-              </div>
-            )}
+            <div className="wi-actions">
+              <input
+                type="checkbox"
+                className="workflow-checkbox"
+                checked={comparedWorkflowIds.includes(workflow.id)}
+                onChange={() => onToggleWorkflowComparison(workflow.id)}
+                onClick={(event) => event.stopPropagation()}
+                style={{ display: isComparing ? "block" : "none" }}
+              />
+              <button
+                className="btn btn-sm"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDeleteWorkflow(workflow.id);
+                }}
+                title="Delete"
+                style={{ display: isComparing ? "none" : "block" }}
+              >
+                x
+              </button>
+            </div>
           </div>
         ))}
       </div>

@@ -2,10 +2,9 @@ import type { Workflow } from "../types";
 
 type Props = {
   workflows: Workflow[];
-  onExit: () => void;
 };
 
-const WorkflowComparison = ({ workflows, onExit }: Props) => {
+const WorkflowComparison = ({ workflows }: Props) => {
   const getRatingColor = (value: number): string => {
     const percentage = value * 100;
     if (percentage >= 80) return "#48bb78"; // green
@@ -22,9 +21,6 @@ const WorkflowComparison = ({ workflows, onExit }: Props) => {
             Compare chunking strategies side by side
           </p>
         </div>
-        <button className="btn-exit" onClick={onExit}>
-          ✕ Exit Comparison
-        </button>
       </div>
 
       {workflows.length < 2 ? (

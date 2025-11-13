@@ -191,7 +191,6 @@ export default function App() {
           {comparisonState.isComparing ? (
             <WorkflowComparison
               workflows={comparedWorkflows}
-              onExit={handleExitComparison}
             />
           ) : (
             <WorkflowDetails
