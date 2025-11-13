@@ -2,7 +2,6 @@
 Provides some custom types to the server.
 """
 
-from typing import Optional
 from pydantic import BaseModel
 from chunkwise_core import ChunkerConfig, Chunk, EvaluationResponse, EvaluationMetrics
 
@@ -34,9 +33,9 @@ class Workflow(BaseModel):
     Shape of an object in the workflow table of the database.
     """
 
-    id: Optional[int] = None
-    document_title: Optional[str] = None
-    chunking_strategy: Optional[ChunkerConfig] = None
-    chunks_stats: Optional[ChunkStatistics] = None
-    visualization_html: Optional[str] = None
-    evaluation_metrics: Optional[EvaluationMetrics] = None
+    id: int | None = None
+    document_title: str | None = None
+    chunking_strategy: ChunkerConfig | str | None = None
+    chunks_stats: ChunkStatistics | str | None = None
+    visualization_html: str | None = None
+    evaluation_metrics: EvaluationMetrics | str | None = None
