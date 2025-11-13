@@ -122,7 +122,9 @@ const WorkflowList = ({
             <div className="wi-left">
               <div className="wi-name">{workflow.title}</div>
               <div className="wi-meta">
-                <span className="wi-date">{formatDate(workflow.created_at)}</span>
+                <span className="wi-date">
+                  {formatDate(workflow.created_at)}
+                </span>
                 <span className="wi-stage">{workflow.stage}</span>
               </div>
             </div>
