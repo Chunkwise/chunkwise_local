@@ -21,7 +21,7 @@ async def get_evaluation(chunker_config, document_id) -> EvaluationResponse:
 
     # Send request to chunking service
     evaluation_response = requests.post(
-        f"{EVALUATION_SERVICE_URL}/evaluate", json=request_body, timeout=120
+        f"{EVALUATION_SERVICE_URL}/evaluate", json=request_body, timeout=240
     )
     evaluation_response.raise_for_status()
     evaluation_json: EvaluationResponse = evaluation_response.json()
