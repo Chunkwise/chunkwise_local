@@ -1,49 +1,67 @@
 import { useEffect, useReducer, useState } from "react";
-import type { Workflow, Chunker } from "./types";
+import type { Workflow, Chunker, Stage } from "./types";
 import Header from "./components/Header";
 import WorkflowList from "./components/WorkflowList";
 import WorkflowDetails from "./components/WorkflowDetails";
-import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { State } from "./reducers/workflowReducer";
 import { getChunkers } from "./services/chunkers";
 import { getFiles } from "./services/documents";
 import {
+  getWorkflows,
+  createWorkflow as createWorkflowAPI,
+  deleteWorkflow as deleteWorkflowAPI,
+} from "./services/workflows";
+import {
   workflowReducer,
+  setWorkflowsAction,
   createWorkflowAction,
   selectWorkflowAction,
   updateWorkflowAction,
   deleteWorkflowAction,
 } from "./reducers/workflowReducer";
 
-const STORAGE_KEY = "chunkwise_workflows_v1";
-
-function makeId() {
-  return Math.random().toString(36).slice(2, 9);
+// Compute workflow stage based on its properties
+function computeStage(workflow: Workflow): Stage {
+  if (workflow.evaluationMetrics) {
+    return "Evaluated";
+  }
+  if (workflow.chunking_strategy) {
+    return "Configured";
+  }
+  return "Draft";
 }
 
 export default function App() {
-  const [stored, setStored] = useLocalStorage(STORAGE_KEY, {
+  const [state, dispatch] = useReducer(workflowReducer, {
     workflows: [],
     selectedWorkflowId: undefined,
-  });
-  const [state, dispatch] = useReducer(workflowReducer, {
-    workflows: stored.workflows,
-    selectedWorkflowId: stored.selectedWorkflowId,
   } as State);
   const [chunkers, setChunkers] = useState<Chunker[]>([]);
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // Load workflows on mount
   useEffect(() => {
-    setStored(state);
-  }, [state, setStored]);
+    getWorkflows()
+      .then((workflows) => {
+        const workflowsWithStage = workflows.map((workflow) => ({
+          ...workflow,
+          stage: computeStage(workflow),
+        }));
+        dispatch(setWorkflowsAction(workflowsWithStage));
+      })
+      .catch((error) => {
+        console.error("Failed to load workflows:", error);
+        setError("Failed to load workflows from the server");
+      });
+  }, []);
 
   // Load chunkers on mount
   useEffect(() => {
     getChunkers()
       .then((data) => setChunkers(data))
       .catch((error) => {
-        console.error(error);
+        console.error("Failed to load chunkers:", error);
         setError("Failed to load chunkers from the server");
       });
   }, []);
@@ -63,14 +81,18 @@ export default function App() {
     (workflow) => workflow.id === state.selectedWorkflowId
   );
 
-  const handleCreateWorkflow = (name: string) => {
-    const newWorkflow: Workflow = {
-      id: makeId(),
-      name,
-      createdAt: new Date().toLocaleString(),
-      stage: "Draft",
-    };
-    dispatch(createWorkflowAction(newWorkflow));
+  const handleCreateWorkflow = async (name: string) => {
+    try {
+      const newWorkflow = await createWorkflowAPI(name);
+      const workflowWithStage = {
+        ...newWorkflow,
+        stage: computeStage(newWorkflow),
+      };
+      dispatch(createWorkflowAction(workflowWithStage));
+    } catch (error) {
+      console.error("Failed to create workflow:", error);
+      setError("Failed to create workflow");
+    }
   };
 
   const handleSelectWorkflow = (id: string) => {
@@ -78,14 +100,17 @@ export default function App() {
   };
 
   const handleUpdateWorkflow = (id: string, patch: Partial<Workflow>) => {
-    if (patch.chunker) {
-      patch.stage = "Configured";
-    }
     dispatch(updateWorkflowAction(id, patch));
   };
 
-  const handleDeleteWorkflow = (id: string) => {
-    dispatch(deleteWorkflowAction(id));
+  const handleDeleteWorkflow = async (id: string) => {
+    try {
+      await deleteWorkflowAPI(id);
+      dispatch(deleteWorkflowAction(id));
+    } catch (error) {
+      console.error("Failed to delete workflow:", error);
+      setError("Failed to delete workflow");
+    }
   };
 
   return (

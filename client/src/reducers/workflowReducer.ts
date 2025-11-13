@@ -6,6 +6,7 @@ export type State = {
 };
 
 export type Action =
+  | { type: "SET_WORKFLOWS"; payload: Workflow[] }
   | { type: "CREATE_WORKFLOW"; payload: Workflow }
   | { type: "SELECT_WORKFLOW"; payload: string }
   | {
@@ -16,6 +17,11 @@ export type Action =
 
 export const workflowReducer = (state: State, action: Action): State => {
   switch (action.type) {
+    case "SET_WORKFLOWS":
+      return {
+        ...state,
+        workflows: action.payload,
+      };
     case "CREATE_WORKFLOW":
       return {
         workflows: [action.payload, ...state.workflows],
@@ -46,6 +52,11 @@ export const workflowReducer = (state: State, action: Action): State => {
       return state;
   }
 };
+
+export const setWorkflowsAction = (workflows: Workflow[]): Action => ({
+  type: "SET_WORKFLOWS",
+  payload: workflows,
+});
 
 export const createWorkflowAction = (workflow: Workflow): Action => ({
   type: "CREATE_WORKFLOW",

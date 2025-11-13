@@ -18,12 +18,33 @@ const WorkflowList = ({
 }: Props) => {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleCreate = () => {
-    const finalName = name.trim() || `Workflow ${new Date().toLocaleString()}`;
-    onCreateWorkflow(finalName);
+    const trimmedName = name.trim();
+
+    // Validate name length
+    if (trimmedName.length === 0) {
+      setValidationError("Workflow name cannot be empty");
+      return;
+    }
+    if (trimmedName.length > 50) {
+      setValidationError("Workflow name cannot exceed 50 characters");
+      return;
+    }
+
+    // Validate characters
+    if (!/^[a-zA-Z0-9\s]+$/.test(trimmedName)) {
+      setValidationError(
+        "Workflow name can only contain letters, numbers, and spaces"
+      );
+      return;
+    }
+
+    onCreateWorkflow(trimmedName);
     setCreating(false);
     setName("");
+    setValidationError(null);
   };
 
   return (
@@ -44,7 +65,10 @@ const WorkflowList = ({
           <input
             className="input"
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setName(event.target.value);
+              setValidationError(null);
+            }}
             placeholder="Workflow name"
           />
           <button className="btn" onClick={handleCreate}>
@@ -55,10 +79,22 @@ const WorkflowList = ({
             onClick={() => {
               setCreating(false);
               setName("");
+              setValidationError(null);
             }}
           >
             Cancel
           </button>
+          {validationError && (
+            <div
+              style={{
+                color: "red",
+                fontSize: "0.875rem",
+                marginTop: "0.5rem",
+              }}
+            >
+              {validationError}
+            </div>
+          )}
         </div>
       )}
 
