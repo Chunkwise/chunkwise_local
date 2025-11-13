@@ -1,7 +1,11 @@
+"""
+This modules provides the server the functions that it needs to interact with the database.
+"""
+
 import json
+from configparser import ConfigParser
 import psycopg2
 from psycopg2 import OperationalError, sql
-from configparser import ConfigParser
 from server_types import Workflow, ChunkerConfig
 from pydantic import TypeAdapter
 
@@ -18,18 +22,22 @@ COLUMN_NAMES = (
 
 
 def format_workflow(workflow):
+    """
+    Takes a complete list of column values and put them with their corresponding property
+    name. Also converts JSON strings into objects.
+    """
     formatted_result = zip(COLUMN_NAMES, workflow)
     formatted_result = dict(formatted_result)
 
-    if type(formatted_result["chunking_strategy"]) == str:
+    if isinstance(["chunking_strategy"], str):
         formatted_result["chunking_strategy"] = json.loads(
             formatted_result["chunking_strategy"]
         )
 
-    if type(formatted_result["chunks_stats"]) == str:
+    if isinstance(["chunks_stats"], str):
         formatted_result["chunks_stats"] = json.loads(formatted_result["chunks_stats"])
 
-    if type(formatted_result["evaluation_metrics"]) == str:
+    if isinstance(["evaluation_metrics"], str):
         formatted_result["evaluation_metrics"] = json.loads(
             formatted_result["evaluation_metrics"]
         )
@@ -84,10 +92,10 @@ def create_workflow(workflow_title: str) -> int:
         cursor.execute(query, (workflow_title,))
         print(query)
 
-        id = cursor.fetchone()[0]
+        created_id = cursor.fetchone()[0]
 
         query = "SELECT * FROM workflow WHERE id = %s;"
-        cursor.execute(query, (id,))
+        cursor.execute(query, (created_id,))
         print(query)
 
         result = cursor.fetchone()
@@ -115,7 +123,7 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
         cursor = connection.cursor()
 
         for column, value in updated_columns.items():
-            if value == None:
+            if value is None:
                 # Column update not sent
                 continue
             if value == "":
@@ -125,7 +133,7 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
                 or column == "chunks_stats"
                 or column == "evaluation_metrics"
             ) and not value is None:
-                if type(value) != dict:
+                if isinstance(value, dict):
                     value = json.dumps(value.__dict__)
                 else:
                     value = json.dumps(value)

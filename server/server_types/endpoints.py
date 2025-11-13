@@ -1,3 +1,7 @@
+"""
+Provides some custom types to the server.
+"""
+
 from typing import Optional
 from pydantic import BaseModel
 from chunkwise_core import ChunkerConfig, Chunk, EvaluationResponse, EvaluationMetrics
@@ -26,14 +30,13 @@ class VisualizeResponse(BaseModel):
 
 
 class Workflow(BaseModel):
+    """
+    Shape of an object in the workflow table of the database.
+    """
+
     id: Optional[int] = None
     document_title: Optional[str] = None
     chunking_strategy: Optional[ChunkerConfig] = None
     chunks_stats: Optional[ChunkStatistics] = None
     visualization_html: Optional[str] = None
     evaluation_metrics: Optional[EvaluationMetrics] = None
-
-
-class DocumentUpload(BaseModel):
-    document_title: str
-    document_content: str
