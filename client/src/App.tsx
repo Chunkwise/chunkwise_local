@@ -88,14 +88,17 @@ export default function App() {
       });
   }, []);
 
+  // Derive selected workflows
   const selectedWorkflow = workflowState.workflows.find(
     (workflow) => workflow.id === workflowState.selectedWorkflowId
   );
 
+  // Derive compared workflows
   const comparedWorkflows = workflowState.workflows.filter((workflow) =>
     comparisonState.selectedWorkflowIds.includes(workflow.id)
   );
 
+  // Handlers for workflow actions
   const handleCreateWorkflow = async (name: string) => {
     try {
       const newWorkflow = await createWorkflowAPI(name);
@@ -138,6 +141,7 @@ export default function App() {
     }
   };
 
+  // Handlers for comparison actions
   const handleEnterComparison = () => {
     comparisonDispatch(enterComparisonModeAction());
   };
