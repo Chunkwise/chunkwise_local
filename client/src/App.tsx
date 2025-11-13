@@ -88,7 +88,7 @@ export default function App() {
       });
   }, []);
 
-  // Derive selected workflows
+  // Derive selected workflow
   const selectedWorkflow = workflowState.workflows.find(
     (workflow) => workflow.id === workflowState.selectedWorkflowId
   );
