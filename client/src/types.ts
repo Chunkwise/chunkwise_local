@@ -49,8 +49,8 @@ export interface EvaluationMetrics {
 export interface Workflow {
   // Database schema fields
   id: string;
-  name: string;
-  createdAt: string;
+  title: string;
+  created_at: string;
 
   // Client-side computed field
   stage?: Stage;
@@ -58,9 +58,9 @@ export interface Workflow {
   // Optional workflow data
   document_title?: string;
   chunking_strategy?: ChunkingStrategy;
-  stats?: ChunkStatistics;
-  visualizationHtml?: string;
-  evaluationMetrics?: EvaluationMetrics;
+  chunks_stats?: ChunkStatistics;
+  visualization_html?: string;
+  evaluation_metrics?: EvaluationMetrics;
 }
 
 export type WorkflowCreate = Omit<Workflow, "id" | "createdAt"> & {

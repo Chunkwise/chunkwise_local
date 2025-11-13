@@ -47,6 +47,15 @@ const WorkflowList = ({
     setValidationError(null);
   };
 
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   return (
     <div className="workflow-list">
       <div className="workflow-list-header">
@@ -111,9 +120,9 @@ const WorkflowList = ({
             onClick={() => onSelectWorkflow(workflow.id)}
           >
             <div className="wi-left">
-              <div className="wi-name">{workflow.name}</div>
+              <div className="wi-name">{workflow.title}</div>
               <div className="wi-meta">
-                <span className="wi-date">{workflow.createdAt}</span>
+                <span className="wi-date">{formatDate(workflow.created_at)}</span>
                 <span className="wi-stage">{workflow.stage}</span>
               </div>
             </div>

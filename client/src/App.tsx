@@ -22,7 +22,7 @@ import {
 
 // Compute workflow stage based on its properties
 function computeStage(workflow: Workflow): Stage {
-  if (workflow.evaluationMetrics) {
+  if (workflow.evaluation_metrics) {
     return "Evaluated";
   }
   if (workflow.chunking_strategy) {
@@ -55,6 +55,8 @@ export default function App() {
         setError("Failed to load workflows from the server");
       });
   }, []);
+
+  console.log(state.workflows);
 
   // Load chunkers on mount
   useEffect(() => {
