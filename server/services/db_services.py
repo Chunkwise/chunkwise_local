@@ -3,8 +3,6 @@ This modules provides the server the functions that it needs to interact with th
 """
 
 import os
-import sys
-import boto3
 import json
 import dotenv
 import psycopg2
@@ -24,17 +22,12 @@ COLUMN_NAMES = (
 )
 DBNAME = os.getenv("DB_NAME")
 USER = os.getenv("DB_USER")
-# PASSWORD = os.getenv("DB_PASSWORD")
+PASSWORD = os.getenv("DB_PASSWORD")
 ENDPOINT = os.getenv("DB_HOST")
 PORT = os.getenv("DB_PORT")
 REGION = "us-east-1"
 
 dotenv.load_dotenv()
-
-client = boto3.client("rds")
-token = client.generate_db_auth_token(
-    DBHostname=ENDPOINT, Port=PORT, DBUsername=USER, Region=REGION
-)
 
 
 def format_workflow(workflow):
@@ -61,37 +54,17 @@ def format_workflow(workflow):
     return formatted_result
 
 
-# def get_db_info(filename, section):
-#     """
-#     Returns the necessary database configs from the db_info file.
-#     """
-#     # instantiating the parser object
-#     parser = ConfigParser()
-#     parser.read(filename)
-
-#     db_info = {}
-#     if parser.has_section(section):
-#         # items() method returns (key,value) tuples
-#         key_val_tuple = parser.items(section)
-#         for item in key_val_tuple:
-#             db_info[item[0]] = item[1]  # index 0: key & index 1: value
-
-#     return db_info
-
-
 def get_db_connection():
     """
     Creates and returns a connection object for the database.
     """
     try:
-        # db_info = get_db_info("db_info.ini", "chunkwise-db")
         db_connection = psycopg2.connect(
             host=ENDPOINT,
             port=PORT,
             database=DBNAME,
             user=USER,
-            password=token,
-            # sslrootcert="SSLCERTIFICATE",
+            password=PASSWORD,
         )
         db_connection.autocommit = True
         print("Successfully connected to database.")
