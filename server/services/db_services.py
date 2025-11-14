@@ -3,8 +3,9 @@ This modules provides the server the functions that it needs to interact with th
 """
 
 import os
+import sys
+import boto3
 import json
-from configparser import ConfigParser
 import dotenv
 import psycopg2
 from psycopg2 import OperationalError, sql
@@ -21,8 +22,19 @@ COLUMN_NAMES = (
     "visualization_html",
     "evaluation_metrics",
 )
+DBNAME = os.getenv("DB_NAME")
+USER = os.getenv("DB_USER")
+# PASSWORD = os.getenv("DB_PASSWORD")
+ENDPOINT = os.getenv("DB_HOST")
+PORT = os.getenv("DB_PORT")
+REGION = "us-east-1"
 
 dotenv.load_dotenv()
+
+client = boto3.client("rds")
+token = client.generate_db_auth_token(
+    DBHostname=ENDPOINT, Port=PORT, DBUsername=USER, Region=REGION
+)
 
 
 def format_workflow(workflow):
@@ -73,19 +85,13 @@ def get_db_connection():
     """
     try:
         # db_info = get_db_info("db_info.ini", "chunkwise-db")
-        db_credentials = {
-            "dbname": os.getenv("DB_NAME"),
-            "user": os.getenv("DB_USER"),
-            "password": os.getenv("DB_PASSWORD"),
-            "host": os.getenv("DB_HOST"),
-            "port": os.getenv("DB_PORT"),
-        }
         db_connection = psycopg2.connect(
-            dbname=db_credentials["dbname"],
-            user=db_credentials["user"],
-            password=db_credentials["password"],
-            host=db_credentials["host"],
-            port=db_credentials["port"],
+            host=ENDPOINT,
+            port=PORT,
+            database=DBNAME,
+            user=USER,
+            password=token,
+            # sslrootcert="SSLCERTIFICATE",
         )
         db_connection.autocommit = True
         print("Successfully connected to database.")
