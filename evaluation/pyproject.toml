@@ -13,7 +13,7 @@ fastapi = "^0.120.3"
 uvicorn = "^0.38.0"
 boto3 = "^1.40.69"
 chunking-evaluation = { git = "https://github.com/Chunkwise/chunking_evaluation_refactored.git" }
-chunkwise-core = { path = "../core", develop = true }
+chunkwise-core = {path = "../core", develop = true}
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
