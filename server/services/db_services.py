@@ -2,8 +2,10 @@
 This modules provides the server the functions that it needs to interact with the database.
 """
 
+import os
 import json
 from configparser import ConfigParser
+import dotenv
 import psycopg2
 from psycopg2 import OperationalError, sql
 from server_types import Workflow, ChunkerConfig
@@ -20,6 +22,8 @@ COLUMN_NAMES = (
     "evaluation_metrics",
 )
 
+dotenv.load_dotenv()
+
 
 def format_workflow(workflow):
     """
@@ -29,15 +33,15 @@ def format_workflow(workflow):
     formatted_result = zip(COLUMN_NAMES, workflow)
     formatted_result = dict(formatted_result)
 
-    if isinstance(["chunking_strategy"], str):
+    if isinstance(formatted_result["chunking_strategy"], str):
         formatted_result["chunking_strategy"] = json.loads(
             formatted_result["chunking_strategy"]
         )
 
-    if isinstance(["chunks_stats"], str):
+    if isinstance(formatted_result["chunks_stats"], str):
         formatted_result["chunks_stats"] = json.loads(formatted_result["chunks_stats"])
 
-    if isinstance(["evaluation_metrics"], str):
+    if isinstance(formatted_result["evaluation_metrics"], str):
         formatted_result["evaluation_metrics"] = json.loads(
             formatted_result["evaluation_metrics"]
         )
@@ -45,22 +49,22 @@ def format_workflow(workflow):
     return formatted_result
 
 
-def get_db_info(filename, section):
-    """
-    Returns the necessary database configs from the db_info file.
-    """
-    # instantiating the parser object
-    parser = ConfigParser()
-    parser.read(filename)
+# def get_db_info(filename, section):
+#     """
+#     Returns the necessary database configs from the db_info file.
+#     """
+#     # instantiating the parser object
+#     parser = ConfigParser()
+#     parser.read(filename)
 
-    db_info = {}
-    if parser.has_section(section):
-        # items() method returns (key,value) tuples
-        key_val_tuple = parser.items(section)
-        for item in key_val_tuple:
-            db_info[item[0]] = item[1]  # index 0: key & index 1: value
+#     db_info = {}
+#     if parser.has_section(section):
+#         # items() method returns (key,value) tuples
+#         key_val_tuple = parser.items(section)
+#         for item in key_val_tuple:
+#             db_info[item[0]] = item[1]  # index 0: key & index 1: value
 
-    return db_info
+#     return db_info
 
 
 def get_db_connection():
@@ -68,8 +72,21 @@ def get_db_connection():
     Creates and returns a connection object for the database.
     """
     try:
-        db_info = get_db_info("db_info.ini", "chunkwise-db")
-        db_connection = psycopg2.connect(**db_info)
+        # db_info = get_db_info("db_info.ini", "chunkwise-db")
+        db_credentials = {
+            "dbname": os.getenv("DB_NAME"),
+            "user": os.getenv("DB_USER"),
+            "password": os.getenv("DB_PASSWORD"),
+            "host": os.getenv("DB_HOST"),
+            "port": os.getenv("DB_PORT"),
+        }
+        db_connection = psycopg2.connect(
+            dbname=db_credentials["dbname"],
+            user=db_credentials["user"],
+            password=db_credentials["password"],
+            host=db_credentials["host"],
+            port=db_credentials["port"],
+        )
         db_connection.autocommit = True
         print("Successfully connected to database.")
         return db_connection
