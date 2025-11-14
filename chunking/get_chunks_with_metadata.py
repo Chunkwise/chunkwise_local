@@ -109,5 +109,4 @@ def get_chunks_with_metadata(chunker: Any, text: str) -> list[Chunk]:
     else:
         chunks = chunker(text)
 
-    print(chunks)
     return chunks
