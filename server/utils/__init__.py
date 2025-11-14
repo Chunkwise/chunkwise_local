@@ -5,7 +5,7 @@ from .create_file import create_file
 from .extract_metrics import extract_metrics
 from .exception_helpers import handle_endpoint_exceptions
 from .visualization import Visualizer
-from .get_chunks_with_metadata import get_chunks_with_metadata
+from .adjustable_configs import adjustable_configs
 
 __all__ = [
     "normalize_document",
@@ -15,5 +15,5 @@ __all__ = [
     "extract_metrics",
     "handle_endpoint_exceptions",
     "Visualizer",
-    "get_chunks_with_metadata",
+    "adjustable_configs",
 ]

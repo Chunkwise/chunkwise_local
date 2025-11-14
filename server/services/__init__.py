@@ -1,4 +1,4 @@
-from .chunkwise_services import get_evaluation
+from .chunkwise_services import get_evaluation, get_chunks
 from .s3_services import (
     download_s3_file,
     upload_s3_file,
@@ -15,6 +15,7 @@ from .db_services import (
 
 __all__ = [
     "get_evaluation",
+    "get_chunks",
     "download_s3_file",
     "upload_s3_file",
     "get_s3_file_names",

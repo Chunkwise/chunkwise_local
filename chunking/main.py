@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, Body
 from chunkwise_core import Chunk, ChunkerConfig, create_chunker
+from get_chunks_with_metadata import get_chunks_with_metadata
 
 app = FastAPI()
 
@@ -9,18 +10,28 @@ app = FastAPI()
 @app.post("/chunk")
 def chunk(
     chunker_config: ChunkerConfig = Body(...), text: str = Body(...)
-) -> list[Chunk] | list[str]:
+) -> list[str]:
     """
     Receives a chunking configuration and a string to be chunked
-    Returns an array of chunks (Chonkie chunks have metadata, Langchain chunks are strings)
+    Returns an array of strings
     """
     chunker = create_chunker(chunker_config)
 
-    # LangChain chunkers are called with `split_text`
     if hasattr(chunker, "split_text"):
         return chunker.split_text(text)
-    # Chonkie chunkers are callable objects (with __call__)
-    return chunker(text)
+    return [chunk.text for chunk in chunker(text)]
+
+
+@app.post("/chunk_with_metadata")
+def chunk_with_metadata(
+    chunker_config: ChunkerConfig = Body(...), text: str = Body(...)
+) -> list[Chunk]:
+    """
+    Receives a chunking configuration and a string to be chunked
+    Returns an array of chunks with metadata
+    """
+    chunker = create_chunker(chunker_config)
+    return get_chunks_with_metadata(chunker, text)
 
 
 @app.get("/health")

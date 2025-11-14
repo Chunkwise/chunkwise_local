@@ -1,10 +1,6 @@
-from typing import Literal, Annotated
+from typing import Literal, Annotated, Any
 from pydantic import BaseModel, Field, ConfigDict, model_validator
-from chonkie.genie import OpenAIGenie
-from chonkie.embeddings import OpenAIEmbeddings
 
-
-# ChunkerConfig models using Pydantic v2
 class LangChainBaseConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
     provider: Literal["langchain"] = "langchain"
@@ -132,7 +128,7 @@ class ChonkieSentenceConfig(ChonkieBaseConfig):
 
 class ChonkieSemanticConfig(ChonkieBaseConfig):
     chunker_type: Literal["semantic"] = "semantic"
-    embedding_model: str | OpenAIEmbeddings | None = None
+    embedding_model: Any = None
     threshold: float = 0.8
     chunk_size: int = Field(default=2048, ge=1)
     min_sentences_per_chunk: int = Field(default=1, ge=1)
@@ -162,7 +158,7 @@ class ChonkieSemanticConfig(ChonkieBaseConfig):
 
 class ChonkieSlumberConfig(ChonkieBaseConfig):
     chunker_type: Literal["slumber"] = "slumber"
-    genie: OpenAIGenie | None = None
+    genie: Any = None
     tokenizer: Literal["character", "word", "gpt2"] | str = "character"
     chunk_size: int = Field(default=2048, ge=1)
     candidate_size: int = Field(default=128, ge=1)

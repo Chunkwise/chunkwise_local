@@ -78,7 +78,7 @@ adjustable_configs = [
     },
     {
         "name": "LangChain Character",
-        "description": "Splits text based on a character sequence (default: \"\\n\\n\").",
+        "description": 'Splits text based on a character sequence (default: "\\n\\n").',
         "chunk_size": {"type": "int", "default": 2048, "min": 1, "max": 8192},
         "chunk_overlap": {"type": "int", "default": 0, "min": 0, "max": 4086},
     },
