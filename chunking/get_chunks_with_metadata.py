@@ -11,7 +11,7 @@ Chonkie chunks have metadata; LangChain chunks must have metadata added.
 import re
 from typing import Tuple, Any
 from fuzzywuzzy import fuzz, process
-from server_types import Chunk
+from chunkwise_core import Chunk
 
 
 def find_query_despite_whitespace(document: str, query: str) -> Tuple[int, int] | None:
