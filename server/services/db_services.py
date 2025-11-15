@@ -4,13 +4,14 @@ This modules provides the server the functions that it needs to interact with th
 
 import os
 import json
+from typing import Dict, Any
 import dotenv
 import psycopg2
 from psycopg2 import OperationalError, sql
-from server_types import Workflow, ChunkerConfig
+from server_types import ChunkerConfig
 from pydantic import TypeAdapter
 
-COLUMN_NAMES = (
+COLUMN_NAMES: tuple[str, ...] = (
     "id",
     "title",
     "created_at",
@@ -30,28 +31,48 @@ REGION = "us-east-1"
 dotenv.load_dotenv()
 
 
-def format_workflow(workflow):
+def format_workflow(workflow: tuple) -> Dict[str, Any]:
     """
     Takes a complete list of column values and put them with their corresponding property
     name. Also converts JSON strings into objects.
     """
     formatted_result = zip(COLUMN_NAMES, workflow)
-    formatted_result = dict(formatted_result)
+    formatted_result_dict = dict(formatted_result)
 
-    if isinstance(formatted_result["chunking_strategy"], str):
-        formatted_result["chunking_strategy"] = json.loads(
-            formatted_result["chunking_strategy"]
+    if isinstance(formatted_result_dict.get("chunking_strategy"), str):
+        formatted_result_dict["chunking_strategy"] = json.loads(
+            formatted_result_dict["chunking_strategy"]
         )
 
-    if isinstance(formatted_result["chunks_stats"], str):
-        formatted_result["chunks_stats"] = json.loads(formatted_result["chunks_stats"])
-
-    if isinstance(formatted_result["evaluation_metrics"], str):
-        formatted_result["evaluation_metrics"] = json.loads(
-            formatted_result["evaluation_metrics"]
+    if isinstance(formatted_result_dict.get("chunks_stats"), str):
+        formatted_result_dict["chunks_stats"] = json.loads(
+            formatted_result_dict["chunks_stats"]
         )
 
-    return formatted_result
+    if isinstance(formatted_result_dict.get("evaluation_metrics"), str):
+        formatted_result_dict["evaluation_metrics"] = json.loads(
+            formatted_result_dict["evaluation_metrics"]
+        )
+
+    return formatted_result_dict
+
+
+def get_db_info(filename: str, section: str):
+    """
+    Returns the necessary database configs from the db_info file.
+    """
+    # instantiating the parser object
+    parser = ConfigParser()
+    parser.read(filename)
+
+    db_info = {}
+    if parser.has_section(section):
+        # items() method returns (key,value) tuples
+        key_val_tuple = parser.items(section)
+        for item in key_val_tuple:
+            db_info[item[0]] = item[1]  # index 0: key & index 1: value
+
+    return db_info
 
 
 def get_db_connection():
@@ -75,11 +96,12 @@ def get_db_connection():
         raise e
 
 
-def create_workflow(workflow_title: str) -> int:
+def create_workflow(workflow_title: str) -> Dict[str, Any]:
     """
     Creates a row in the workflow table and returns the id of the
     created workflow.
     """
+    connection = None
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
@@ -107,13 +129,14 @@ def create_workflow(workflow_title: str) -> int:
             print("Database connection closed.")
 
 
-def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
+def update_workflow(
+    workflow_id: int, updated_columns: Dict[str, Any]
+) -> Dict[str, Any]:
     """
     Takes an id and an object with Workflow properties and sets the
     corresponding columns in the database to match.
     """
-    if not isinstance(updated_columns, dict):
-        updated_columns = Workflow.model_dump(updated_columns)
+    connection = None
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
@@ -125,10 +148,9 @@ def update_workflow(workflow_id: int, updated_columns: Workflow) -> Workflow:
             if value == "":
                 value = None
             elif (
-                column == "chunking_strategy"
-                or column == "chunks_stats"
-                or column == "evaluation_metrics"
-            ) and not value is None:
+                column in ("chunking_strategy", "chunks_stats", "evaluation_metrics")
+                and value is not None
+            ):
                 if not isinstance(value, dict):
                     value = json.dumps(value.__dict__)
                 else:
@@ -160,6 +182,7 @@ def delete_workflow(workflow_id: int) -> bool:
     Deletes a workflow and returns a boolean representing whether the
     operation was successful.
     """
+    connection = None
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
@@ -178,10 +201,11 @@ def delete_workflow(workflow_id: int) -> bool:
             print("Database connection closed.")
 
 
-def get_all_workflows() -> list[list]:
+def get_all_workflows() -> list[Dict[str, Any]]:
     """
     Returns a list containing all of the workflows stored in the database.
     """
+    connection = None
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
@@ -209,6 +233,7 @@ def get_workflow_info(workflow_id) -> tuple[str, ChunkerConfig]:
     Retrieves both the document_title and chunking_strategy (as a ChunkerConfig)
     for a given workflow_id.
     """
+    connection = None
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
