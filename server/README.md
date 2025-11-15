@@ -15,6 +15,16 @@ To activate the virtual environment use `eval $(poetry env activate)`
 3. You should already have installed AWS CLI in the CDK Workshop but if you haven't,
    do that then configure your account using `aws configure`
 
+## Chunkwise service setup
+
+Run each service on any host and port, then add that information to the .env file
+under these feilds:
+
+CHUNKING_SERVICE_HOST=
+EVALUATION_SERVICE_HOST=
+CHUNKING_SERVICE_PORT=
+EVALUATION_SERVICE_PORT=
+
 ## To run the server use
 
 poetry run uvicorn main:app --reload --port 8000
