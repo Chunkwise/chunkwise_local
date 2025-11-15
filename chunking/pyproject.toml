@@ -11,6 +11,7 @@ python = ">=3.13,<4.0"
 fastapi = ">=0.120.2,<0.121.0"
 uvicorn = ">=0.38.0,<0.39.0"
 chunkwise-core = {path = "../core", develop = true, extras=["chunkers"]}
+fuzzywuzzy = "^0.18.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
