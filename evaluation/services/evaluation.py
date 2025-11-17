@@ -7,12 +7,12 @@ import logging
 from fastapi import HTTPException
 from chunking_evaluation.evaluation_framework.base_evaluation import BaseEvaluation
 from chunkwise_core import (
-    create_chunker,
     ChunkerConfig,
     EvaluationRequest,
     EvaluationResponse,
     EvaluationMetrics,
 )
+from chunkwise_core.utils import create_chunker
 from .s3_utils import get_document_s3_key, download_file_temp, exists
 from .queries import resolve_queries
 
