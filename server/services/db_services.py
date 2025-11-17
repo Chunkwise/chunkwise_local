@@ -57,24 +57,6 @@ def format_workflow(workflow: tuple) -> Dict[str, Any]:
     return formatted_result_dict
 
 
-def get_db_info(filename: str, section: str):
-    """
-    Returns the necessary database configs from the db_info file.
-    """
-    # instantiating the parser object
-    parser = ConfigParser()
-    parser.read(filename)
-
-    db_info = {}
-    if parser.has_section(section):
-        # items() method returns (key,value) tuples
-        key_val_tuple = parser.items(section)
-        for item in key_val_tuple:
-            db_info[item[0]] = item[1]  # index 0: key & index 1: value
-
-    return db_info
-
-
 def get_db_connection():
     """
     Creates and returns a connection object for the database.
