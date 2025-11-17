@@ -23,14 +23,14 @@ const ConfigSlider = ({
     }
 
     const optionFromConfig = chunkerConfig[key];
-    if (optionFromConfig) {
-      return (optionFromConfig as ConfigOption).default;
+    if (optionFromConfig != undefined) {
+      return (optionFromConfig as ConfigOption).default as number;
     }
   };
+
   const currentChunkSize = resolveNumericValue("chunk_size");
   const currentChunkOverlap = resolveNumericValue("chunk_overlap");
   const currentMinChars = resolveNumericValue("min_characters_per_chunk");
-
   const needsChunkSizeBound =
     optionKey === "chunk_overlap" || optionKey === "min_characters_per_chunk";
   const affectsChunkSize = optionKey === "chunk_size";
@@ -39,36 +39,29 @@ const ConfigSlider = ({
     let min = configOption.min;
     let max = configOption.max;
 
-    if (needsChunkSizeBound && typeof currentChunkSize === "number") {
-      const limit = Math.max(0, currentChunkSize - 1);
+    if (needsChunkSizeBound) {
+      const limit = Math.max(0, (currentChunkSize ?? 0) - 1);
       max = Math.min(max, limit);
       min = Math.min(min, max);
     }
-
     if (affectsChunkSize) {
-      const overlapRequirement =
-        typeof currentChunkOverlap === "number" ? currentChunkOverlap + 1 : min;
-      const minCharsRequirement =
-        typeof currentMinChars === "number" ? currentMinChars + 1 : min;
-
+      const overlapRequirement = currentChunkOverlap
+        ? currentChunkOverlap + 1
+        : min;
+      const minCharsRequirement = currentMinChars ? currentMinChars + 1 : min;
       min = Math.max(min, overlapRequirement, minCharsRequirement);
     }
-
-    if (min > max) {
-      min = max;
-    }
+    if (min > max) min = max;
 
     return { min, max };
   };
-
-  const clamp = (value: number, bounds: { min: number; max: number }) =>
-    Math.min(Math.max(value, bounds.min), bounds.max);
-
   const bounds = computeBounds();
 
-  const initialValue =
-    resolveNumericValue(optionKey) ?? configOption.default ?? bounds.min;
-  const clampedValue = clamp(initialValue, bounds);
+  const clamp = (
+    value: number | undefined,
+    bounds: { min: number; max: number }
+  ) => Math.min(Math.max(value ?? bounds.min, bounds.min), bounds.max);
+  const clampedValue = clamp(resolveNumericValue(optionKey), bounds);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const raw = Number(event.target.value);
