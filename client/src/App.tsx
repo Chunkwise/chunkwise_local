@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState, useMemo } from "react";
+import { useEffect, useReducer, useState } from "react";
 import type { Workflow, Chunker } from "./types";
 import type { State } from "./reducers/workflowReducer";
 import Header from "./components/Header";
@@ -80,12 +80,8 @@ export default function App() {
   }, []);
 
   // Derive selected workflow
-  const selectedWorkflow = useMemo(
-    () =>
-      workflowState.workflows.find(
-        (workflow) => workflow.id === workflowState.selectedWorkflowId
-      ),
-    [workflowState.workflows, workflowState.selectedWorkflowId]
+  const selectedWorkflow = workflowState.workflows.find(
+    (workflow) => workflow.id === workflowState.selectedWorkflowId
   );
 
   // Derive compared workflows
@@ -114,28 +110,20 @@ export default function App() {
 
   const handleUpdateWorkflow = async (id: string, patch: Partial<Workflow>) => {
     try {
-      const patchKeys = Object.keys(patch);
-      const isVisualizationUpdate =
-        patchKeys.length === 2 &&
-        patchKeys.includes("chunks_stats") &&
-        patchKeys.includes("visualization_html");
-      const isEvaluationUpdate =
-        patchKeys.length === 1 && patchKeys.includes("evaluation_metrics");
-
-      if (isVisualizationUpdate || isEvaluationUpdate) {
-        workflowDispatch(patchWorkflowAction(id, patch));
-      } else {
-        const updatedWorkflow = await updateWorkflowAPI(id, patch);
-        const workflowWithStage = {
-          ...updatedWorkflow,
-          stage: computeWorkflowStage(updatedWorkflow),
-        };
-        workflowDispatch(updateWorkflowAction(id, workflowWithStage));
-      }
+      const updatedWorkflow = await updateWorkflowAPI(id, patch);
+      const workflowWithStage = {
+        ...updatedWorkflow,
+        stage: computeWorkflowStage(updatedWorkflow),
+      };
+      workflowDispatch(updateWorkflowAction(id, workflowWithStage));
     } catch (error) {
       console.error("Failed to update workflow:", error);
       setError("Failed to update workflow");
     }
+  };
+
+  const handlePatchWorkflow = async (id: string, patch: Partial<Workflow>) => {
+    workflowDispatch(patchWorkflowAction(id, patch));
   };
 
   const handleDeleteWorkflow = async (id: string) => {
@@ -204,6 +192,9 @@ export default function App() {
               workflow={selectedWorkflow}
               onUpdateWorkflow={(patch) =>
                 handleUpdateWorkflow(selectedWorkflow!.id, patch)
+              }
+              onPatchWorkflow={(patch) =>
+                handlePatchWorkflow(selectedWorkflow!.id, patch)
               }
             />
           )}
