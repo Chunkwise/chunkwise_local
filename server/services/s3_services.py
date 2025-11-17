@@ -29,8 +29,10 @@ async def upload_s3_file(document_id):
 
 
 async def download_s3_file(document_id):
-    """Download a file from s3"""
+    """Download a file from s3 to local directory /documents"""
     try:
+        os.makedirs("documents", exist_ok=True)
+
         s3_client = boto3.client("s3")
         s3_client.download_file(
             BUCKET_NAME, f"documents/{document_id}.txt", f"documents/{document_id}.txt"
