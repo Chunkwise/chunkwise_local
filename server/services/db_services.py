@@ -2,9 +2,10 @@
 This modules provides the server the functions that it needs to interact with the database.
 """
 
+import os
 import json
 from typing import Dict, Any
-from configparser import ConfigParser
+import dotenv
 import psycopg2
 from psycopg2 import OperationalError, sql
 from server_types import ChunkerConfig
@@ -20,6 +21,14 @@ COLUMN_NAMES: tuple[str, ...] = (
     "visualization_html",
     "evaluation_metrics",
 )
+DBNAME = os.getenv("DB_NAME")
+USER = os.getenv("DB_USER")
+PASSWORD = os.getenv("DB_PASSWORD")
+ENDPOINT = os.getenv("DB_HOST")
+PORT = os.getenv("DB_PORT")
+REGION = "us-east-1"
+
+dotenv.load_dotenv()
 
 
 def format_workflow(workflow: tuple) -> Dict[str, Any]:
@@ -48,31 +57,18 @@ def format_workflow(workflow: tuple) -> Dict[str, Any]:
     return formatted_result_dict
 
 
-def get_db_info(filename: str, section: str):
-    """
-    Returns the necessary database configs from the db_info file.
-    """
-    # instantiating the parser object
-    parser = ConfigParser()
-    parser.read(filename)
-
-    db_info = {}
-    if parser.has_section(section):
-        # items() method returns (key,value) tuples
-        key_val_tuple = parser.items(section)
-        for item in key_val_tuple:
-            db_info[item[0]] = item[1]  # index 0: key & index 1: value
-
-    return db_info
-
-
 def get_db_connection():
     """
     Creates and returns a connection object for the database.
     """
     try:
-        db_info = get_db_info("db_info.ini", "chunkwise-db")
-        db_connection = psycopg2.connect(**db_info)
+        db_connection = psycopg2.connect(
+            host=ENDPOINT,
+            port=PORT,
+            database=DBNAME,
+            user=USER,
+            password=PASSWORD,
+        )
         db_connection.autocommit = True
         print("Successfully connected to database.")
         return db_connection
