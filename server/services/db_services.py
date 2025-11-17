@@ -287,6 +287,3 @@ def get_workflow_info(workflow_id) -> tuple[str, ChunkerConfig]:
         if connection:
             connection.close()
             print("Database connection closed.")
-
-
-setup_schema()

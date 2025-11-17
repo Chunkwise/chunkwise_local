@@ -6,6 +6,7 @@ from .s3_services import (
     delete_s3_file,
 )
 from .db_services import (
+    setup_schema,
     create_workflow,
     update_workflow,
     delete_workflow,
@@ -20,6 +21,7 @@ __all__ = [
     "upload_s3_file",
     "get_s3_file_names",
     "delete_s3_file",
+    "setup_schema",
     "create_workflow",
     "update_workflow",
     "delete_workflow",
