@@ -1,4 +1,5 @@
-import type { Workflow, Chunker } from "../types";
+import type { Workflow, Chunker, ConfigOption } from "../types";
+import ConfigSlider from "./ConfigSlider";
 
 interface ChunkerFormProps {
   workflow: Workflow;
@@ -39,45 +40,20 @@ const ChunkerForm = ({
 
         {workflow.chunking_strategy && selectedChunkerConfig ? (
           <div className="config-area">
-            <div>
-              {selectedChunkerConfig.description}
-            </div>
+            <div>{selectedChunkerConfig.description}</div>
             <div className="muted">
               Configure chunker options (defaults pre-selected)
             </div>
             {Object.keys(selectedChunkerConfig).map((key) =>
-              typeof selectedChunkerConfig[key] === "string" ? (
-                ""
-              ) : (
-                <div key={key} className="config-row">
-                  <label className="label">{key}</label>
-                  <div className="slider-container">
-                    <input
-                      type="range"
-                      step={
-                        selectedChunkerConfig[key]?.type === "int" ? 1 : 0.01
-                      }
-                      className="slider"
-                      value={
-                        (workflow.chunking_strategy?.[key] as number) ??
-                        selectedChunkerConfig[key]?.default
-                      }
-                      min={selectedChunkerConfig[key]?.min}
-                      max={selectedChunkerConfig[key]?.max}
-                      onChange={(event) =>
-                        onConfigChange(key, Number(event.target.value))
-                      }
-                    />
-                    <span className="slider-value">
-                      {(workflow.chunking_strategy?.[key] as number) ??
-                        selectedChunkerConfig[key]?.default}
-                    </span>
-                  </div>
-                  <small className="hint">
-                    min {selectedChunkerConfig[key]?.min} - max{" "}
-                    {selectedChunkerConfig[key]?.max}
-                  </small>
-                </div>
+              typeof selectedChunkerConfig[key] === "string" ? null : (
+                <ConfigSlider
+                  key={key}
+                  optionKey={key}
+                  configOption={selectedChunkerConfig[key] as ConfigOption}
+                  chunkerConfig={selectedChunkerConfig}
+                  workflow={workflow}
+                  onConfigChange={onConfigChange}
+                />
               )
             )}
           </div>
