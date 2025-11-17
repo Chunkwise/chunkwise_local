@@ -42,7 +42,6 @@ const ConfigSlider = ({
     if (needsChunkSizeBound) {
       const limit = Math.max(0, (currentChunkSize ?? 0) - 1);
       max = Math.min(max, limit);
-      min = Math.min(min, max);
     }
     if (affectsChunkSize) {
       const overlapRequirement = currentChunkOverlap
@@ -51,7 +50,6 @@ const ConfigSlider = ({
       const minCharsRequirement = currentMinChars ? currentMinChars + 1 : min;
       min = Math.max(min, overlapRequirement, minCharsRequirement);
     }
-    if (min > max) min = max;
 
     return { min, max };
   };
