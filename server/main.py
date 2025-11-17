@@ -28,6 +28,7 @@ from services import (
     get_s3_file_names,
     get_evaluation,
     get_chunks,
+    setup_schema,
     create_workflow,
     update_workflow,
     delete_workflow,
@@ -46,6 +47,15 @@ logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database schema on application startup"""
+    logging.info("Initializing database schema...")
+    setup_schema()
+    logging.info("Database schema initialized successfully")
+
 
 origins = [
     "*",

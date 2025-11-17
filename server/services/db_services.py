@@ -31,6 +31,47 @@ REGION = "us-east-1"
 dotenv.load_dotenv()
 
 
+def setup_schema():
+    """
+    Creates a row in the workflow table and returns the id of the
+    created workflow.
+    """
+    connection = None
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        cursor.execute(
+            """
+                        SELECT COUNT(*) FROM information_schema.tables
+                        WHERE table_schema = 'public'
+                        AND table_name = 'workflow'
+                        """
+        )
+        if cursor.fetchone()[0] == 0:
+            cursor.execute(
+                """
+                            CREATE TABLE workflow (
+                            id SERIAL PRIMARY KEY,
+                            title varchar(50) NOT NULL,
+                            created_at timestamptz NOT NULL DEFAULT NOW(),
+                            document_title TEXT,
+                            chunking_strategy TEXT,
+                            chunks_stats TEXT,
+                            visualization_html TEXT,
+                            evaluation_metrics TEXT
+                            );
+                           """
+            )
+    except Exception as e:
+        print(("Error setting up database.", e))
+        raise e
+    finally:
+        if connection:
+            connection.close()
+            print("Database connection closed.")
+
+
 def format_workflow(workflow: tuple) -> Dict[str, Any]:
     """
     Takes a complete list of column values and put them with their corresponding property
