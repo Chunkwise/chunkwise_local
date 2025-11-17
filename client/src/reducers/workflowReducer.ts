@@ -1,4 +1,4 @@
-import type { Workflow } from "../types";
+import type { Workflow, Stage } from "../types";
 
 export type State = {
   workflows: Workflow[];
@@ -11,9 +11,23 @@ export type Action =
   | { type: "SELECT_WORKFLOW"; payload: string }
   | {
       type: "UPDATE_WORKFLOW";
+      payload: { id: string; updatedWorkflow: Workflow };
+    }
+  | {
+      type: "PATCH_WORKFLOW";
       payload: { id: string; patch: Partial<Workflow> };
     }
   | { type: "DELETE_WORKFLOW"; payload: string };
+
+export const computeWorkflowStage = (workflow: Workflow): Stage => {
+  if (workflow.evaluation_metrics) {
+    return "Evaluated";
+  }
+  if (workflow.chunking_strategy) {
+    return "Configured";
+  }
+  return "Draft";
+};
 
 export const workflowReducer = (state: State, action: Action): State => {
   switch (action.type) {
@@ -34,9 +48,23 @@ export const workflowReducer = (state: State, action: Action): State => {
         ...state,
         workflows: state.workflows.map((workflow) =>
           workflow.id === action.payload.id
-            ? { ...workflow, ...action.payload.patch }
+            ? { ...action.payload.updatedWorkflow }
             : workflow
         ),
+      };
+    case "PATCH_WORKFLOW":
+      return {
+        ...state,
+        workflows: state.workflows.map((workflow) => {
+          if (workflow.id !== action.payload.id) {
+            return workflow;
+          }
+          const merged = { ...workflow, ...action.payload.patch };
+          return {
+            ...merged,
+            stage: computeWorkflowStage(merged),
+          };
+        }),
       };
     case "DELETE_WORKFLOW": {
       const remaining = state.workflows.filter(
@@ -70,9 +98,17 @@ export const selectWorkflowAction = (id: string): Action => ({
 
 export const updateWorkflowAction = (
   id: string,
-  patch: Partial<Workflow>
+  updatedWorkflow: Workflow
 ): Action => ({
   type: "UPDATE_WORKFLOW",
+  payload: { id, updatedWorkflow },
+});
+
+export const patchWorkflowAction = (
+  id: string,
+  patch: Partial<Workflow>
+): Action => ({
+  type: "PATCH_WORKFLOW",
   payload: { id, patch },
 });
 
