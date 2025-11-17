@@ -268,26 +268,6 @@ files = [
 ]
 
 [[package]]
-name = "configparser"
-version = "7.2.0"
-description = "Updated configparser from stdlib for earlier Pythons."
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "configparser-7.2.0-py3-none-any.whl", hash = "sha256:fee5e1f3db4156dcd0ed95bc4edfa3580475537711f67a819c966b389d09ce62"},
-    {file = "configparser-7.2.0.tar.gz", hash = "sha256:b629cc8ae916e3afbd36d1b3d093f34193d851e11998920fdcfc4552218b7b70"},
-]
-
-[package.extras]
-check = ["pytest-checkdocs (>=2.4)", "pytest-ruff (>=0.2.1) ; sys_platform != \"cygwin\""]
-cover = ["pytest-cov"]
-doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
-enabler = ["pytest-enabler (>=2.2)"]
-test = ["pytest (>=6,!=8.1.*)", "types-backports"]
-type = ["pytest-mypy"]
-
-[[package]]
 name = "fastapi"
 version = "0.120.4"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
@@ -923,4 +903,4 @@ standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.6.3)
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4.0.0"
-content-hash = "270cab2ecb9b10023cffd0a52a9683eae8e5eaf842451be6491df7f7bc7ebcaf"
+content-hash = "73801cf5528a188a0e7253f615e481fc3ffdfe98f8c626e628998f974fddbc44"
