@@ -3,7 +3,6 @@ Contains service calls to the services implemented by the chunkwise team.
 """
 
 import os
-import json
 import requests
 import dotenv
 from server_types import EvaluationResponse, Chunk
@@ -12,9 +11,9 @@ from server_types import EvaluationResponse, Chunk
 dotenv.load_dotenv()
 
 CHUNKING_SERVICE_HOST = os.getenv("CHUNKING_SERVICE_HOST", "localhost")
-CHUNKING_SERVICE_PORT = os.getenv("CHUNKING_SERVICE_PORT", 1111)
+CHUNKING_SERVICE_PORT = os.getenv("CHUNKING_SERVICE_PORT", "1111")
 EVALUATION_SERVICE_HOST = os.getenv("EVALUATION_SERVICE_HOST", "localhost")
-EVALUATION_SERVICE_PORT = os.getenv("EVALUATION_SERVICE_PORT", 2222)
+EVALUATION_SERVICE_PORT = os.getenv("EVALUATION_SERVICE_PORT", "2222")
 
 
 async def get_chunks(chunker_config, document) -> list[Chunk]:
@@ -24,7 +23,7 @@ async def get_chunks(chunker_config, document) -> list[Chunk]:
     """
     # Prepare the request for the chunking
     request_body = {
-        "chunker_config": json.loads(chunker_config.model_dump_json()),
+        "chunker_config": chunker_config.model_dump(),
         "text": document,
     }
 
@@ -48,7 +47,7 @@ async def get_evaluation(chunker_config, document_id) -> EvaluationResponse:
     EvaluationResponse from the evaluation service.
     """
     request_body = {
-        "chunking_configs": [chunker_config.__dict__],
+        "chunking_configs": [chunker_config.model_dump()],
         "document_id": document_id,
     }
 
