@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
-import type { Workflow, Chunker, Stage } from "./types";
+import type { Workflow, Chunker } from "./types";
 import type { State } from "./reducers/workflowReducer";
 import Header from "./components/Header";
 import WorkflowList from "./components/WorkflowList";
@@ -19,7 +19,9 @@ import {
   createWorkflowAction,
   selectWorkflowAction,
   updateWorkflowAction,
+  patchWorkflowAction,
   deleteWorkflowAction,
+  computeWorkflowStage,
 } from "./reducers/workflowReducer";
 import {
   comparisonReducer,
@@ -27,17 +29,6 @@ import {
   exitComparisonModeAction,
   toggleWorkflowSelectionAction,
 } from "./reducers/comparisonReducer";
-
-// Compute workflow stage based on its properties
-function computeStage(workflow: Workflow): Stage {
-  if (workflow.evaluation_metrics) {
-    return "Evaluated";
-  }
-  if (workflow.chunking_strategy) {
-    return "Configured";
-  }
-  return "Draft";
-}
 
 export default function App() {
   const [workflowState, workflowDispatch] = useReducer(workflowReducer, {
@@ -58,7 +49,7 @@ export default function App() {
       .then((workflows) => {
         const workflowsWithStage = workflows.map((workflow) => ({
           ...workflow,
-          stage: computeStage(workflow),
+          stage: computeWorkflowStage(workflow),
         }));
         workflowDispatch(setWorkflowsAction(workflowsWithStage));
       })
@@ -104,7 +95,7 @@ export default function App() {
       const newWorkflow = await createWorkflowAPI(name);
       const workflowWithStage = {
         ...newWorkflow,
-        stage: computeStage(newWorkflow),
+        stage: computeWorkflowStage(newWorkflow),
       };
       workflowDispatch(createWorkflowAction(workflowWithStage));
     } catch (error) {
@@ -122,13 +113,17 @@ export default function App() {
       const updatedWorkflow = await updateWorkflowAPI(id, patch);
       const workflowWithStage = {
         ...updatedWorkflow,
-        stage: computeStage(updatedWorkflow),
+        stage: computeWorkflowStage(updatedWorkflow),
       };
       workflowDispatch(updateWorkflowAction(id, workflowWithStage));
     } catch (error) {
       console.error("Failed to update workflow:", error);
       setError("Failed to update workflow");
     }
+  };
+
+  const handlePatchWorkflow = async (id: string, patch: Partial<Workflow>) => {
+    workflowDispatch(patchWorkflowAction(id, patch));
   };
 
   const handleDeleteWorkflow = async (id: string) => {
@@ -197,6 +192,9 @@ export default function App() {
               workflow={selectedWorkflow}
               onUpdateWorkflow={(patch) =>
                 handleUpdateWorkflow(selectedWorkflow!.id, patch)
+              }
+              onPatchWorkflow={(patch) =>
+                handlePatchWorkflow(selectedWorkflow!.id, patch)
               }
             />
           )}

@@ -14,6 +14,7 @@ type Props = {
   availableFiles: string[];
   workflow?: Workflow;
   onUpdateWorkflow: (patch: Partial<Workflow>) => Promise<void>;
+  onPatchWorkflow: (patch: Partial<Workflow>) => Promise<void>;
 };
 
 const WorkflowDetails = ({
@@ -21,6 +22,7 @@ const WorkflowDetails = ({
   availableFiles,
   workflow,
   onUpdateWorkflow,
+  onPatchWorkflow,
 }: Props) => {
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
   const [localConfig, setLocalConfig] = useState(workflow?.chunking_strategy);
@@ -30,6 +32,15 @@ const WorkflowDetails = ({
   const [isLoadingViz, setIsLoadingViz] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (configChangeTimer) {
+        clearTimeout(configChangeTimer);
+      }
+    };
+  }, [configChangeTimer]);
 
   // Sync local config with workflow changes
   useEffect(() => {
@@ -44,15 +55,6 @@ const WorkflowDetails = ({
       setEvaluationEnabled(false);
     }
   }, [workflow?.chunking_strategy]);
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (configChangeTimer) {
-        clearTimeout(configChangeTimer);
-      }
-    };
-  }, [configChangeTimer]);
 
   // Placeholder when no workflow is selected
   if (!workflow) {
@@ -116,7 +118,7 @@ const WorkflowDetails = ({
         chunks_stats: vizData.stats,
         visualization_html: vizData.html,
       };
-      onUpdateWorkflow(update as Partial<Workflow>);
+      await onPatchWorkflow(update as Partial<Workflow>);
     } catch (error) {
       console.error("Failed to load visualization:", error);
       setError("Failed to load visualization");
@@ -196,7 +198,7 @@ const WorkflowDetails = ({
 
     try {
       const metrics = await getEvaluationMetrics(workflow.id);
-      onUpdateWorkflow({
+      await onPatchWorkflow({
         evaluation_metrics: metrics,
       });
     } catch (error) {
