@@ -16,45 +16,65 @@ const ConfigSlider = ({
   workflow,
   onConfigChange,
 }: ConfigSliderProps) => {
-  const chunkSizeOption =
-    typeof chunkerConfig.chunk_size === "object"
-      ? (chunkerConfig.chunk_size as ConfigOption)
-      : undefined;
-  const currentChunkSize =
-    (workflow.chunking_strategy?.chunk_size as number | undefined) ??
-    chunkSizeOption?.default;
+  const resolveNumericValue = (key: string): number | undefined => {
+    const strategyValue = workflow.chunking_strategy?.[key];
+    if (strategyValue !== undefined) {
+      return strategyValue as number;
+    }
+
+    const optionFromConfig = chunkerConfig[key];
+    if (optionFromConfig) {
+      return (optionFromConfig as ConfigOption).default;
+    }
+  };
+  const currentChunkSize = resolveNumericValue("chunk_size");
+  const currentChunkOverlap = resolveNumericValue("chunk_overlap");
+  const currentMinChars = resolveNumericValue("min_characters_per_chunk");
 
   const needsChunkSizeBound =
     optionKey === "chunk_overlap" || optionKey === "min_characters_per_chunk";
+  const affectsChunkSize = optionKey === "chunk_size";
 
-  let effectiveMax = configOption.max;
-  let effectiveMin = configOption.min;
-  if (needsChunkSizeBound && typeof currentChunkSize === "number") {
-    const limit = Math.max(0, currentChunkSize - 1);
-    effectiveMax = Math.min(configOption.max, limit);
-    effectiveMin = Math.min(configOption.min, effectiveMax);
-  }
-
-  const rawValue =
-    (workflow.chunking_strategy?.[optionKey] as number | undefined) ??
-    configOption.default;
-  const clampedValue = Math.min(Math.max(rawValue, effectiveMin), effectiveMax);
-
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const raw = Number(event.target.value);
-    let nextValue = raw;
+  const computeBounds = () => {
+    let min = configOption.min;
+    let max = configOption.max;
 
     if (needsChunkSizeBound && typeof currentChunkSize === "number") {
       const limit = Math.max(0, currentChunkSize - 1);
-      nextValue = Math.min(nextValue, limit);
+      max = Math.min(max, limit);
+      min = Math.min(min, max);
     }
 
-    nextValue = Math.max(nextValue, effectiveMin);
+    if (affectsChunkSize) {
+      const overlapRequirement =
+        typeof currentChunkOverlap === "number" ? currentChunkOverlap + 1 : min;
+      const minCharsRequirement =
+        typeof currentMinChars === "number" ? currentMinChars + 1 : min;
 
-    onConfigChange(optionKey, nextValue);
+      min = Math.max(min, overlapRequirement, minCharsRequirement);
+    }
+
+    if (min > max) {
+      min = max;
+    }
+
+    return { min, max };
   };
 
-  const step = configOption.type === "int" ? 1 : 0.01;
+  const clamp = (value: number, bounds: { min: number; max: number }) =>
+    Math.min(Math.max(value, bounds.min), bounds.max);
+
+  const bounds = computeBounds();
+
+  const initialValue =
+    resolveNumericValue(optionKey) ?? configOption.default ?? bounds.min;
+  const clampedValue = clamp(initialValue, bounds);
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const raw = Number(event.target.value);
+    const nextValue = clamp(raw, bounds);
+    onConfigChange(optionKey, nextValue);
+  };
 
   return (
     <div className="config-row">
@@ -62,17 +82,17 @@ const ConfigSlider = ({
       <div className="slider-container">
         <input
           type="range"
-          step={step}
+          step={configOption.type === "int" ? 1 : 0.01}
           className="slider"
           value={clampedValue}
-          min={effectiveMin}
-          max={effectiveMax}
+          min={bounds.min}
+          max={bounds.max}
           onChange={handleChange}
         />
         <span className="slider-value">{clampedValue}</span>
       </div>
       <small className="hint">
-        min {effectiveMin} - max {effectiveMax}
+        min {bounds.min} - max {bounds.max}
       </small>
     </div>
   );
