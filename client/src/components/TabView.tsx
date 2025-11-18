@@ -5,10 +5,11 @@ interface TabViewProps {
   children: {
     visualization: React.ReactNode;
     evaluation: React.ReactNode;
+    deploy: React.ReactNode;
   };
 }
 
-type Tab = "visualization" | "evaluation";
+type Tab = "visualization" | "evaluation" | "deploy";
 
 const TabView = ({ hasEvaluation, children }: TabViewProps) => {
   const [activeTab, setActiveTab] = useState<Tab>("visualization");
@@ -22,20 +23,30 @@ const TabView = ({ hasEvaluation, children }: TabViewProps) => {
           }`}
           onClick={() => setActiveTab("visualization")}
         >
-          Chunk Visualization
+          Visualization
         </button>
         <button
-          className={`tab-button ${activeTab === "evaluation" ? "active" : ""}`}
+          className={`tab-button ${
+            activeTab === "evaluation" ? "active" : ""
+          }`}
           onClick={() => setActiveTab("evaluation")}
           disabled={!hasEvaluation}
         >
           Evaluation
         </button>
+        <button
+          className={`tab-button ${activeTab === "deploy" ? "active" : ""}`}
+          onClick={() => setActiveTab("deploy")}
+        >
+          Deploy
+        </button>
       </div>
       <div className="tab-content">
         {activeTab === "visualization"
           ? children.visualization
-          : children.evaluation}
+          : activeTab === "evaluation"
+            ? children.evaluation
+            : children.deploy}
       </div>
     </div>
   );
