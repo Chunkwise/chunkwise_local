@@ -1,0 +1,14 @@
+Retrieval-Augmented Generation (RAG) is a technique that combines the power of 
+large language models with external knowledge retrieval. RAG systems work by first 
+retrieving relevant documents from a database, then using those documents as context 
+for the language model to generate responses.
+
+Chunking is a critical preprocessing step in RAG systems. The goal of chunking is to 
+split large documents into smaller, semantically coherent pieces that can be efficiently 
+stored and retrieved. Good chunking strategies ensure that each chunk contains complete 
+ideas and relevant context.
+
+There are several chunking strategies available: fixed-size chunking splits text by 
+character or token count, recursive chunking splits by paragraphs and sentences, and 
+semantic chunking groups text by meaning. The choice of chunking strategy significantly 
+impacts retrieval quality.
