@@ -54,9 +54,15 @@ export default function App() {
         }));
         workflowDispatch(setWorkflowsAction(workflowsWithStage));
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Failed to load workflows:", error);
-        setError("Failed to load workflows from the server");
+        if (error instanceof ZodError) {
+          setError(
+            "The server returned workflow data in an unexpected format"
+          );
+        } else {
+          setError("Failed to load workflows from the server");
+        }
       });
   }, []);
 
@@ -109,9 +115,13 @@ export default function App() {
         stage: computeWorkflowStage(newWorkflow),
       };
       workflowDispatch(createWorkflowAction(workflowWithStage));
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to create workflow:", error);
-      setError("Failed to create workflow");
+      if (error instanceof ZodError) {
+        setError("The server returned the created workflow in an unexpected format");
+      } else {
+        setError("Failed to create workflow");
+      }
     }
   };
 
@@ -127,9 +137,13 @@ export default function App() {
         stage: computeWorkflowStage(updatedWorkflow),
       };
       workflowDispatch(updateWorkflowAction(id, workflowWithStage));
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to update workflow:", error);
-      setError("Failed to update workflow");
+      if (error instanceof ZodError) {
+        setError("The server returned the updated workflow in an unexpected format");
+      } else {
+        setError("Failed to update workflow");
+      }
     }
   };
 
@@ -141,7 +155,7 @@ export default function App() {
     try {
       await deleteWorkflowAPI(id);
       workflowDispatch(deleteWorkflowAction(id));
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to delete workflow:", error);
       setError("Failed to delete workflow");
     }

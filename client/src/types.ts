@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-export type Stage = "Draft" | "Configured" | "Evaluated";
+export const StageSchema = z.enum(["Draft", "Configured", "Evaluated"]);
+export type Stage = z.infer<typeof StageSchema>;
 
 export interface File {
   document_title: string;
@@ -22,16 +23,20 @@ export const ChunkerSchema = z
     description: z.string(),
   })
   .catchall(z.union([z.string(), ConfigOptionSchema]));
-
 export type Chunker = z.infer<typeof ChunkerSchema>;
 
-export interface ChunkingStrategy {
-  chunker_type: string;
-  provider: string;
-  chunk_size?: number;
-  chunk_overlap?: number;
-  [key: string]: string | number | undefined;
-}
+export const ChunkingStrategySchema = z
+  .object({
+    chunker_type: z.string(),
+    provider: z.string(),
+    chunk_size: z.number().optional(),
+    chunk_overlap: z.number().optional(),
+  })
+  .catchall(
+    z.union([z.number(), z.string(), z.boolean(), z.null(), z.undefined()])
+  );
+
+export type ChunkingStrategy = z.infer<typeof ChunkingStrategySchema>;
 
 export const ChunkStatisticsSchema = z.object({
   total_chunks: z.number(),
@@ -60,19 +65,33 @@ export const EvaluationMetricsSchema = z.object({
 
 export type EvaluationMetrics = z.infer<typeof EvaluationMetricsSchema>;
 
+export const WorkflowResponseSchema = z
+  .object({
+    id: z.union([z.string(), z.number()]).transform((value) => String(value)),
+    title: z.string(),
+    created_at: z.string(),
+    stage: z.string().optional().nullable(),
+    document_title: z.string().optional().nullable(),
+    chunking_strategy: z
+      .union([ChunkingStrategySchema, z.string(), z.null()])
+      .optional(),
+    chunks_stats: z
+      .union([ChunkStatisticsSchema, z.string(), z.null()])
+      .optional(),
+    visualization_html: z.string().optional().nullable(),
+    evaluation_metrics: z
+      .union([EvaluationMetricsSchema, z.string(), z.null()])
+      .optional(),
+  })
+
 export interface Workflow {
-  // Database schema fields
   id: string;
   title: string;
   created_at: string;
-
-  // Client-side computed field
   stage?: Stage;
-
-  // Optional workflow data
-  document_title?: string;
+  document_title?: string | null;
   chunking_strategy?: ChunkingStrategy;
   chunks_stats?: ChunkStatistics;
-  visualization_html?: string;
+  visualization_html?: string | null;
   evaluation_metrics?: EvaluationMetrics;
 }

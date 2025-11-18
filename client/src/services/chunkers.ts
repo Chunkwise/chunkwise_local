@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { ChunkerSchema } from "../types";
-import type { Chunker } from "../types";
+import { ChunkerSchema, type Chunker } from "../types";
 import axios from "axios";
 
 const chunkerListSchema = z.array(ChunkerSchema);

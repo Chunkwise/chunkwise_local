@@ -1,6 +1,8 @@
 import axios from "axios";
-import { VisualizationResponseSchema } from "../types";
-import type { VisualizationResponse } from "../types";
+import {
+  VisualizationResponseSchema,
+  type VisualizationResponse,
+} from "../types";
 
 export const getVisualization = async (
   workflowId: string

@@ -1,5 +1,10 @@
-import type { Workflow } from "../types";
 import axios from "axios";
+import {
+  WorkflowResponseSchema,
+  type Workflow,
+} from "../types";
+
+const workflowListSchema = WorkflowResponseSchema.array();
 
 // Helper function to parse workflow fields
 const parseWorkflowFields = (workflow: Record<string, unknown>): Workflow => {
@@ -27,12 +32,14 @@ const parseWorkflowFields = (workflow: Record<string, unknown>): Workflow => {
 
 export const getWorkflows = async (): Promise<Workflow[]> => {
   const response = await axios.get("/api/workflows");
-  return response.data.map(parseWorkflowFields);
+  const parsedList = workflowListSchema.parse(response.data);
+  return parsedList.map(parseWorkflowFields);
 };
 
 export const createWorkflow = async (title: string): Promise<Workflow> => {
   const response = await axios.post("/api/workflows", { title });
-  return parseWorkflowFields(response.data);
+  const parsedWorkflow = WorkflowResponseSchema.parse(response.data);
+  return parseWorkflowFields(parsedWorkflow);
 };
 
 export const updateWorkflow = async (
@@ -40,7 +47,8 @@ export const updateWorkflow = async (
   patch: Partial<Workflow>
 ): Promise<Workflow> => {
   const response = await axios.put(`/api/workflows/${workflowId}`, patch);
-  return parseWorkflowFields(response.data);
+  const parsedWorkflow = WorkflowResponseSchema.parse(response.data);
+  return parseWorkflowFields(parsedWorkflow);
 };
 
 export const deleteWorkflow = async (workflowId: string): Promise<void> => {

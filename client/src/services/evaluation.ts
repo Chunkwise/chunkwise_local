@@ -1,6 +1,5 @@
 import axios from "axios";
-import { EvaluationMetricsSchema } from "../types";
-import type { EvaluationMetrics } from "../types";
+import { EvaluationMetricsSchema, type EvaluationMetrics } from "../types";
 
 export const getEvaluationMetrics = async (
   workflowId: string
