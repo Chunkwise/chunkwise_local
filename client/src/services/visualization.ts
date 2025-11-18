@@ -1,5 +1,8 @@
 import axios from "axios";
-import type { VisualizationResponse } from "../types";
+import {
+  VisualizationResponseSchema,
+  type VisualizationResponse,
+} from "../types";
 
 export const getVisualization = async (
   workflowId: string
@@ -7,5 +10,5 @@ export const getVisualization = async (
   const response = await axios.get(
     `/api/workflows/${workflowId}/visualization`
   );
-  return response.data;
+  return VisualizationResponseSchema.parse(response.data);
 };

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ZodError } from "zod";
 import type { Workflow, Chunker } from "../types";
 import ChooseFile from "./ChooseFile";
 import ChunkerForm from "./ChunkerForm";
@@ -11,6 +12,7 @@ import { getEvaluationMetrics } from "../services/evaluation";
 
 type Props = {
   chunkers: Chunker[];
+  isLoadingFiles: boolean;
   availableFiles: string[];
   workflow?: Workflow;
   onUpdateWorkflow: (patch: Partial<Workflow>) => Promise<void>;
@@ -19,6 +21,7 @@ type Props = {
 
 const WorkflowDetails = ({
   chunkers,
+  isLoadingFiles,
   availableFiles,
   workflow,
   onUpdateWorkflow,
@@ -119,9 +122,15 @@ const WorkflowDetails = ({
         visualization_html: vizData.html,
       };
       await onPatchWorkflow(update as Partial<Workflow>);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to load visualization:", error);
-      setError("Failed to load visualization");
+      if (error instanceof ZodError) {
+        setError(
+          "The server returned visualization data in an unexpected format"
+        );
+      } else {
+        setError("Failed to load visualization");
+      }
     } finally {
       setIsLoadingViz(false);
     }
@@ -201,9 +210,13 @@ const WorkflowDetails = ({
       await onPatchWorkflow({
         evaluation_metrics: metrics,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to run evaluation:", error);
-      setError("Failed to run evaluation");
+      if (error instanceof ZodError) {
+        setError("The server returned evaluation data in an unexpected format");
+      } else {
+        setError("Failed to run evaluation");
+      }
     } finally {
       setIsEvaluating(false);
     }
@@ -240,6 +253,7 @@ const WorkflowDetails = ({
 
       <ChooseFile
         workflow={workflow}
+        isLoadingFiles={isLoadingFiles}
         availableFiles={availableFiles}
         onFileChange={handleFileChange}
       />

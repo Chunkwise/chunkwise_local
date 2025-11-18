@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
+import { ZodError } from "zod";
 import type { Workflow, Chunker } from "./types";
 import type { State } from "./reducers/workflowReducer";
 import Header from "./components/Header";
@@ -40,6 +41,7 @@ export default function App() {
     selectedWorkflowIds: [],
   });
   const [chunkers, setChunkers] = useState<Chunker[]>([]);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,9 +55,13 @@ export default function App() {
         }));
         workflowDispatch(setWorkflowsAction(workflowsWithStage));
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Failed to load workflows:", error);
-        setError("Failed to load workflows from the server");
+        if (error instanceof ZodError) {
+          setError("The server returned workflow data in an unexpected format");
+        } else {
+          setError("Failed to load workflows from the server");
+        }
       });
   }, []);
 
@@ -63,19 +69,33 @@ export default function App() {
   useEffect(() => {
     getChunkers()
       .then((data) => setChunkers(data))
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Failed to load chunkers:", error);
-        setError("Failed to load chunkers from the server");
+        if (error instanceof ZodError) {
+          setError("The server returned chunker data in an unexpected format");
+        } else {
+          setError("Failed to load chunkers from the server");
+        }
       });
   }, []);
 
   // Load available files on mount
   useEffect(() => {
+    setIsLoadingFiles(true);
     getFiles()
       .then((files) => setAvailableFiles([...files]))
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Failed to load files:", error);
-        setError("Failed to load files from the server");
+        if (error instanceof ZodError) {
+          setError(
+            "The server returned file information in an unexpected format"
+          );
+        } else {
+          setError("Failed to load files from the server");
+        }
+      })
+      .finally(() => {
+        setIsLoadingFiles(false);
       });
   }, []);
 
@@ -98,9 +118,15 @@ export default function App() {
         stage: computeWorkflowStage(newWorkflow),
       };
       workflowDispatch(createWorkflowAction(workflowWithStage));
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to create workflow:", error);
-      setError("Failed to create workflow");
+      if (error instanceof ZodError) {
+        setError(
+          "The server returned the created workflow in an unexpected format"
+        );
+      } else {
+        setError("Failed to create workflow");
+      }
     }
   };
 
@@ -116,9 +142,15 @@ export default function App() {
         stage: computeWorkflowStage(updatedWorkflow),
       };
       workflowDispatch(updateWorkflowAction(id, workflowWithStage));
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to update workflow:", error);
-      setError("Failed to update workflow");
+      if (error instanceof ZodError) {
+        setError(
+          "The server returned the updated workflow in an unexpected format"
+        );
+      } else {
+        setError("Failed to update workflow");
+      }
     }
   };
 
@@ -130,7 +162,7 @@ export default function App() {
     try {
       await deleteWorkflowAPI(id);
       workflowDispatch(deleteWorkflowAction(id));
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to delete workflow:", error);
       setError("Failed to delete workflow");
     }
@@ -188,6 +220,7 @@ export default function App() {
           ) : (
             <WorkflowDetails
               chunkers={chunkers}
+              isLoadingFiles={isLoadingFiles}
               availableFiles={availableFiles}
               workflow={selectedWorkflow}
               onUpdateWorkflow={(patch) =>
