@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export type Stage = "Draft" | "Configured" | "Evaluated";
 
 export interface File {
@@ -5,18 +7,21 @@ export interface File {
   document_content: string;
 }
 
-export interface ConfigOption {
-  type: string;
-  min: number;
-  max: number;
-  default: number;
-}
+export const ConfigOptionSchema = z.object({
+  type: z.string(),
+  min: z.number(),
+  max: z.number(),
+  default: z.number(),
+});
 
-export interface Chunker {
-  name: string;
-  description: string;
-  [key: string]: string | ConfigOption;
-}
+export type ConfigOption = z.infer<typeof ConfigOptionSchema>;
+
+export const ChunkerSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+}).catchall(z.union([z.string(), ConfigOptionSchema]));
+
+export type Chunker = z.infer<typeof ChunkerSchema>;
 
 export interface ChunkingStrategy {
   chunker_type: string;
