@@ -1,4 +1,26 @@
-import type { Chunker, Workflow } from "../types";
+import type {
+  Chunker,
+  Workflow,
+  ChunkStatistics,
+  EvaluationMetrics,
+} from "../types";
+
+const CHUNK_METRIC_KEYS: Record<
+  keyof Omit<ChunkStatistics, "largest_text" | "smallest_text">,
+  string
+> = {
+  total_chunks: "Total chunks",
+  avg_chars: "Average characters",
+  smallest_chunk_chars: "Smallest chunk characters",
+  largest_chunk_chars: "Largest chunk characters",
+};
+
+const EVALUATION_METRIC_KEYS: Record<keyof EvaluationMetrics, string> = {
+  precision_mean: "Precision mean",
+  recall_mean: "Recall mean",
+  iou_mean: "IoU mean",
+  precision_omega_mean: "Precision omega mean",
+};
 
 type Props = {
   chunkers: Chunker[];
@@ -14,6 +36,13 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
     const fullName =
       `${strategy.provider} ${strategy.chunker_type}`.toLowerCase();
     return chunkers.find((chunker) => chunker.name.toLowerCase() === fullName);
+  };
+
+  const getChunkerName = (
+    strategy: Workflow["chunking_strategy"]
+  ): string | undefined => {
+    if (!strategy) return undefined;
+    return findChunkerConfig(strategy)!.name;
   };
 
   const getConfigSummary = (workflow: Workflow): string => {
@@ -39,13 +68,6 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
     if (percentage >= 80) return "#48bb78"; // green
     if (percentage >= 60) return "#f6ad55"; // orange
     return "#fc8181"; // red
-  };
-
-  const chunkerName = (
-    strategy: Workflow["chunking_strategy"]
-  ): string | undefined => {
-    if (!strategy) return undefined;
-    return findChunkerConfig(strategy)!.name;
   };
 
   return (
@@ -77,7 +99,7 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                     <h3 className="comparison-card-title">{workflow.title}</h3>
                     <div className="comparison-card-meta">
                       <span className="comparison-badge">
-                        {chunkerName(workflow.chunking_strategy)}
+                        {getChunkerName(workflow.chunking_strategy)}
                       </span>
                       <span className="comparison-stage-badge">
                         {workflow.stage}
@@ -105,40 +127,36 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                       Chunking Metrics
                     </h4>
                     {workflow.chunks_stats ? (
-                      <div className="comparison-metrics">
-                        <div className="comparison-metric-row">
-                          <span className="comparison-metric-label">
-                            Chunks
-                          </span>
-                          <span className="comparison-metric-value">
-                            {workflow.chunks_stats.total_chunks}
-                          </span>
-                        </div>
-                        <div className="comparison-metric-row">
-                          <span className="comparison-metric-label">
-                            Avg Size
-                          </span>
-                          <span className="comparison-metric-value">
-                            {Math.round(workflow.chunks_stats.avg_chars)}
-                          </span>
-                        </div>
-                        <div className="comparison-metric-row">
-                          <span className="comparison-metric-label">
-                            Min Size
-                          </span>
-                          <span className="comparison-metric-value">
-                            {workflow.chunks_stats.smallest_chunk_chars}
-                          </span>
-                        </div>
-                        <div className="comparison-metric-row">
-                          <span className="comparison-metric-label">
-                            Max Size
-                          </span>
-                          <span className="comparison-metric-value">
-                            {workflow.chunks_stats.largest_chunk_chars}
-                          </span>
-                        </div>
-                      </div>
+                      (() => {
+                        const stats = workflow.chunks_stats as ChunkStatistics;
+                        return (
+                          <div className="comparison-metrics">
+                            {(
+                              Object.keys(CHUNK_METRIC_KEYS) as Array<
+                                keyof typeof CHUNK_METRIC_KEYS
+                              >
+                            ).map((key) => {
+                              const statsTyped = stats as unknown as Record<
+                                keyof typeof CHUNK_METRIC_KEYS,
+                                number
+                              >;
+                              return (
+                                <div
+                                  key={String(key)}
+                                  className="comparison-metric-row"
+                                >
+                                  <span className="comparison-metric-label">
+                                    {CHUNK_METRIC_KEYS[key]}
+                                  </span>
+                                  <span className="comparison-metric-value">
+                                    {Number(statsTyped[key]).toFixed(0)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()
                     ) : (
                       <p className="comparison-empty">No stats available</p>
                     )}
@@ -149,87 +167,47 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                       Evaluation Results
                     </h4>
                     {workflow.evaluation_metrics ? (
-                      <div className="comparison-evaluation">
-                        <div className="comparison-eval-item">
-                          <div className="comparison-eval-header">
-                            <span className="comparison-eval-label">
-                              Precision
-                            </span>
-                            <span className="comparison-eval-value">
-                              {(
-                                workflow.evaluation_metrics.precision_mean * 100
-                              ).toFixed(1)}
-                              %
-                            </span>
-                          </div>
-                          <div className="comparison-progress-bar">
-                            <div
-                              className="comparison-progress-fill"
-                              style={{
-                                width: `${
-                                  workflow.evaluation_metrics.precision_mean *
-                                  100
-                                }%`,
-                                backgroundColor: getRatingColor(
-                                  workflow.evaluation_metrics.precision_mean
-                                ),
-                              }}
-                            />
-                          </div>
-                        </div>
+                      (() => {
+                        const metrics =
+                          workflow.evaluation_metrics as EvaluationMetrics;
+                        return (
+                          <div className="comparison-evaluation">
+                            {(
+                              Object.keys(EVALUATION_METRIC_KEYS) as Array<
+                                keyof EvaluationMetrics
+                              >
+                            ).map((key) => {
+                              const value = metrics[key];
+                              const width = Math.max(
+                                0,
+                                Math.min(100, value * 100)
+                              );
 
-                        <div className="comparison-eval-item">
-                          <div className="comparison-eval-header">
-                            <span className="comparison-eval-label">
-                              Recall
-                            </span>
-                            <span className="comparison-eval-value">
-                              {(
-                                workflow.evaluation_metrics.recall_mean * 100
-                              ).toFixed(1)}
-                              %
-                            </span>
+                              return (
+                                <div key={key} className="comparison-eval-item">
+                                  <div className="comparison-eval-header">
+                                    <span className="comparison-eval-label">
+                                      {EVALUATION_METRIC_KEYS[key]}
+                                    </span>
+                                    <span className="comparison-eval-value">
+                                      {Number(value).toFixed(3)}
+                                    </span>
+                                  </div>
+                                  <div className="comparison-progress-bar">
+                                    <div
+                                      className="comparison-progress-fill"
+                                      style={{
+                                        width: `${width}%`,
+                                        backgroundColor: getRatingColor(value),
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                          <div className="comparison-progress-bar">
-                            <div
-                              className="comparison-progress-fill"
-                              style={{
-                                width: `${
-                                  workflow.evaluation_metrics.recall_mean * 100
-                                }%`,
-                                backgroundColor: getRatingColor(
-                                  workflow.evaluation_metrics.recall_mean
-                                ),
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="comparison-eval-item">
-                          <div className="comparison-eval-header">
-                            <span className="comparison-eval-label">IoU</span>
-                            <span className="comparison-eval-value">
-                              {(
-                                workflow.evaluation_metrics.iou_mean * 100
-                              ).toFixed(1)}
-                              %
-                            </span>
-                          </div>
-                          <div className="comparison-progress-bar">
-                            <div
-                              className="comparison-progress-fill"
-                              style={{
-                                width: `${
-                                  workflow.evaluation_metrics.iou_mean * 100
-                                }%`,
-                                backgroundColor: getRatingColor(
-                                  workflow.evaluation_metrics.iou_mean
-                                ),
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
+                        );
+                      })()
                     ) : (
                       <p className="comparison-empty">Not evaluated</p>
                     )}
