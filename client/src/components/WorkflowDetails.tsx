@@ -7,6 +7,7 @@ import TabView from "./TabView";
 import EvaluationMetrics from "./EvaluationMetrics";
 import ChunkStats from "./ChunkStats";
 import VisualizationDisplay from "./VisualizationDisplay";
+import DeployConnector from "./DeployConnector";
 import { getVisualization } from "../services/visualization";
 import { getEvaluationMetrics } from "../services/evaluation";
 
@@ -316,6 +317,17 @@ const WorkflowDetails = ({
                 <div className="tab-panel">
                   <p className="muted">
                     Run evaluation to see performance metrics
+                  </p>
+                </div>
+              ),
+              deploy: workflow.chunking_strategy ? (
+                <div className="tab-panel">
+                  <DeployConnector workflow={workflow} />
+                </div>
+              ) : (
+                <div className="tab-panel">
+                  <p className="muted">
+                    Configure a chunker to enable deployment
                   </p>
                 </div>
               ),
