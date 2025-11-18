@@ -1,0 +1,86 @@
+"""
+Processing Service
+Takes an S3 bucket, document key, chunker config, and destination database
+Chunks the document, creates embeddings, and writes to the destination database
+"""
+
+import os
+import json
+import boto3
+import psycopg2
+from psycopg2 import OperationalError
+from pydantic import TypeAdapter
+from openai import OpenAI
+from chunkwise-core import ChunkerConfig
+from chunkwise-core.utils import create_chunker
+
+bucket = os.getenv("BUCKET_NAME")
+document_key = os.getenv("DOCUMENT_KEY")
+config = os.getenv("CHUNK_CONFIG")
+openai_api_key = os.getenv("OPENAI_API_KEY")
+deployment_id = os.getenv("DEPLOYMENT_ID")
+
+host=os.getenv("DB_HOST")
+database=os.getenv("DB_NAME")
+user=os.getenv("DB_USER")
+password=os.getenv("DB_PASSWORD")
+
+
+def get_db_connection():
+    """
+    Creates and returns a connection object for the database.
+    """
+    try:
+        db_connection = psycopg2.connect(host=host, database=database, user=user, password=password)
+        db_connection.autocommit = True
+        print("Successfully connected to database.")
+        return db_connection
+
+    except OperationalError as e:
+        print(("Error connecting to the database.", e))
+        raise e
+
+
+def main():
+    # 1. Read the document from S3
+    s3 = boto3.client("s3")
+    obj = s3.get_object(Bucket=bucket, Key=document_key)
+    text = obj["Body"].read().decode("utf-8")
+
+    # 2. Chunk
+    chunker_config = TypeAdapter(ChunkerConfig).validate_json(config)
+    chunker = create_chunker(chunker_config)
+    chunks = chunker.split_text(text) if hasattr(chunker, "split_text") else [chunk.text for chunk in chunker(text)]
+
+    # 3. Embed
+    client = OpenAI(api_key=openai_api_key)
+    response = client.embeddings.create(
+        input=chunks,
+        model="text-embedding-3-small"
+    )
+    embeddings = [d.embedding for d in response.data]
+
+    # 4. Insert into Postgres
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        insert_sql = """
+            INSERT INTO document_chunks
+            (deployment_id, document_key, chunk_id, chunk_text, embedding)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+
+        for index, chunk in enumerate(chunks):
+            cursor.excecute(insert_sql, (deployment_id, document_key, index, chunk, embeddings[index]))
+    except Exception as e:
+        print(("Error creating workflow.", e))
+        raise e
+    finally:
+        if connection:
+            connection.close()
+            print("Database connection closed.")
+
+
+if __name__ == "__main__":
+    main()
