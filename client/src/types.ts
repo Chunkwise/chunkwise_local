@@ -51,12 +51,14 @@ export const VisualizationResponseSchema = z.object({
 
 export type VisualizationResponse = z.infer<typeof VisualizationResponseSchema>;
 
-export interface EvaluationMetrics {
-  iou_mean: number;
-  recall_mean: number;
-  precision_mean: number;
-  precision_omega_mean: number;
-}
+export const EvaluationMetricsSchema = z.object({
+  iou_mean: z.number(),
+  recall_mean: z.number(),
+  precision_mean: z.number(),
+  precision_omega_mean: z.number(),
+});
+
+export type EvaluationMetrics = z.infer<typeof EvaluationMetricsSchema>;
 
 export interface Workflow {
   // Database schema fields
