@@ -12,6 +12,7 @@ import { getEvaluationMetrics } from "../services/evaluation";
 
 type Props = {
   chunkers: Chunker[];
+  isLoadingFiles: boolean;
   availableFiles: string[];
   workflow?: Workflow;
   onUpdateWorkflow: (patch: Partial<Workflow>) => Promise<void>;
@@ -20,6 +21,7 @@ type Props = {
 
 const WorkflowDetails = ({
   chunkers,
+  isLoadingFiles,
   availableFiles,
   workflow,
   onUpdateWorkflow,
@@ -123,7 +125,9 @@ const WorkflowDetails = ({
     } catch (error: unknown) {
       console.error("Failed to load visualization:", error);
       if (error instanceof ZodError) {
-        setError("The server returned visualization data in an unexpected format");
+        setError(
+          "The server returned visualization data in an unexpected format"
+        );
       } else {
         setError("Failed to load visualization");
       }
@@ -249,6 +253,7 @@ const WorkflowDetails = ({
 
       <ChooseFile
         workflow={workflow}
+        isLoadingFiles={isLoadingFiles}
         availableFiles={availableFiles}
         onFileChange={handleFileChange}
       />

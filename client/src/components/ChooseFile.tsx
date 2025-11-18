@@ -4,6 +4,7 @@ import { uploadFile } from "../services/documents";
 
 interface ChooseFileProps {
   workflow: Workflow;
+  isLoadingFiles: boolean;
   availableFiles: string[];
   onFileChange: (fileId: string | undefined) => void;
 }
@@ -12,11 +13,12 @@ const UPLOAD_OPTION_VALUE = "__upload__";
 
 const ChooseFile = ({
   workflow,
+  isLoadingFiles,
   availableFiles,
   onFileChange,
 }: ChooseFileProps) => {
   const [files, setFiles] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Sync with availableFiles
@@ -32,7 +34,7 @@ const ChooseFile = ({
   const handleFileUpload = async (file: File | null) => {
     if (!file) return;
     setError(null);
-    setIsLoading(true);
+    setIsUploadingFile(true);
 
     try {
       const title = removeExtension(file.name);
@@ -44,7 +46,7 @@ const ChooseFile = ({
       console.error("Upload failed:", error);
       setError("Failed to upload file");
     } finally {
-      setIsLoading(false);
+      setIsUploadingFile(false);
     }
   };
 
@@ -67,7 +69,7 @@ const ChooseFile = ({
             className="file-select"
             value={workflow.document_title || ""}
             onChange={(event) => handleSelectChange(event.target.value)}
-            disabled={isLoading}
+            disabled={isLoadingFiles || isUploadingFile}
           >
             <option value="">-- Select a file --</option>
             {files.map((title) => (
@@ -93,7 +95,11 @@ const ChooseFile = ({
 
         {error && <div className="error">{error}</div>}
 
-        {isLoading && <div className="muted">Uploading...</div>}
+        {isLoadingFiles && (
+          <div className="muted">Loading available files...</div>
+        )}
+
+        {isUploadingFile && <div className="muted">Uploading...</div>}
 
         {workflow.document_title ? (
           <div className="file-preview">

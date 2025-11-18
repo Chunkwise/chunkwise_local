@@ -41,6 +41,7 @@ export default function App() {
     selectedWorkflowIds: [],
   });
   const [chunkers, setChunkers] = useState<Chunker[]>([]);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,9 +58,7 @@ export default function App() {
       .catch((error: unknown) => {
         console.error("Failed to load workflows:", error);
         if (error instanceof ZodError) {
-          setError(
-            "The server returned workflow data in an unexpected format"
-          );
+          setError("The server returned workflow data in an unexpected format");
         } else {
           setError("Failed to load workflows from the server");
         }
@@ -82,6 +81,7 @@ export default function App() {
 
   // Load available files on mount
   useEffect(() => {
+    setIsLoadingFiles(true);
     getFiles()
       .then((files) => setAvailableFiles([...files]))
       .catch((error: unknown) => {
@@ -93,6 +93,9 @@ export default function App() {
         } else {
           setError("Failed to load files from the server");
         }
+      })
+      .finally(() => {
+        setIsLoadingFiles(false);
       });
   }, []);
 
@@ -118,7 +121,9 @@ export default function App() {
     } catch (error: unknown) {
       console.error("Failed to create workflow:", error);
       if (error instanceof ZodError) {
-        setError("The server returned the created workflow in an unexpected format");
+        setError(
+          "The server returned the created workflow in an unexpected format"
+        );
       } else {
         setError("Failed to create workflow");
       }
@@ -140,7 +145,9 @@ export default function App() {
     } catch (error: unknown) {
       console.error("Failed to update workflow:", error);
       if (error instanceof ZodError) {
-        setError("The server returned the updated workflow in an unexpected format");
+        setError(
+          "The server returned the updated workflow in an unexpected format"
+        );
       } else {
         setError("Failed to update workflow");
       }
@@ -213,6 +220,7 @@ export default function App() {
           ) : (
             <WorkflowDetails
               chunkers={chunkers}
+              isLoadingFiles={isLoadingFiles}
               availableFiles={availableFiles}
               workflow={selectedWorkflow}
               onUpdateWorkflow={(patch) =>
