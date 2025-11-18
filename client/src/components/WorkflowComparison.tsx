@@ -12,6 +12,20 @@ const WorkflowComparison = ({ workflows }: Props) => {
     return "#fc8181"; // red
   };
 
+  const chunkerName = (
+    strategy: Workflow["chunking_strategy"]
+  ): undefined | string => {
+    if (!strategy) return;
+
+    const provider =
+      strategy.provider === "langchain"
+        ? "LangChain"
+        : strategy.provider[0].toUpperCase() + strategy.provider.slice(1);
+    const type =
+      strategy.chunker_type[0].toUpperCase() + strategy.chunker_type.slice(1);
+    return `${provider} ${type}`;
+  };
+
   return (
     <div className="comparison-view">
       <div className="comparison-header">
@@ -36,7 +50,7 @@ const WorkflowComparison = ({ workflows }: Props) => {
                   <h3 className="comparison-card-title">{workflow.title}</h3>
                   <div className="comparison-card-meta">
                     <span className="comparison-badge">
-                      {workflow.chunking_strategy?.chunker_type || "N/A"}
+                      {chunkerName(workflow.chunking_strategy) || "N/A"}
                     </span>
                     <span className="comparison-stage-badge">
                       {workflow.stage}
@@ -122,9 +136,9 @@ const WorkflowComparison = ({ workflows }: Props) => {
                             Precision
                           </span>
                           <span className="comparison-eval-value">
-                            {(workflow.evaluation_metrics.precision_mean * 100).toFixed(
-                              1
-                            )}
+                            {(
+                              workflow.evaluation_metrics.precision_mean * 100
+                            ).toFixed(1)}
                             %
                           </span>
                         </div>
@@ -132,7 +146,9 @@ const WorkflowComparison = ({ workflows }: Props) => {
                           <div
                             className="comparison-progress-fill"
                             style={{
-                              width: `${workflow.evaluation_metrics.precision_mean * 100}%`,
+                              width: `${
+                                workflow.evaluation_metrics.precision_mean * 100
+                              }%`,
                               backgroundColor: getRatingColor(
                                 workflow.evaluation_metrics.precision_mean
                               ),
@@ -145,9 +161,9 @@ const WorkflowComparison = ({ workflows }: Props) => {
                         <div className="comparison-eval-header">
                           <span className="comparison-eval-label">Recall</span>
                           <span className="comparison-eval-value">
-                            {(workflow.evaluation_metrics.recall_mean * 100).toFixed(
-                              1
-                            )}
+                            {(
+                              workflow.evaluation_metrics.recall_mean * 100
+                            ).toFixed(1)}
                             %
                           </span>
                         </div>
@@ -155,7 +171,9 @@ const WorkflowComparison = ({ workflows }: Props) => {
                           <div
                             className="comparison-progress-fill"
                             style={{
-                              width: `${workflow.evaluation_metrics.recall_mean * 100}%`,
+                              width: `${
+                                workflow.evaluation_metrics.recall_mean * 100
+                              }%`,
                               backgroundColor: getRatingColor(
                                 workflow.evaluation_metrics.recall_mean
                               ),
@@ -168,9 +186,9 @@ const WorkflowComparison = ({ workflows }: Props) => {
                         <div className="comparison-eval-header">
                           <span className="comparison-eval-label">IoU</span>
                           <span className="comparison-eval-value">
-                            {(workflow.evaluation_metrics.iou_mean * 100).toFixed(
-                              1
-                            )}
+                            {(
+                              workflow.evaluation_metrics.iou_mean * 100
+                            ).toFixed(1)}
                             %
                           </span>
                         </div>
@@ -178,7 +196,9 @@ const WorkflowComparison = ({ workflows }: Props) => {
                           <div
                             className="comparison-progress-fill"
                             style={{
-                              width: `${workflow.evaluation_metrics.iou_mean * 100}%`,
+                              width: `${
+                                workflow.evaluation_metrics.iou_mean * 100
+                              }%`,
                               backgroundColor: getRatingColor(
                                 workflow.evaluation_metrics.iou_mean
                               ),
