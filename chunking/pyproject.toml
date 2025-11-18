@@ -10,6 +10,7 @@ package-mode = false
 python = ">=3.13,<4.0"
 fastapi = ">=0.120.2,<0.121.0"
 uvicorn = ">=0.38.0,<0.39.0"
+python-dotenv = "^1.2.1"
 chunkwise-core = { git = "https://github.com/Chunkwise/chunkwise_core.git", extras = ["chunkers"] }
 fuzzywuzzy = "^0.18.0"
 

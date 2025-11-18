@@ -1,9 +1,12 @@
 """Chunking Service"""
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, Body
 from chunkwise_core import Chunk, ChunkerConfig
 from chunkwise_core.utils import create_chunker
 from get_chunks_with_metadata import get_chunks_with_metadata
+
+load_dotenv()
 
 app = FastAPI()
 
