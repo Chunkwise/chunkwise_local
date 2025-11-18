@@ -216,7 +216,10 @@ export default function App() {
 
         <main className="main-content">
           {comparisonState.isComparing ? (
-            <WorkflowComparison workflows={comparedWorkflows} />
+            <WorkflowComparison
+              chunkers={chunkers}
+              workflows={comparedWorkflows}
+            />
           ) : (
             <WorkflowDetails
               chunkers={chunkers}
