@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const StageSchema = z.enum(["Draft", "Configured", "Evaluated"]);
+
 export type Stage = z.infer<typeof StageSchema>;
 
 export interface File {
@@ -23,6 +24,7 @@ export const ChunkerSchema = z
     description: z.string(),
   })
   .catchall(z.union([z.string(), ConfigOptionSchema]));
+
 export type Chunker = z.infer<typeof ChunkerSchema>;
 
 export const ChunkingStrategySchema = z
@@ -32,9 +34,7 @@ export const ChunkingStrategySchema = z
     chunk_size: z.number().optional(),
     chunk_overlap: z.number().optional(),
   })
-  .catchall(
-    z.union([z.number(), z.string(), z.boolean(), z.null(), z.undefined()])
-  );
+  .catchall(z.unknown());
 
 export type ChunkingStrategy = z.infer<typeof ChunkingStrategySchema>;
 
@@ -65,24 +65,23 @@ export const EvaluationMetricsSchema = z.object({
 
 export type EvaluationMetrics = z.infer<typeof EvaluationMetricsSchema>;
 
-export const WorkflowResponseSchema = z
-  .object({
-    id: z.union([z.string(), z.number()]).transform((value) => String(value)),
-    title: z.string(),
-    created_at: z.string(),
-    stage: z.string().optional().nullable(),
-    document_title: z.string().optional().nullable(),
-    chunking_strategy: z
-      .union([ChunkingStrategySchema, z.string(), z.null()])
-      .optional(),
-    chunks_stats: z
-      .union([ChunkStatisticsSchema, z.string(), z.null()])
-      .optional(),
-    visualization_html: z.string().optional().nullable(),
-    evaluation_metrics: z
-      .union([EvaluationMetricsSchema, z.string(), z.null()])
-      .optional(),
-  })
+export const WorkflowResponseSchema = z.object({
+  id: z.union([z.string(), z.number()]).transform((value) => String(value)),
+  title: z.string(),
+  created_at: z.string(),
+  stage: z.string().optional().nullable(),
+  document_title: z.string().optional().nullable(),
+  chunking_strategy: z
+    .union([ChunkingStrategySchema, z.string(), z.null()])
+    .optional(),
+  chunks_stats: z
+    .union([ChunkStatisticsSchema, z.string(), z.null()])
+    .optional(),
+  visualization_html: z.string().optional().nullable(),
+  evaluation_metrics: z
+    .union([EvaluationMetricsSchema, z.string(), z.null()])
+    .optional(),
+});
 
 export interface Workflow {
   id: string;

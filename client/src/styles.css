@@ -818,6 +818,28 @@ html,
   color: #2d3748;
 }
 
+.comparison-config-code {
+  margin: 0;
+  padding: 12px 14px;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  height: 72px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.comparison-config-code code {
+  display: block;
+  color: inherit;
+}
+
 .comparison-empty {
   font-size: 13px;
   color: var(--muted);
