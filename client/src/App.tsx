@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
+import { ZodError } from "zod";
 import type { Workflow, Chunker } from "./types";
 import type { State } from "./reducers/workflowReducer";
 import Header from "./components/Header";
@@ -63,9 +64,13 @@ export default function App() {
   useEffect(() => {
     getChunkers()
       .then((data) => setChunkers(data))
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Failed to load chunkers:", error);
-        setError("Failed to load chunkers from the server");
+        if (error instanceof ZodError) {
+          setError("The server returned chunker data in an unexpected format");
+        } else {
+          setError("Failed to load chunkers from the server");
+        }
       });
   }, []);
 
@@ -73,9 +78,15 @@ export default function App() {
   useEffect(() => {
     getFiles()
       .then((files) => setAvailableFiles([...files]))
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Failed to load files:", error);
-        setError("Failed to load files from the server");
+        if (error instanceof ZodError) {
+          setError(
+            "The server returned file information in an unexpected format"
+          );
+        } else {
+          setError("Failed to load files from the server");
+        }
       });
   }, []);
 
