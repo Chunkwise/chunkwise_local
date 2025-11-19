@@ -8,6 +8,7 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.13,<4.0.0"
+python-dotenv = "^1.2.1"
 chunkwise-core = { git = "https://github.com/Chunkwise/chunkwise_core.git", extras = ["chunkers"] }
 boto3 = ">=1.40.68,<2.0.0"
 psycopg2 = "^2.9.11"

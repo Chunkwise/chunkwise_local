@@ -302,7 +302,7 @@ chunkers = ["chonkie[openai] (>=1.4.1,<2.0.0)", "langchain-text-splitters (>=1.0
 type = "git"
 url = "https://github.com/Chunkwise/chunkwise_core.git"
 reference = "HEAD"
-resolved_reference = "5889d6db917081b7de2d122812b840ee71c8cf19"
+resolved_reference = "31300dd953c6bca8347fd916779a53113bbd4a9f"
 
 [[package]]
 name = "colorama"
@@ -1030,6 +1030,21 @@ files = [
 six = ">=1.5"
 
 [[package]]
+name = "python-dotenv"
+version = "1.2.1"
+description = "Read key-value pairs from a .env file and set them as environment variables"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "python_dotenv-1.2.1-py3-none-any.whl", hash = "sha256:b81ee9561e9ca4004139c6cbba3a238c32b03e4894671e181b671e8cb8425d61"},
+    {file = "python_dotenv-1.2.1.tar.gz", hash = "sha256:42667e897e16ab0d66954af0e60a9caa94f0fd4ecf3aaf6d2d260eec1aa36ad6"},
+]
+
+[package.extras]
+cli = ["click (>=5.0)"]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.3"
 description = "YAML parser and emitter for Python"
@@ -1588,4 +1603,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4.0.0"
-content-hash = "54f2ad97be6f7c55c700be42a543c48545d86b41fbefacce757597bca64a242f"
+content-hash = "1c83e4a7310ee2d1ed3f3d3c96aa5cc5e9562593af70af6013d1a07de9796a33"
