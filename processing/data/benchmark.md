@@ -38,3 +38,4 @@ collection1.txt
 - Time
 
 170.61 seconds
+142.12 seconds (1 table instead of 2)
