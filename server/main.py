@@ -421,7 +421,6 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 "s3",
                 aws_access_key_id=req.s3_access_key,
                 aws_secret_access_key=req.s3_secret_key,
-                region_name=req.s3_region or None,
             )
             try:
                 s3_client.head_bucket(Bucket=req.s3_bucket)
@@ -458,6 +457,39 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             return
 
         yield sse_event({"ok": True, "stage": "done"}, event="done")
+
+        # Create a job for each document in S3 using AWS Batch
+        keys = list_s3_objects(bucket, extensions=[".txt", ".md"])
+        batch = boto3.client("batch")
+        job_ids = []
+
+        for doc_key in keys:
+            response = batch.submit_job(
+                jobName=f"chunkwise-{doc_key.replace('/', '-')}",
+                jobQueue="chunkwise-job-queue",
+                jobDefinition="chunkwise-job-definition",
+                containerOverrides={
+                    "environment": [
+                        {"name": "DOCUMENT_KEY", "value": doc_key},
+                        {"name": "BUCKET_NAME", "value": req.s3_bucket},
+                        {"name": "DB_HOST", "value": address},
+                        {"name": "DB_USER", "value": master_user},
+                        {"name": "DB_PASSWORD", "value": master_password},
+                        {"name": "DB_NAME", "value": SHARED_DB_NAME},
+                        {"name": "DB_TABLE", "value": table_name},
+                        {
+                            "name": "CHUNK_CONFIG",
+                            "value": {
+                                "provider": "langchain",
+                                "chunk_size": 300,
+                                "chunk_overlap": 0,
+                                "chunker_type": "token",
+                            },
+                        },
+                    ]
+                },
+            )
+            job_ids.append(response["jobId"])
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
