@@ -146,7 +146,7 @@ class EcsStack(Stack):
     def _get_openai_secret(self):
         """Get reference to OpenAI API key secret"""
         if not hasattr(self, "_openai_secret"):
-            self._openai_secret = secretsmanager.Secret.from_secret_name_arn(
+            self._openai_secret = secretsmanager.Secret.from_secret_name_v2(
                 self, "OpenAISecret", secret_name="chunkwise/openai-api-key"
             )
             # Grant read access to task execution role
@@ -339,7 +339,6 @@ class EcsStack(Stack):
                 "DB_HOST": self.database.instance_endpoint.hostname,
                 "DB_NAME": config.RDS_CONFIG["database_name"],
                 "DB_PORT": str(config.RDS_CONFIG["port"]),
-                "OPENAI_API_KEY": config.ENVIRONMENT_VARIABLES["OPENAI_API_KEY"],
                 "S3_BUCKET_NAME": self.documents_bucket.bucket_name,
                 # Service discovery endpoints
                 "CHUNKING_SERVICE_HOST": f"{config.CLOUD_MAP_CONFIG['services']['chunking']}.{config.CLOUD_MAP_CONFIG['namespace_name']}",
