@@ -8,13 +8,16 @@ import os
 import json
 import boto3
 import psycopg2
+import tiktoken
 from dotenv import load_dotenv
 from psycopg2 import OperationalError
 from pydantic import TypeAdapter
 from openai import OpenAI
 from chunkwise_core import ChunkerConfig
 from chunkwise_core.utils import create_chunker
+import time
 
+start_time = time.perf_counter()
 load_dotenv()
 
 bucket = os.getenv("BUCKET_NAME")
@@ -46,6 +49,35 @@ def get_db_connection():
         raise e
 
 
+def get_batch_embeddings(chunks, model="text-embedding-3-small", max_tokens=280000):
+    client = OpenAI(api_key=openai_api_key)
+    enc = tiktoken.get_encoding("cl100k_base")
+
+    batches = []
+    current = []
+    current_tokens = 0
+
+    for chunk in chunks:
+        tokens = len(enc.encode(chunk))
+        if current_tokens + tokens > max_tokens:
+            batches.append(current)
+            current = []
+            current_tokens = 0
+        current.append(chunk)
+        current_tokens += tokens
+
+    if current:
+        batches.append(current)
+
+    # embed batches
+    embeddings = []
+    for batch in batches:
+        response = client.embeddings.create(model=model, input=batch)
+        embeddings.extend([d.embedding for d in response.data])
+
+    return embeddings
+
+
 def main():
     # 1. Read the document from S3
     if bucket == "local":
@@ -66,9 +98,7 @@ def main():
     )
 
     # 3. Embed
-    client = OpenAI(api_key=openai_api_key)
-    response = client.embeddings.create(input=chunks, model="text-embedding-3-small")
-    embeddings = [d.embedding for d in response.data]
+    embeddings = get_batch_embeddings(chunks)
 
     # 4. Insert into Postgres
     try:
@@ -93,6 +123,11 @@ def main():
         if connection:
             connection.close()
             print("Database connection closed.")
+
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+
+    print(f"Code execution took {elapsed_time:.4f} seconds.")
 
 
 if __name__ == "__main__":
