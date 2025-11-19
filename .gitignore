@@ -30,6 +30,3 @@ __pycache__/
 .Python
 *.env
 *.ini
-
-requirements.txt
-Dockerfile

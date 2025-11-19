@@ -238,7 +238,7 @@ chunkers = ["chonkie[openai] (>=1.4.1,<2.0.0)", "langchain-text-splitters (>=1.0
 type = "git"
 url = "https://github.com/Chunkwise/chunkwise_core.git"
 reference = "HEAD"
-resolved_reference = "5889d6db917081b7de2d122812b840ee71c8cf19"
+resolved_reference = "31300dd953c6bca8347fd916779a53113bbd4a9f"
 
 [[package]]
 name = "click"
