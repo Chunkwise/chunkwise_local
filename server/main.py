@@ -71,7 +71,7 @@ RDS_MASTER_USER = os.environ.get("RDS_MASTER_USER")
 RDS_INSTANCE_CLASS = os.environ.get("RDS_INSTANCE_CLASS")
 RDS_ENGINE_VERSION = os.environ.get("RDS_ENGINE_VERSION")
 RDS_ALLOCATED_STORAGE = int(os.environ.get("RDS_ALLOCATED_STORAGE"))
-RDS_PUBLIC = os.environ.get("RDS_PUBLIC", "false").lower() == "true"
+RDS_PUBLIC = os.environ.get("RDS_PUBLIC", "true").lower() == "true"
 RDS_WAIT_TIMEOUT = int(os.environ.get("RDS_WAIT_TIMEOUT"))
 RDS_SG_IDS = os.environ.get("RDS_SG_IDS")
 RDS_SG_LIST = RDS_SG_IDS.split(",") if RDS_SG_IDS else None

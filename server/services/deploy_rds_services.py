@@ -43,7 +43,7 @@ def create_instance(
     allocated_storage: int = 20,
     vpc_security_group_ids: list | None = None,
     db_subnet_group_name: str | None = None,
-    publicly_accessible: bool = False,
+    publicly_accessible: bool = True,
     multi_az: bool = False,
     tags: list | None = None,
 ):
@@ -78,12 +78,12 @@ def create_preprovisioned_instance_if_missing(
     master_username: str,
     master_password: str,
     db_name: str,
-    engine_version: str = "15.4",
-    db_instance_class: str = "db.t3.medium",
+    engine_version: str = "17.6",
+    db_instance_class: str = "db.t4g.micro",
     allocated_storage: int = 20,
     vpc_security_group_ids: list | None = None,
     db_subnet_group_name: str | None = None,
-    publicly_accessible: bool = False,
+    publicly_accessible: bool = True,
     wait_timeout: int = 1800,
 ):
     """
