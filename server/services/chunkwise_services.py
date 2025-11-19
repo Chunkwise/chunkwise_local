@@ -34,7 +34,7 @@ async def get_chunks(chunker_config, document) -> list[Chunk]:
     chunking_response = requests.post(
         f"http://{CHUNKING_SERVICE_HOST}:{CHUNKING_SERVICE_PORT}/chunk_with_metadata",
         json=request_body,
-        timeout=60,
+        timeout=120,
     )
     chunking_response.raise_for_status()
     chunks: list[Chunk] = [Chunk(**c) for c in chunking_response.json()]
