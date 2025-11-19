@@ -132,9 +132,7 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
       case "rds-ready":
         return `Instance ${event.data.db_instance_identifier} at ${event.data.endpoint}:${event.data.port}`;
       case "s3-connected":
-        return `Verified bucket ${event.data.bucket}${
-          event.data.region ? ` (${event.data.region})` : ""
-        }`;
+        return `Verified bucket ${event.data.bucket}`;
       case "s3-error":
       case "error":
         return `${event.data.stage}: ${event.data.error}`;
@@ -195,7 +193,6 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
           <div className="deployment-summary" style={{ marginTop: "16px" }}>
             <div className="muted">
               Verified bucket <strong>{s3Details.bucket}</strong>
-              {s3Details.region ? ` (${s3Details.region})` : ""}.
             </div>
           </div>
         )}

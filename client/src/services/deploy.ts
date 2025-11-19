@@ -2,7 +2,6 @@ export interface S3Credentials {
   access_key: string;
   secret_key: string;
   bucket_name: string;
-  region?: string;
 }
 
 export interface RDSReadyPayload {
@@ -21,7 +20,6 @@ export interface S3ConnectedPayload {
   ok: boolean;
   stage: "s3-connected";
   bucket: string;
-  region?: string;
 }
 
 export interface DeployErrorPayload {
@@ -101,7 +99,6 @@ export const deployWorkflow = async ({
   signal,
   onEvent,
 }: DeployWorkflowOptions): Promise<void> => {
-  const normalizedRegion = credentials.region?.trim();
   const response = await fetch(`/api/workflows/${workflowId}/deploy`, {
     method: "POST",
     headers: {
@@ -111,10 +108,6 @@ export const deployWorkflow = async ({
       s3_access_key: credentials.access_key,
       s3_secret_key: credentials.secret_key,
       s3_bucket: credentials.bucket_name,
-      s3_region:
-        normalizedRegion && normalizedRegion.length > 0
-          ? normalizedRegion
-          : null,
     }),
     signal,
   });
