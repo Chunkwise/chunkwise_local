@@ -6,6 +6,7 @@ from .endpoints import (
     EvaluationMetrics,
     EvaluationResponse,
     Workflow,
+    DeployRequest,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "EvaluationMetrics",
     "EvaluationResponse",
     "Workflow",
+    "DeployRequest",
 ]

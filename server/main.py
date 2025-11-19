@@ -4,6 +4,8 @@ services and it will eventually manage the database(s) and document storage.
 """
 
 import os
+import json
+import traceback
 import re
 import logging
 from server_types import (
@@ -11,6 +13,7 @@ from server_types import (
     EvaluationResponse,
     EvaluationMetrics,
     Workflow,
+    DeployRequest,
 )
 from utils import (
     calculate_chunk_stats,
@@ -20,6 +23,8 @@ from utils import (
     handle_endpoint_exceptions,
     Visualizer,
     adjustable_configs,
+    secret_name_for_instance,
+    sse_event,
 )
 from services import (
     upload_s3_file,
@@ -34,9 +39,20 @@ from services import (
     delete_workflow,
     get_all_workflows,
     get_workflow_info,
+    create_preprovisioned_instance_if_missing,
+    describe_instance,
+    ensure_secret,
+    get_secret,
+    connect_db,
+    ensure_pgvector_and_table,
 )
 from fastapi import FastAPI, APIRouter, Body, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+import boto3
+from botocore.exceptions import ClientError, NoCredentialsError, EndpointConnectionError
 
 app = FastAPI()
 router = APIRouter()
@@ -48,13 +64,70 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 
+# Configuration for RDS via env
+PREPROV_DB_IDENTIFIER = os.environ.get("PREPROV_DB_IDENTIFIER", "shared-wf-db")
+SHARED_DB_NAME = os.environ.get("SHARED_DB_NAME")
+RDS_MASTER_USER = os.environ.get("RDS_MASTER_USER")
+RDS_INSTANCE_CLASS = os.environ.get("RDS_INSTANCE_CLASS")
+RDS_ENGINE_VERSION = os.environ.get("RDS_ENGINE_VERSION")
+RDS_ALLOCATED_STORAGE = int(os.environ.get("RDS_ALLOCATED_STORAGE"))
+RDS_PUBLIC = os.environ.get("RDS_PUBLIC", "false").lower() == "true"
+RDS_WAIT_TIMEOUT = int(os.environ.get("RDS_WAIT_TIMEOUT"))
+RDS_SG_IDS = os.environ.get("RDS_SG_IDS")
+RDS_SG_LIST = RDS_SG_IDS.split(",") if RDS_SG_IDS else None
+RDS_SUBNET_GROUP = os.environ.get("RDS_SUBNET_GROUP")
+EMBEDDING_DIM = int(os.environ.get("EMBEDDING_DIM"))
+
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database schema on application startup"""
+    """
+    Initialize database schema on application startup, and
+    ensure RDS instance and Secrets Manager secret exist.
+    """
     logging.info("Initializing database schema...")
     setup_schema()
     logging.info("Database schema initialized successfully")
+
+    # Prepare a deterministic secret name and ensure credentials exist
+    secret_name = secret_name_for_instance(PREPROV_DB_IDENTIFIER)
+    try:
+        sec_val, sec_arn = ensure_secret(secret_name, username=RDS_MASTER_USER)
+    except Exception as e:
+        logging.exception("Failed to ensure secret in Secrets Manager at startup: %s", e)
+        raise
+
+    # Creds to provision/verify instance
+    master_password = sec_val["password"]
+    master_user = sec_val["username"]
+
+    # Create RDS instance if missing and wait for it to be available
+    try:
+        info = create_preprovisioned_instance_if_missing(
+            db_identifier=PREPROV_DB_IDENTIFIER,
+            master_username=master_user,
+            master_password=master_password,
+            db_name=SHARED_DB_NAME,
+            engine_version=RDS_ENGINE_VERSION,
+            db_instance_class=RDS_INSTANCE_CLASS,
+            allocated_storage=RDS_ALLOCATED_STORAGE,
+            vpc_security_group_ids=RDS_SG_LIST,
+            db_subnet_group_name=RDS_SUBNET_GROUP,
+            publicly_accessible=RDS_PUBLIC,
+            wait_timeout=RDS_WAIT_TIMEOUT,
+        )
+    except Exception as e:
+        logging.exception("Failed to create/wait for RDS instance at startup: %s", e)
+        raise
+
+    # Quick check to see if we can connect to the DB
+    try:
+        connect_db(host=info["address"], port=info["port"], user=master_user, password=master_password, dbname=SHARED_DB_NAME)
+    except Exception as e:
+        logging.exception("Failed DB connection: %s", e)
+        raise
+
+    logging.info("Startup: RDS instance %s available at %s:%s; secret ARN: %s", PREPROV_DB_IDENTIFIER, info["address"], info["port"], sec_arn)
 
 
 origins = [
@@ -259,6 +332,86 @@ async def remove_workflow(workflow_id: int):
         return {"detail": "successfully deleted workflow."}
     else:
         raise HTTPException(status_code=400, detail="Invalid workflow id")
+
+
+@router.post("/workflows/{workflow_id}/deploy")
+@handle_endpoint_exceptions
+def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
+    """
+    SSE POST: assumes startup has provisioned the RDS instance and Secrets Manager secret.
+    Streams: rds-ready (with secret ARN), s3-connected (or s3-error), done.
+    """
+    def event_generator():
+        # Ensure instance is available and get endpoint
+        try:
+            info = describe_instance(PREPROV_DB_IDENTIFIER)
+            address = info["address"]
+            port = info["port"]
+        except Exception as e:
+            yield sse_event({"ok": False, "stage": "rds-describe", "error": str(e)}, event="error")
+            return
+
+        # Get secret ARN and runtime secret
+        secret_name = secret_name_for_instance(PREPROV_DB_IDENTIFIER)
+        try:
+            secret_json, arn = get_secret(secret_name)
+            master_user = secret_json.get("username")
+            master_password = secret_json.get("password")
+        except Exception as e:
+            yield sse_event({"ok": False, "stage": "secrets-get", "error": str(e)}, event="error")
+            return
+
+        # Connect and ensure table and truncate
+        try:
+            conn = connect_db(host=address, port=port, user=master_user, password=master_password, dbname=SHARED_DB_NAME)
+            table_name = ensure_pgvector_and_table(conn, workflow_id=workflow_id, embedding_dim=EMBEDDING_DIM)
+            conn.close()
+        except Exception as e:
+            tb = traceback.format_exc()
+            yield sse_event({"ok": False, "stage": "db-setup", "error": str(e), "trace": tb}, event="error")
+            return
+
+        # Emit rds-ready with secret ARN
+        rds_payload = {
+            "ok": True,
+            "stage": "rds-ready",
+            "db_instance_identifier": PREPROV_DB_IDENTIFIER,
+            "endpoint": address,
+            "port": port,
+            "database": SHARED_DB_NAME,
+            "username_secret_arn": arn,
+            "table_name": table_name,
+            "notes": "The ARN references the master credentials in Secrets Manager. Grant caller IAM permission to read it if client needs credentials."
+        }
+        yield sse_event(rds_payload, event="rds-ready")
+
+        # Connect to S3 using provided credentials
+        try:
+            s3_client = boto3.client(
+                "s3",
+                aws_access_key_id=req.s3_access_key,
+                aws_secret_access_key=req.s3_secret_key,
+                region_name=req.s3_region or None,
+            )
+            try:
+                s3_client.head_bucket(Bucket=req.s3_bucket)
+                yield sse_event({"ok": True, "stage": "s3-connected", "bucket": req.s3_bucket, "region": req.s3_region}, event="s3-connected")
+            except ClientError as e:
+                yield sse_event({"ok": False, "stage": "s3-verify", "error": str(e)}, event="s3-error")
+                return
+        except NoCredentialsError:
+            yield sse_event({"ok": False, "stage": "s3", "error": "invalid S3 credentials"}, event="s3-error")
+            return
+        except EndpointConnectionError as e:
+            yield sse_event({"ok": False, "stage": "s3", "error": str(e)}, event="s3-error")
+            return
+        except Exception as e:
+            yield sse_event({"ok": False, "stage": "s3", "error": str(e)}, event="s3-error")
+            return
+
+        yield sse_event({"ok": True, "stage": "done"}, event="done")
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.exception_handler(Exception)

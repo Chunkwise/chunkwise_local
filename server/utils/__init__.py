@@ -6,6 +6,10 @@ from .extract_metrics import extract_metrics
 from .exception_helpers import handle_endpoint_exceptions
 from .visualization import Visualizer
 from .adjustable_configs import adjustable_configs
+from .deploy_helpers import (
+    secret_name_for_instance,
+    sse_event,
+)
 
 __all__ = [
     "normalize_document",
@@ -16,4 +20,6 @@ __all__ = [
     "handle_endpoint_exceptions",
     "Visualizer",
     "adjustable_configs",
+    "secret_name_for_instance",
+    "sse_event",
 ]
