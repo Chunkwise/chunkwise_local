@@ -122,7 +122,8 @@ async def startup_event():
 
     # Quick check to see if we can connect to the DB
     try:
-        connect_db(host=info["address"], port=info["port"], user=master_user, password=master_password, dbname=SHARED_DB_NAME)
+        connection = connect_db(host=info["address"], port=info["port"], user=master_user, password=master_password, dbname=SHARED_DB_NAME)
+        connection.close()
     except Exception as e:
         logging.exception("Failed DB connection: %s", e)
         raise

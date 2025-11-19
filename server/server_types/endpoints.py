@@ -42,7 +42,6 @@ class Workflow(BaseModel):
 
 
 class DeployRequest(BaseModel):
-    workflow_id: str
     s3_access_key: str
     s3_secret_key: str
     s3_bucket: str
