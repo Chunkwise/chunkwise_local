@@ -5,17 +5,19 @@ from botocore.exceptions import ClientError
 
 sm = boto3.client("secretsmanager")
 
+
 def get_secret(secret_name: str):
     try:
         resp = sm.get_secret_value(SecretId=secret_name)
-        if 'SecretString' in resp:
-            return json.loads(resp['SecretString']), resp.get('ARN')
+        if "SecretString" in resp:
+            return json.loads(resp["SecretString"]), resp.get("ARN")
         else:
-            return None, resp.get('ARN')
+            return None, resp.get("ARN")
     except ClientError as e:
-        if e.response['Error']['Code'] in ('ResourceNotFoundException',):
+        if e.response["Error"]["Code"] in ("ResourceNotFoundException",):
             return None, None
         raise
+
 
 def create_secret(secret_name: str, username: str):
     password = secrets.token_urlsafe(24)
@@ -23,9 +25,10 @@ def create_secret(secret_name: str, username: str):
     resp = sm.create_secret(
         Name=secret_name,
         Description="RDS master credentials for shared workflows DB",
-        SecretString=json.dumps(secret_value)
+        SecretString=json.dumps(secret_value),
     )
-    return secret_value, resp['ARN']
+    return secret_value, resp["ARN"]
+
 
 def ensure_secret(secret_name: str, username: str):
     sec, arn = get_secret(secret_name)

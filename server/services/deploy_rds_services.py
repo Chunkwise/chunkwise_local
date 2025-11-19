@@ -3,9 +3,14 @@ from botocore.exceptions import ClientError
 
 rds = boto3.client("rds")
 
+
 def wait_for_instance_available(db_identifier: str, timeout_sec: int = 1800):
     waiter = rds.get_waiter("db_instance_available")
-    waiter.wait(DBInstanceIdentifier=db_identifier, WaiterConfig={"Delay": 15, "MaxAttempts": max(1, timeout_sec // 15)})
+    waiter.wait(
+        DBInstanceIdentifier=db_identifier,
+        WaiterConfig={"Delay": 15, "MaxAttempts": max(1, timeout_sec // 15)},
+    )
+
 
 def describe_instance(db_identifier: str):
     resp = rds.describe_db_instances(DBInstanceIdentifier=db_identifier)
@@ -22,15 +27,21 @@ def describe_instance(db_identifier: str):
         "engine_version": inst.get("EngineVersion"),
     }
 
+
 def instance_exists(db_identifier: str) -> bool:
     try:
         rds.describe_db_instances(DBInstanceIdentifier=db_identifier)
         return True
     except ClientError as e:
         code = e.response.get("Error", {}).get("Code", "")
-        if code in ("DBInstanceNotFound", "DBInstanceNotFoundFault", "InvalidDBInstanceState"):
+        if code in (
+            "DBInstanceNotFound",
+            "DBInstanceNotFoundFault",
+            "InvalidDBInstanceState",
+        ):
             return False
         raise
+
 
 def create_instance(
     db_identifier: str,
@@ -72,6 +83,7 @@ def create_instance(
 
     resp = rds.create_db_instance(**params)
     return resp
+
 
 def create_preprovisioned_instance_if_missing(
     db_identifier: str,

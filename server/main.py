@@ -94,7 +94,9 @@ async def startup_event():
     try:
         sec_val, sec_arn = ensure_secret(secret_name, username=RDS_MASTER_USER)
     except Exception as e:
-        logging.exception("Failed to ensure secret in Secrets Manager at startup: %s", e)
+        logging.exception(
+            "Failed to ensure secret in Secrets Manager at startup: %s", e
+        )
         raise
 
     # Creds to provision/verify instance
@@ -122,13 +124,25 @@ async def startup_event():
 
     # Quick check to see if we can connect to the DB
     try:
-        connection = connect_db(host=info["address"], port=info["port"], user=master_user, password=master_password, dbname=SHARED_DB_NAME)
+        connection = connect_db(
+            host=info["address"],
+            port=info["port"],
+            user=master_user,
+            password=master_password,
+            dbname=SHARED_DB_NAME,
+        )
         connection.close()
     except Exception as e:
         logging.exception("Failed DB connection: %s", e)
         raise
 
-    logging.info("Startup: RDS instance %s available at %s:%s; secret ARN: %s", PREPROV_DB_IDENTIFIER, info["address"], info["port"], sec_arn)
+    logging.info(
+        "Startup: RDS instance %s available at %s:%s; secret ARN: %s",
+        PREPROV_DB_IDENTIFIER,
+        info["address"],
+        info["port"],
+        sec_arn,
+    )
 
 
 origins = [
@@ -342,6 +356,7 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
     SSE POST: assumes startup has provisioned the RDS instance and Secrets Manager secret.
     Streams: rds-ready (with secret ARN), s3-connected (or s3-error), done.
     """
+
     def event_generator():
         # Ensure instance is available and get endpoint
         try:
@@ -349,7 +364,9 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             address = info["address"]
             port = info["port"]
         except Exception as e:
-            yield sse_event({"ok": False, "stage": "rds-describe", "error": str(e)}, event="error")
+            yield sse_event(
+                {"ok": False, "stage": "rds-describe", "error": str(e)}, event="error"
+            )
             return
 
         # Get secret ARN and runtime secret
@@ -359,17 +376,30 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             master_user = secret_json.get("username")
             master_password = secret_json.get("password")
         except Exception as e:
-            yield sse_event({"ok": False, "stage": "secrets-get", "error": str(e)}, event="error")
+            yield sse_event(
+                {"ok": False, "stage": "secrets-get", "error": str(e)}, event="error"
+            )
             return
 
         # Connect and ensure table and truncate
         try:
-            conn = connect_db(host=address, port=port, user=master_user, password=master_password, dbname=SHARED_DB_NAME)
-            table_name = ensure_pgvector_and_table(conn, workflow_id=workflow_id, embedding_dim=EMBEDDING_DIM)
+            conn = connect_db(
+                host=address,
+                port=port,
+                user=master_user,
+                password=master_password,
+                dbname=SHARED_DB_NAME,
+            )
+            table_name = ensure_pgvector_and_table(
+                conn, workflow_id=workflow_id, embedding_dim=EMBEDDING_DIM
+            )
             conn.close()
         except Exception as e:
             tb = traceback.format_exc()
-            yield sse_event({"ok": False, "stage": "db-setup", "error": str(e), "trace": tb}, event="error")
+            yield sse_event(
+                {"ok": False, "stage": "db-setup", "error": str(e), "trace": tb},
+                event="error",
+            )
             return
 
         # Emit rds-ready with secret ARN
@@ -382,7 +412,7 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             "database": SHARED_DB_NAME,
             "username_secret_arn": arn,
             "table_name": table_name,
-            "notes": "The ARN references the master credentials in Secrets Manager. Grant caller IAM permission to read it if client needs credentials."
+            "notes": "The ARN references the master credentials in Secrets Manager. Grant caller IAM permission to read it if client needs credentials.",
         }
         yield sse_event(rds_payload, event="rds-ready")
 
@@ -396,18 +426,36 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             )
             try:
                 s3_client.head_bucket(Bucket=req.s3_bucket)
-                yield sse_event({"ok": True, "stage": "s3-connected", "bucket": req.s3_bucket, "region": req.s3_region}, event="s3-connected")
+                yield sse_event(
+                    {
+                        "ok": True,
+                        "stage": "s3-connected",
+                        "bucket": req.s3_bucket,
+                        "region": req.s3_region,
+                    },
+                    event="s3-connected",
+                )
             except ClientError as e:
-                yield sse_event({"ok": False, "stage": "s3-verify", "error": str(e)}, event="s3-error")
+                yield sse_event(
+                    {"ok": False, "stage": "s3-verify", "error": str(e)},
+                    event="s3-error",
+                )
                 return
         except NoCredentialsError:
-            yield sse_event({"ok": False, "stage": "s3", "error": "invalid S3 credentials"}, event="s3-error")
+            yield sse_event(
+                {"ok": False, "stage": "s3", "error": "invalid S3 credentials"},
+                event="s3-error",
+            )
             return
         except EndpointConnectionError as e:
-            yield sse_event({"ok": False, "stage": "s3", "error": str(e)}, event="s3-error")
+            yield sse_event(
+                {"ok": False, "stage": "s3", "error": str(e)}, event="s3-error"
+            )
             return
         except Exception as e:
-            yield sse_event({"ok": False, "stage": "s3", "error": str(e)}, event="s3-error")
+            yield sse_event(
+                {"ok": False, "stage": "s3", "error": str(e)}, event="s3-error"
+            )
             return
 
         yield sse_event({"ok": True, "stage": "done"}, event="done")
