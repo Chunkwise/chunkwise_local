@@ -20,20 +20,16 @@ This service processes documents. It takes a document from an S3 bucket, chunks 
 
 4. Create a vector extension and tables (see `vector_schema.sql` in `chunkwise_local` root)
 
-For testing the processing service by itself, create an entry in the `deployment` table, eg.
-
-`INSERT INTO deployment (name, chunker_config) VALUES (localtest, testconfig)`
-
 5. Create a .env with the following variables:
 
 BUCKET_NAME=local
 DOCUMENT_KEY="../evaluation/data/sample_document_large.txt"
 CHUNK_CONFIG={"provider":"langchain","chunk_size":300,"chunk_overlap":0,"chunker_type":"token"}
 OPENAI_API_KEY=
-DEPLOYMENT_ID=1
 
 DB_HOST=localhost
 DB_NAME=
+DB_TABLE=workflow_1
 DB_USER=
 DB_PASSWORD=
 

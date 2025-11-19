@@ -19,6 +19,7 @@ life_of_johnson.txt
 - Time
 
 14.14 seconds
+10.88 seconds (1 table instead of 2)
 
 ### Trial 2
 

@@ -24,12 +24,26 @@ bucket = os.getenv("BUCKET_NAME")
 document_key = os.getenv("DOCUMENT_KEY")
 config = os.getenv("CHUNK_CONFIG")
 openai_api_key = os.getenv("OPENAI_API_KEY")
-deployment_id = os.getenv("DEPLOYMENT_ID")
 
 host = os.getenv("DB_HOST")
 database = os.getenv("DB_NAME")
+table = os.getenv("DB_TABLE")
 user = os.getenv("DB_USER")
 password = os.getenv("DB_PASSWORD")
+
+
+def normalize_document(content: str) -> str:
+    """Normalize smart quotes and dashes in the document to standard ASCII characters."""
+
+    # Normalize smart quotes and dashes for consistency
+    content = content.replace("\u2018", "'")  #  → '
+    content = content.replace("\u2019", "'")  # ’ → '
+    content = content.replace("\u201c", '"')  # ” → "
+    content = content.replace("\u201d", '"')  # " → "
+    content = content.replace("\u2013", "-")  # – → -
+    content = content.replace("\u2014", "-")  # — → -
+
+    return content
 
 
 def get_db_connection():
@@ -79,7 +93,7 @@ def get_batch_embeddings(chunks, model="text-embedding-3-small", max_tokens=2800
 
 
 def main():
-    # 1. Read the document from S3
+    # 1. Read the document from S3 and normalize
     if bucket == "local":
         with open(document_key, "r") as f:
             text = f.read()
@@ -87,14 +101,15 @@ def main():
         s3 = boto3.client("s3")
         obj = s3.get_object(Bucket=bucket, Key=document_key)
         text = obj["Body"].read().decode("utf-8")
+    normalized_text = normalize_document(text)
 
     # 2. Chunk
     chunker_config = TypeAdapter(ChunkerConfig).validate_json(config)
     chunker = create_chunker(chunker_config)
     chunks = (
-        chunker.split_text(text)
+        chunker.split_text(normalized_text)
         if hasattr(chunker, "split_text")
-        else [chunk.text for chunk in chunker(text)]
+        else [chunk.text for chunk in chunker(normalized_text)]
     )
 
     # 3. Embed
@@ -105,16 +120,16 @@ def main():
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        insert_sql = """
-            INSERT INTO chunk
-            (deployment_id, document_key, chunk_id, chunk_text, embedding)
-            VALUES (%s, %s, %s, %s, %s)
+        insert_sql = f"""
+            INSERT INTO {table}
+            (document_key, chunk_id, chunk_text, embedding)
+            VALUES (%s, %s, %s, %s)
         """
 
         for index, chunk in enumerate(chunks):
             cursor.execute(
                 insert_sql,
-                (deployment_id, document_key, index, chunk, embeddings[index]),
+                (document_key, index, chunk, embeddings[index]),
             )
     except Exception as e:
         print(("Error creating workflow.", e))
