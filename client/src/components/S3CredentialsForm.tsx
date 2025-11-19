@@ -11,6 +11,7 @@ const initialCredentials: S3Credentials = {
   access_key: "",
   secret_key: "",
   bucket_name: "",
+  region: "",
 };
 
 const S3CredentialsForm = ({
@@ -88,6 +89,22 @@ const S3CredentialsForm = ({
           autoComplete="off"
           value={formState.bucket_name}
           onChange={(event) => handleChange("bucket_name", event)}
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <div className="field">
+        <label className="label" htmlFor="region">
+          Region (optional)
+        </label>
+        <input
+          className="input"
+          id="region"
+          type="text"
+          autoComplete="off"
+          placeholder="us-east-1"
+          value={formState.region}
+          onChange={(event) => handleChange("region", event)}
           disabled={isSubmitting}
         />
       </div>
