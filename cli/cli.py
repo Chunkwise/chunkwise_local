@@ -1,3 +1,4 @@
+import os
 import typer
 from rich import print
 
@@ -5,12 +6,21 @@ app = typer.Typer()
 
 
 def display_logo():
-    pass
+    with open("logo.txt") as logo_file:
+        logo_text = logo_file.read()
+
+    print(f"[#00BCF7]{logo_text}")
+
+    with open("chunkwise_monospace.txt") as name_file:
+        text = name_file.read()
+
+    print(f"[white]{text}")
 
 
 @app.command()
 def deploy(openai_api_key: str, region: str = "us-east-1a", confirm: bool = True):
     if confirm:
+        display_logo()
         print(f"creating VPC in {region}...")
         print(f"creating secret {openai_api_key}...")
         print("AWS Stack deployed")
