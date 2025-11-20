@@ -9,7 +9,7 @@ def display_logo():
 
 
 @app.command()
-def deploy(openai_api_key: str, region: str, confirm: bool):
+def deploy(openai_api_key: str, region: str = "us-east-1a", confirm: bool = True):
     if confirm:
         print(f"creating VPC in {region}...")
         print(f"creating secret {openai_api_key}...")
