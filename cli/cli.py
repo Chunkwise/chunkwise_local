@@ -2,6 +2,7 @@ import os
 import json
 import typer
 from rich import print
+from rich.pretty import pprint
 from rich.prompt import Prompt, Confirm, InvalidResponse
 
 app = typer.Typer()
@@ -77,7 +78,8 @@ def deploy():
         }
         options_json = json.dumps(options)
 
-        print(f"[green]Deploying stack with options: {options}...")
+        print(f"[green]Deploying stack with options:")
+        pprint(options, expand_all=True)
     else:
         print(f"[red]Deployment cancelled")
 
