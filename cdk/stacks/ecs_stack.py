@@ -82,7 +82,7 @@ class EcsStack(Stack):
         # Allow ECS tasks to connect to Vector RDS
         ec2.CfnSecurityGroupIngress(
             self,
-            "ProductionRdsIngressFromEcs",
+            "VectorRdsIngressFromEcs",
             ip_protocol="tcp",
             from_port=config.VECTOR_RDS_CONFIG["port"],
             to_port=config.VECTOR_RDS_CONFIG["port"],
@@ -371,9 +371,6 @@ class EcsStack(Stack):
                 "DB_USER": ecs.Secret.from_secrets_manager(
                     self.database.secret, "username"
                 ),
-                "OPENAI_API_KEY": ecs.Secret.from_secrets_manager(
-                    self._get_openai_secret()
-                ),
             },
             environment={
                 # Evaluation Database
@@ -381,9 +378,9 @@ class EcsStack(Stack):
                 "DB_NAME": config.RDS_CONFIG["database_name"],
                 "DB_PORT": str(config.RDS_CONFIG["port"]),
                 # Vector Database (for deploy endpoint)
-                "VECTOR_DB_HOST": self.production_database.instance_endpoint.hostname,
-                "VECTOR_DB_NAME": config.PRODUCTION_RDS_CONFIG["database_name"],
-                "VECTOR_DB_PORT": str(config.PRODUCTION_RDS_CONFIG["port"]),
+                "VECTOR_DB_HOST": self.vector_database.instance_endpoint.hostname,
+                "VECTOR_DB_NAME": config.VECTOR_RDS_CONFIG["database_name"],
+                "VECTOR_DB_PORT": str(config.VECTOR_RDS_CONFIG["port"]),
                 # S3
                 "S3_BUCKET_NAME": self.documents_bucket.bucket_name,
                 # Service discovery endpoints

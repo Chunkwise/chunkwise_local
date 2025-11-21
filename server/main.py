@@ -63,7 +63,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 
-# OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 # Configuration for RDS via env
 # PREPROV_DB_IDENTIFIER = os.environ.get("PREPROV_DB_IDENTIFIER", "shared-wf-db")

@@ -41,16 +41,40 @@ ECS_CONFIG = {
     },
 }
 
-# RDS Configuration
+# RDS Configuration (Evaluation Database)
 RDS_CONFIG = {
     "instance_type": "t4g.micro",
-    "database_name": "chunkwise",
+    "database_name": "chunkwise_evaluation",
     "port": 5432,
     "allocated_storage": 20,  # GB
     "max_allocated_storage": 100,  # GB - for autoscaling
     "backup_retention_days": 0,
     "multi_az": False,  # Set to True for production
     "deletion_protection": False,  # Set to True for production
+    "publicly_accessible": False,  # Keep evaluation DB private
+}
+
+# Vector RDS Configuration (Deployment Database)
+VECTOR_RDS_CONFIG = {
+    "instance_type": "t4g.micro",  # Same as evaluation DB
+    "database_name": "chunkwise_production",
+    "port": 5432,
+    "allocated_storage": 100,  # GB - larger initial size
+    "max_allocated_storage": 500,  # GB - room to grow
+    "backup_retention_days": 3,
+    "multi_az": False,  # Set to True for production HA
+    "deletion_protection": False,  # Set to True for production
+    "publicly_accessible": True,  # Allow users to export embeddings
+    "allowed_cidrs": [],
+}
+
+# AWS Batch Configuration
+BATCH_CONFIG = {
+    "max_vcpus": 32,  # Maximum vCPUs for compute environment
+    "job_cpu": 1024,  # 1 vCPU per job
+    "job_memory": 2048,  # 2 GB per job
+    "assign_public_ip": True,  # Use public IP to save NAT Gateway costs
+    "log_retention_days": 7,  # CloudWatch Logs retention
 }
 
 # S3 Configuration
@@ -58,7 +82,6 @@ S3_CONFIG = {"bucket_name_prefix": "chunkwise"}  # Will append account ID
 
 # Environment Variables
 # WARNING: These will be stored as plaintext in ECS task definitions
-# For production, use AWS Secrets Manager
 ENVIRONMENT_VARIABLES = {
     # Database credentials (will be set from RDS stack)
     # "DB_HOST": "",  # Set dynamically

@@ -19,7 +19,6 @@ To activate the virtual environment use `eval $(poetry env activate)`
 
 After adding things for s3. add these feilds for the Amazon RDS instance.
 
-OPENAI_API_KEY=
 DB_NAME=
 DB_USER=
 DB_PASSWORD=
