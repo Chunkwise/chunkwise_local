@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "processing"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.13,<4.0.0"
+python-dotenv = "^1.2.1"
+chunkwise-core = { git = "https://github.com/Chunkwise/chunkwise_core.git", extras = ["chunkers"] }
+boto3 = ">=1.40.68,<2.0.0"
+psycopg2 = "^2.9.11"
+openai = "^2.8.1"
+tiktoken = "^0.12.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

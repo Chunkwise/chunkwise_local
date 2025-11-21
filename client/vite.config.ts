@@ -6,7 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": "http://localhost:8000",
+      "/api": {
+        target: "http://chunkwise-alb-1341063601.us-east-1.elb.amazonaws.com",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });
