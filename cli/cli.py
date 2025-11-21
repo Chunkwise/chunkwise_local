@@ -62,6 +62,7 @@ def deploy():
             "us-east-2",
             "us-west-1",
             "us-west-2",
+            "default",
         ],
         show_choices=False,
         default="us-east-1",

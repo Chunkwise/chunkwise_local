@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import json
 import aws_cdk as cdk
 from stacks.network_stack import NetworkStack
 from stacks.database_stack import DatabaseStack
@@ -8,10 +9,22 @@ from stacks.load_balancer_stack import LoadBalancerStack
 
 app = cdk.App()
 
-# Get environment variables or use defaults
+# CDK now expects a json string as context
+options = app.node.try_get_context("options")
+options_json = json.loads(options)
+
+if (
+    not options
+    or not isinstance(options_json, dict)
+    or not "openai_api_key" in options_json
+):
+    raise ValueError("Must provide a key and region")
+
+
+# Get environment variables or use defaults, for the reason use the one passed in as context
 env = cdk.Environment(
     account=os.getenv("CDK_DEFAULT_ACCOUNT"),
-    region=os.getenv("CDK_DEFAULT_REGION", "us-east-1"),
+    region=options_json["region"] or os.getenv("CDK_DEFAULT_REGION", "us-east-1"),
 )
 
 # Stack 1: Network Infrastructure (VPC, Subnets, NAT Gateways, etc.)
@@ -39,6 +52,7 @@ ecs_stack = EcsStack(
     database=database_stack.database,
     env=env,
     description="Chunkwise ECS Cluster and Services",
+    openai_api_key=options_json["openai_api_key"],
 )
 
 # Stack 4: Load Balancer
