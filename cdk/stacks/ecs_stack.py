@@ -37,12 +37,14 @@ class EcsStack(Stack):
         construct_id: str,
         vpc: ec2.Vpc,
         database: rds.DatabaseInstance,
+        vector_database: rds.DatabaseInstance,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         self.vpc = vpc
         self.database = database
+        self.vector_database = vector_database
 
         # Create S3 bucket for document storage
         self.documents_bucket = s3.Bucket(
@@ -65,23 +67,28 @@ class EcsStack(Stack):
             allow_all_outbound=True,  # Allow outbound for API calls, ECR pulls, etc.
         )
 
-        # Create security group ingress as CloudFormation resource
+        # Allow ECS tasks to connect to Evaluation RDS
         ec2.CfnSecurityGroupIngress(
             self,
-            "RdsIngressFromEcs",
+            "EvaluationRdsIngressFromEcs",
             ip_protocol="tcp",
             from_port=config.RDS_CONFIG["port"],
             to_port=config.RDS_CONFIG["port"],
             source_security_group_id=self.ecs_security_group.security_group_id,
             group_id=database.connections.security_groups[0].security_group_id,
-            description="Allow ECS tasks to connect to RDS",
+            description="Allow ECS tasks to connect to Evaluation RDS",
         )
 
-        # Allow ECS tasks to communicate with each other
-        self.ecs_security_group.add_ingress_rule(
-            peer=self.ecs_security_group,
-            connection=ec2.Port.tcp(80),
-            description="Allow service-to-service communication",
+        # Allow ECS tasks to connect to Vector RDS
+        ec2.CfnSecurityGroupIngress(
+            self,
+            "ProductionRdsIngressFromEcs",
+            ip_protocol="tcp",
+            from_port=config.VECTOR_RDS_CONFIG["port"],
+            to_port=config.VECTOR_RDS_CONFIG["port"],
+            source_security_group_id=self.ecs_security_group.security_group_id,
+            group_id=vector_database.connections.security_groups[0].security_group_id,
+            description="Allow ECS server to connect to Vector RDS for table management",
         )
 
         # Allow ECS tasks to communicate with each other (for Cloud Map)
@@ -134,6 +141,7 @@ class EcsStack(Stack):
 
         # Allow reading database credentials from Secrets Manager
         self.database.secret.grant_read(self.task_execution_role)
+        self.vector_database.secret.grant_read(self.task_execution_role)
 
         # Task Role - used by the application code running in containers
         self.task_role = iam.Role(
@@ -142,6 +150,38 @@ class EcsStack(Stack):
 
         # Grant S3 access to task role
         self.documents_bucket.grant_read_write(self.task_role)
+
+        # Grant permissions for server to interact with AWS Batch (will be used by the deploy endpoint)
+        self.task_role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "batch:SubmitJob",
+                    "batch:DescribeJobs",
+                    "batch:TerminateJob",
+                    "batch:ListJobs",
+                ],
+                resources=["*"],  # Batch job ARNs are generated dynamically
+            )
+        )
+
+        # Grant permissions to describe RDS instances (to get vector DB endpoint)
+        self.task_role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "rds:DescribeDBInstances",
+                    "rds:ListTagsForResource",
+                ],
+                resources=["*"],
+            )
+        )
+
+        # Grant permissions to read vector DB credentials
+        self.vector_database.secret.grant_read(self.task_role)
+
+        # Note: iam:PassRole permission for Batch roles will be added by BatchStack
+        # when it creates the Batch IAM roles, to avoid circular dependency
 
     def _get_openai_secret(self):
         """Get reference to OpenAI API key secret"""
@@ -336,9 +376,15 @@ class EcsStack(Stack):
                 ),
             },
             environment={
+                # Evaluation Database
                 "DB_HOST": self.database.instance_endpoint.hostname,
                 "DB_NAME": config.RDS_CONFIG["database_name"],
                 "DB_PORT": str(config.RDS_CONFIG["port"]),
+                # Vector Database (for deploy endpoint)
+                "VECTOR_DB_HOST": self.production_database.instance_endpoint.hostname,
+                "VECTOR_DB_NAME": config.PRODUCTION_RDS_CONFIG["database_name"],
+                "VECTOR_DB_PORT": str(config.PRODUCTION_RDS_CONFIG["port"]),
+                # S3
                 "S3_BUCKET_NAME": self.documents_bucket.bucket_name,
                 # Service discovery endpoints
                 "CHUNKING_SERVICE_HOST": f"{config.CLOUD_MAP_CONFIG['services']['chunking']}.{config.CLOUD_MAP_CONFIG['namespace_name']}",
