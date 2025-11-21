@@ -12,11 +12,12 @@ from .db_services import (
     delete_workflow,
     get_all_workflows,
     get_workflow_info,
+    get_chunker_config,
 )
 
 from .deploy_rds_services import (
     create_preprovisioned_instance_if_missing,
-    describe_instance
+    describe_instance,
 )
 
 from .deploy_secrets_services import (
@@ -42,6 +43,7 @@ __all__ = [
     "delete_workflow",
     "get_all_workflows",
     "get_workflow_info",
+    "get_chunker_config",
     "create_preprovisioned_instance_if_missing",
     "describe_instance",
     "ensure_secret",
