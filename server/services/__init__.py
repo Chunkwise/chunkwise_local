@@ -13,21 +13,8 @@ from .db_services import (
     get_all_workflows,
     get_workflow_info,
     get_chunker_config,
-)
-
-from .deploy_rds_services import (
-    create_preprovisioned_instance_if_missing,
-    describe_instance,
-)
-
-from .deploy_secrets_services import (
-    ensure_secret,
-    get_secret,
-)
-
-from .deploy_db_services import (
-    connect_db,
     ensure_pgvector_and_table,
+    get_db_connection,
 )
 
 __all__ = [
@@ -44,10 +31,5 @@ __all__ = [
     "get_all_workflows",
     "get_workflow_info",
     "get_chunker_config",
-    "create_preprovisioned_instance_if_missing",
-    "describe_instance",
-    "ensure_secret",
-    "get_secret",
-    "connect_db",
     "ensure_pgvector_and_table",
 ]
