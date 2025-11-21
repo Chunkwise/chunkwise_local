@@ -9,6 +9,7 @@ DOCKER_IMAGES = {
     "server": "public.ecr.aws/x7l1y0z0/chunkwise-server:latest",
     "chunking": "public.ecr.aws/x7l1y0z0/chunkwise-chunking:latest",
     "evaluation": "public.ecr.aws/x7l1y0z0/chunkwise-evaluation:latest",
+    "processing": "public.ecr.aws/x7l1y0z0/chunkwise-processing:latest",
 }
 
 # VPC Configuration
