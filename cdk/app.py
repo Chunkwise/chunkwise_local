@@ -11,16 +11,20 @@ app = cdk.App()
 
 # CDK now expects a json string as context
 options = app.node.try_get_context("options")
-options_json = json.loads(options)
+if options:
+    options_json = json.loads(options)
 
-if not isinstance(options_json, dict):
-    raise AttributeError("Must provide an options in JSON format")
+    if not isinstance(options_json, dict):
+        raise AttributeError("Must provide an options in JSON format")
+else:
+    options_json = None
 
 
 # Get environment variables or use defaults, for the reason use the one passed in as context
 env = cdk.Environment(
     account=os.getenv("CDK_DEFAULT_ACCOUNT"),
-    region=options_json.get("region") or os.getenv("CDK_DEFAULT_REGION", "us-east-1"),
+    region=(options_json and options_json.get("region"))
+    or os.getenv("CDK_DEFAULT_REGION", "us-east-1"),
 )
 
 # Stack 1: Network Infrastructure (VPC, Subnets, NAT Gateways, etc.)
@@ -48,7 +52,6 @@ ecs_stack = EcsStack(
     database=database_stack.database,
     env=env,
     description="Chunkwise ECS Cluster and Services",
-    openai_api_key=options_json["openai_api_key"],
 )
 
 # Stack 4: Load Balancer

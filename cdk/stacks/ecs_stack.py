@@ -10,7 +10,6 @@ from aws_cdk import (
     aws_rds as rds,
     RemovalPolicy,
     Duration,
-    secretsmanager,
 )
 from constructs import Construct
 import config
@@ -38,14 +37,12 @@ class EcsStack(Stack):
         construct_id: str,
         vpc: ec2.Vpc,
         database: rds.DatabaseInstance,
-        openai_api_key: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         self.vpc = vpc
         self.database = database
-        self.OPENAI_API_KEY = openai_api_key
 
         # Create S3 bucket for document storage
         self.documents_bucket = s3.Bucket(
@@ -146,15 +143,15 @@ class EcsStack(Stack):
         # Grant S3 access to task role
         self.documents_bucket.grant_read_write(self.task_role)
 
-    # def _get_openai_secret(self):
-    #     """Get reference to OpenAI API key secret"""
-    #     if not hasattr(self, "_openai_secret"):
-    #         self._openai_secret = secretsmanager.Secret.from_secret_name_v2(
-    #             self, "OpenAISecret", secret_name="chunkwise/openai-api-key"
-    #         )
-    #         # Grant read access to task execution role
-    #         self._openai_secret.grant_read(self.task_execution_role)
-    #     return self._openai_secret
+    def _get_openai_secret(self):
+        """Get reference to OpenAI API key secret"""
+        if not hasattr(self, "_openai_secret"):
+            self._openai_secret = secretsmanager.Secret.from_secret_name_v2(
+                self, "OpenAISecret", secret_name="chunkwise/openai-api-key"
+            )
+            # Grant read access to task execution role
+            self._openai_secret.grant_read(self.task_execution_role)
+        return self._openai_secret
 
     def _create_log_group(self, service_name: str) -> logs.LogGroup:
         """Create CloudWatch log group for a service"""
@@ -191,7 +188,9 @@ class EcsStack(Stack):
                 stream_prefix="chunking", log_group=log_group
             ),
             secrets={
-                "OPENAI_API_KEY": self.OPENAI_API_KEY,
+                "OPENAI_API_KEY": ecs.Secret.from_secrets_manager(
+                    self._get_openai_secret()
+                ),
             },
             environment={
                 "S3_BUCKET_NAME": self.documents_bucket.bucket_name,
@@ -257,7 +256,9 @@ class EcsStack(Stack):
                 stream_prefix="evaluation", log_group=log_group
             ),
             secrets={
-                "OPENAI_API_KEY": self.OPENAI_API_KEY,
+                "OPENAI_API_KEY": ecs.Secret.from_secrets_manager(
+                    self._get_openai_secret()
+                ),
             },
             environment={
                 "S3_BUCKET_NAME": self.documents_bucket.bucket_name,
@@ -330,7 +331,9 @@ class EcsStack(Stack):
                 "DB_USER": ecs.Secret.from_secrets_manager(
                     self.database.secret, "username"
                 ),
-                "OPENAI_API_KEY": self.OPENAI_API_KEY,
+                "OPENAI_API_KEY": ecs.Secret.from_secrets_manager(
+                    self._get_openai_secret()
+                ),
             },
             environment={
                 "DB_HOST": self.database.instance_endpoint.hostname,

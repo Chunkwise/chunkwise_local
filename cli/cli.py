@@ -1,11 +1,18 @@
 import os
 import json
+import subprocess
+from pathlib import Path
 import typer
 from rich import print
 from rich.pretty import pprint
 from rich.prompt import Prompt, Confirm, InvalidResponse
 
+# aws secretsmanager create-secret --name chunkwise/openai-api-key --secret-string aklsdjlkasjdlkjsa
+# aws secretsmanager delete-secret --secret-id chunkwise/openai-api-key --force-delete-without-recovery --region us-east-1
+
 app = typer.Typer()
+
+CDK_DIR = Path(__file__).resolve().parent.parent / "cdk"
 
 
 def validate_key(key):
@@ -25,6 +32,121 @@ def display_logo():
     print(f"[white]{text}")
 
 
+def ensure_cdk_dependencies():
+    """
+    Install CDK Python dependencies if they are not installed.
+    Looks for requirements.txt or pyproject.toml inside the CDK directory.
+    """
+
+    req_file = CDK_DIR / "requirements.txt"
+
+    if req_file.exists():
+        typer.echo("📦 Ensuring CDK dependencies with pip...")
+        cmd = ["pip", "install", "-r", "requirements.txt"]
+    else:
+        typer.echo("⚠️ No dependency file found in CDK directory.")
+        return
+
+    # Install inside the CDK directory
+    proc = subprocess.Popen(
+        cmd,
+        cwd=CDK_DIR,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+
+    for line in proc.stdout:
+        typer.echo(line.rstrip())
+
+    proc.wait()
+
+    if proc.returncode != 0:
+        typer.echo("❌ CDK dependency installation failed.")
+        raise typer.Exit(code=1)
+
+    typer.echo("✅ CDK dependencies ready!")
+
+
+def run_cdk_command(*args):
+    """
+    Runs a CDK command inside the CDK directory.
+    Streams output live and preserves exit codes.
+    """
+
+    ensure_cdk_dependencies()
+
+    typer.echo(f"👉 Running: cdk {' '.join(args)} (in {CDK_DIR})")
+
+    try:
+        proc = subprocess.Popen(
+            ["cdk"] + list(args),
+            cwd=CDK_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        # Stream output line-by-line
+        for line in proc.stdout:
+            typer.echo(line.rstrip())
+
+        proc.wait()
+
+        if proc.returncode != 0:
+            raise typer.Exit(code=proc.returncode)
+
+        typer.echo("✅ Stacks deployed!")
+
+    except FileNotFoundError:
+        typer.echo("❌ Error: CDK is not installed or not in PATH.")
+        raise typer.Exit(code=1)
+
+
+def create_secret(secret_name, secret_value):
+    """
+    Runs a AWS CLI command inside to create a secret.
+    """
+
+    typer.echo(
+        f"👉 Running: aws secretsmanager create-secret --name {secret_name} --secret-string *******"
+    )
+
+    try:
+        proc = subprocess.Popen(
+            [
+                "aws",
+                "secretsmanager",
+                "create-secret",
+                "--name",
+                secret_name,
+                "--secret-string",
+                secret_value,
+            ],
+            cwd=CDK_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        # Stream output line-by-line
+        for line in proc.stdout:
+            typer.echo(line.rstrip())
+
+        proc.wait()
+
+        if proc.returncode != 0:
+            raise typer.Exit(code=proc.returncode)
+
+        typer.echo("✅ AWS Secret created!")
+
+    except FileNotFoundError:
+        typer.echo("❌ Error: CLI is not installed or not in PATH.")
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def deploy():
     """
@@ -39,8 +161,8 @@ def deploy():
         f"[#00BCF7]OpenAI Api key", password=False
     )  # Could make password True to hide while typing
     print()
-
     validate_key(openai_api_key)
+
     region = Prompt.ask(
         f"[#00BCF7]What region would you like to deploy Chunkwise in?",
         # Default available regions
@@ -62,10 +184,10 @@ def deploy():
             "us-east-2",
             "us-west-1",
             "us-west-2",
-            "default",
+            "my default",
         ],
         show_choices=False,
-        default="us-east-1",
+        default="my default",
     )
     print()
 
@@ -74,13 +196,19 @@ def deploy():
 
     if confirm:
         options = {
-            "openai_api_key": openai_api_key,
-            "region": region,
+            "region": "" if region == "my default" else region,
         }
         options_json = json.dumps(options)
 
-        print(f"[green]Deploying stack with options:")
-        pprint(options, expand_all=True)
+        create_secret("chunkwise/openai-api-key", openai_api_key)
+        run_cdk_command(
+            "deploy",
+            "--all",
+            "--require-approval",
+            "never",
+            "-c",
+            f"options={options_json}",
+        )
     else:
         print(f"[red]Deployment cancelled")
 
@@ -90,7 +218,10 @@ def destroy():
     """
     Calls the cdk destroy command.
     """
-    print("AWS Stack destroyed")
+    run_cdk_command("destroy", "ChunkwiseEcsStack", "--force")
+    run_cdk_command("destroy", "ChunkwiseLoadBalancerStack", "--force")
+    run_cdk_command("destroy", "ChunkwiseDatabaseStack", "--force")
+    run_cdk_command("destroy", "ChunkwiseNetworkStack", "--force")
 
 
 @app.command()
