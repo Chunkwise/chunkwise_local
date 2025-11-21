@@ -7,6 +7,7 @@ import os
 import traceback
 import re
 import logging
+import hashlib
 from server_types import (
     VisualizeResponse,
     EvaluationResponse,
@@ -38,6 +39,7 @@ from services import (
     delete_workflow,
     get_all_workflows,
     get_workflow_info,
+    get_chunker_config,
     create_preprovisioned_instance_if_missing,
     describe_instance,
     ensure_secret,
@@ -48,8 +50,6 @@ from services import (
 from fastapi import FastAPI, APIRouter, Body, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError, EndpointConnectionError
 
@@ -63,19 +63,36 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 
+# OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
 # Configuration for RDS via env
-PREPROV_DB_IDENTIFIER = os.environ.get("PREPROV_DB_IDENTIFIER", "shared-wf-db")
-SHARED_DB_NAME = os.environ.get("SHARED_DB_NAME")
-RDS_MASTER_USER = os.environ.get("RDS_MASTER_USER")
-RDS_INSTANCE_CLASS = os.environ.get("RDS_INSTANCE_CLASS")
-RDS_ENGINE_VERSION = os.environ.get("RDS_ENGINE_VERSION")
-RDS_ALLOCATED_STORAGE = int(os.environ.get("RDS_ALLOCATED_STORAGE"))
-RDS_PUBLIC = os.environ.get("RDS_PUBLIC", "true").lower() == "true"
-RDS_WAIT_TIMEOUT = int(os.environ.get("RDS_WAIT_TIMEOUT"))
-RDS_SG_IDS = os.environ.get("RDS_SG_IDS")
-RDS_SG_LIST = RDS_SG_IDS.split(",") if RDS_SG_IDS else None
-RDS_SUBNET_GROUP = os.environ.get("RDS_SUBNET_GROUP")
-EMBEDDING_DIM = int(os.environ.get("EMBEDDING_DIM"))
+# PREPROV_DB_IDENTIFIER = os.environ.get("PREPROV_DB_IDENTIFIER", "shared-wf-db")
+# SHARED_DB_NAME = os.environ.get("SHARED_DB_NAME")
+# RDS_MASTER_USER = os.environ.get("RDS_MASTER_USER")
+# RDS_INSTANCE_CLASS = os.environ.get("RDS_INSTANCE_CLASS")
+# RDS_ENGINE_VERSION = os.environ.get("RDS_ENGINE_VERSION")
+# RDS_ALLOCATED_STORAGE = int(os.environ.get("RDS_ALLOCATED_STORAGE"))
+# RDS_PUBLIC = os.environ.get("RDS_PUBLIC", "true").lower() == "true"
+# RDS_WAIT_TIMEOUT = int(os.environ.get("RDS_WAIT_TIMEOUT"))
+# RDS_SG_IDS = os.environ.get("RDS_SG_IDS")
+# RDS_SG_LIST = RDS_SG_IDS.split(",") if RDS_SG_IDS else None
+# RDS_SUBNET_GROUP = os.environ.get("RDS_SUBNET_GROUP")
+# EMBEDDING_DIM = int(os.environ.get("EMBEDDING_DIM"))
+PREPROV_DB_IDENTIFIER = "shared-wf-db"
+SHARED_DB_NAME = "shared_workflows_db"
+RDS_MASTER_USER = "workflow_admin"
+RDS_INSTANCE_CLASS = "db.t4g.micro"
+RDS_ENGINE_VERSION = "17.6"
+RDS_ALLOCATED_STORAGE = 20
+RDS_PUBLIC = True
+RDS_WAIT_TIMEOUT = 1800
+RDS_SG_LIST = ["sg-0f6017ebfe24c5d18"]
+RDS_SUBNET_GROUP = (
+    "chunkwisedatabasestack-chunkwisedatabasesubnetgroup40683a3c-tl3pubq3rvt7"
+)
+EMBEDDING_DIM = 1536
+# master_password = "postgres"
+# master_user = "postgres"
 
 
 @app.on_event("startup")
@@ -350,11 +367,13 @@ async def remove_workflow(workflow_id: int):
 
 @router.post("/workflows/{workflow_id}/deploy")
 @handle_endpoint_exceptions
-def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
+async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
     """
     SSE POST: assumes startup has provisioned the RDS instance and Secrets Manager secret.
     Streams: rds-ready (with secret ARN), s3-connected (or s3-error), done.
     """
+
+    chunker_config = get_chunker_config(workflow_id)
 
     def event_generator():
         # Ensure instance is available and get endpoint
@@ -381,6 +400,7 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             return
 
         # Connect and ensure table and truncate
+        conn = None
         try:
             conn = connect_db(
                 host=address,
@@ -392,7 +412,6 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             table_name = ensure_pgvector_and_table(
                 conn, workflow_id=workflow_id, embedding_dim=EMBEDDING_DIM
             )
-            conn.close()
         except Exception as e:
             tb = traceback.format_exc()
             yield sse_event(
@@ -400,6 +419,9 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 event="error",
             )
             return
+        finally:
+            if conn:
+                conn.close()
 
         # Emit rds-ready with secret ARN
         rds_payload = {
@@ -410,6 +432,7 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             "port": port,
             "database": SHARED_DB_NAME,
             "username_secret_arn": arn,
+            # "username_secret_arn": "postgres/postgres for testing",
             "table_name": table_name,
             "notes": "The ARN references the master credentials in Secrets Manager. Grant caller IAM permission to read it if client needs credentials.",
         }
@@ -422,14 +445,14 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 aws_access_key_id=req.s3_access_key,
                 aws_secret_access_key=req.s3_secret_key,
             )
+            bucket = req.s3_bucket
             try:
-                s3_client.head_bucket(Bucket=req.s3_bucket)
+                s3_client.head_bucket(Bucket=bucket)
                 yield sse_event(
                     {
                         "ok": True,
                         "stage": "s3-connected",
-                        "bucket": req.s3_bucket,
-                        "region": req.s3_region,
+                        "bucket": bucket,
                     },
                     event="s3-connected",
                 )
@@ -456,40 +479,61 @@ def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             )
             return
 
-        yield sse_event({"ok": True, "stage": "done"}, event="done")
+        try:
+            # Create a job for each document in S3 using AWS Batch
+            paginator = s3_client.get_paginator("list_objects_v2")
+            keys = []
 
-        # Create a job for each document in S3 using AWS Batch
-        keys = list_s3_objects(bucket, extensions=[".txt", ".md"])
-        batch = boto3.client("batch")
-        job_ids = []
+            for page in paginator.paginate(Bucket=bucket):
+                for obj in page.get("Contents", []):
+                    key = obj["Key"]
+                    if key.endswith(".txt") or key.endswith(".md"):
+                        keys.append(key)
+            if not keys:
+                yield sse_event(
+                    {"ok": True, "stage": "no-documents"}, event="no-documents"
+                )
+                yield sse_event({"ok": True, "stage": "done"}, event="done")
+                return
+            batch = boto3.client("batch")
+            job_ids = []
 
-        for doc_key in keys:
-            response = batch.submit_job(
-                jobName=f"chunkwise-{doc_key.replace('/', '-')}",
-                jobQueue="chunkwise-job-queue",
-                jobDefinition="chunkwise-job-definition",
-                containerOverrides={
-                    "environment": [
-                        {"name": "DOCUMENT_KEY", "value": doc_key},
-                        {"name": "BUCKET_NAME", "value": req.s3_bucket},
-                        {"name": "DB_HOST", "value": address},
-                        {"name": "DB_USER", "value": master_user},
-                        {"name": "DB_PASSWORD", "value": master_password},
-                        {"name": "DB_NAME", "value": SHARED_DB_NAME},
-                        {"name": "DB_TABLE", "value": table_name},
-                        {
-                            "name": "CHUNK_CONFIG",
-                            "value": {
-                                "provider": "langchain",
-                                "chunk_size": 300,
-                                "chunk_overlap": 0,
-                                "chunker_type": "token",
+            for doc_key in keys:
+                safe_name = hashlib.sha1(doc_key.encode()).hexdigest()[:10]
+                response = batch.submit_job(
+                    jobName=f"chunkwise-{safe_name}",
+                    jobQueue="chunkwise-job-queue",
+                    jobDefinition="chunkwise-job-definition",
+                    containerOverrides={
+                        "environment": [
+                            {"name": "DOCUMENT_KEY", "value": doc_key},
+                            {"name": "BUCKET_NAME", "value": bucket},
+                            {"name": "DB_HOST", "value": address},
+                            {"name": "DB_USER", "value": master_user},
+                            {"name": "DB_PASSWORD", "value": master_password},
+                            {"name": "DB_NAME", "value": SHARED_DB_NAME},
+                            {"name": "DB_TABLE", "value": table_name},
+                            {
+                                "name": "CHUNK_CONFIG",
+                                "value": chunker_config.model_dump_json(),
                             },
-                        },
-                    ]
-                },
+                        ]
+                    },
+                )
+                if "jobId" not in response:
+                    yield sse_event(
+                        {"ok": False, "stage": "batch-submit", "error": str(response)},
+                        event="batch-error",
+                    )
+                    return
+                job_ids.append(response["jobId"])
+        except Exception as e:
+            yield sse_event(
+                {"ok": False, "stage": "batch", "error": str(e)}, event="batch-error"
             )
-            job_ids.append(response["jobId"])
+            return
+
+        yield sse_event({"ok": True, "stage": "done"}, event="done")
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
