@@ -173,7 +173,7 @@ def main():
 
         insert_sql = f"""
             INSERT INTO {table}
-            (document_key, chunk_index, chunk_text, embedding)
+            (document_key, chunk_id, chunk_text, embedding)
             VALUES (%s, %s, %s, %s)
         """
 
