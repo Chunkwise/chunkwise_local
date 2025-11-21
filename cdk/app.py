@@ -5,6 +5,7 @@ from stacks.network_stack import NetworkStack
 from stacks.database_stack import DatabaseStack
 from stacks.ecs_stack import EcsStack
 from stacks.load_balancer_stack import LoadBalancerStack
+from stacks.batch_stack import BatchStack
 
 app = cdk.App()
 
@@ -22,13 +23,13 @@ network_stack = NetworkStack(
     description="Chunkwise Network Infrastructure - VPC, Subnets, NAT Gateways",
 )
 
-# Stack 2: Database (RDS PostgreSQL)
+# Stack 2: Database (RDS PostgreSQL - Evaluation and Production)
 database_stack = DatabaseStack(
     app,
     "ChunkwiseDatabaseStack",
     vpc=network_stack.vpc,
     env=env,
-    description="Chunkwise Database - RDS PostgreSQL Instance",
+    description="Chunkwise Databases - RDS PostgreSQL Instances",
 )
 
 # Stack 3: ECS Cluster and Services
@@ -37,6 +38,7 @@ ecs_stack = EcsStack(
     "ChunkwiseEcsStack",
     vpc=network_stack.vpc,
     database=database_stack.database,
+    vector_database=database_stack.production_database,
     env=env,
     description="Chunkwise ECS Cluster and Services",
 )
@@ -51,8 +53,18 @@ load_balancer_stack = LoadBalancerStack(
     description="Chunkwise Application Load Balancer",
 )
 
+# Stack 5: AWS Batch (for production deployment workflows)
+batch_stack = BatchStack(
+    app,
+    "ChunkwiseBatchStack",
+    vpc=network_stack.vpc,
+    production_database=database_stack.production_database,
+    server_task_role=ecs_stack.task_role,
+    env=env,
+    description="Chunkwise AWS Batch - Data Ingestion Processing Workflows",
+)
 
-# Output the ALB DNS name
+# Outputs
 cdk.CfnOutput(
     load_balancer_stack,
     "LoadBalancerDNS",
@@ -66,6 +78,20 @@ cdk.CfnOutput(
     "ApplicationUrl",
     value=f"http://{load_balancer_stack.alb.load_balancer_dns_name}",
     description="Application URL (HTTP)",
+)
+
+cdk.CfnOutput(
+    batch_stack,
+    "BatchJobQueue",
+    value="chunkwise-job-queue",
+    description="Batch Job Queue for data ingestion processing workflows",
+)
+
+cdk.CfnOutput(
+    batch_stack,
+    "BatchJobDefinition",
+    value="chunkwise-job-definition",
+    description="Batch Job Definition for data ingestion processing workflows",
 )
 
 app.synth()
