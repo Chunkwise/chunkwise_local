@@ -5,14 +5,14 @@ Chunks the document, creates embeddings, and writes to the destination database
 """
 
 import os
-import json
+import random
 import boto3
 import psycopg2
 import tiktoken
 from dotenv import load_dotenv
 from psycopg2 import OperationalError
 from pydantic import TypeAdapter
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 from chunkwise_core import ChunkerConfig
 from chunkwise_core.utils import create_chunker
 import time
@@ -34,15 +34,12 @@ password = os.getenv("DB_PASSWORD")
 
 def normalize_document(content: str) -> str:
     """Normalize smart quotes and dashes in the document to standard ASCII characters."""
-
-    # Normalize smart quotes and dashes for consistency
     content = content.replace("\u2018", "'")  #  → '
     content = content.replace("\u2019", "'")  # ’ → '
     content = content.replace("\u201c", '"')  # ” → "
     content = content.replace("\u201d", '"')  # " → "
     content = content.replace("\u2013", "-")  # – → -
     content = content.replace("\u2014", "-")  # — → -
-
     return content
 
 
@@ -63,9 +60,41 @@ def get_db_connection():
         raise e
 
 
-def get_batch_embeddings(chunks, model="text-embedding-3-small", max_tokens=280000):
+def retry_with_backoff(func, retries=9, initial_delay=2, backoff_factor=1.5):
+    """
+    Retries a function if it hits a RateLimitError.
+    Waits exponentially longer between retries.
+    """
+
+    def wrapper(*args, **kwargs):
+        delay = initial_delay
+        for i in range(retries):
+            try:
+                return func(*args, **kwargs)
+            except RateLimitError:
+                if i == retries - 1:
+                    print("Max retries reached. Failing.")
+                    raise
+
+                # Add jitter to prevent 'thundering herd' since we are running multiple instances
+                sleep_time = delay + random.uniform(0, 1)
+                print(f"Rate limited. Retrying in {sleep_time:.2f} seconds...")
+                time.sleep(sleep_time)
+                delay *= backoff_factor
+            except Exception as e:
+                raise e
+
+    return wrapper
+
+
+def get_mapped_embeddings(chunks, model="text-embedding-3-small", max_tokens=280000):
     client = OpenAI(api_key=openai_api_key)
     enc = tiktoken.get_encoding("cl100k_base")
+
+    # Wrap the API call with our retry logic
+    @retry_with_backoff
+    def call_openai_api(batch_input):
+        return client.embeddings.create(model=model, input=batch_input)
 
     batches = []
     current = []
@@ -73,7 +102,16 @@ def get_batch_embeddings(chunks, model="text-embedding-3-small", max_tokens=2800
 
     for chunk in chunks:
         tokens = len(enc.encode(chunk))
-        if current_tokens + tokens > max_tokens:
+        if tokens == 0:
+            print(f"Skipping chunk with 0 tokens: {repr(chunk)}")
+            continue
+
+        if tokens > 8191:
+            chunk = enc.decode(enc.encode(chunk)[:8191])
+            tokens = 8191
+            print(f"Chunk too large: {tokens} tokens > 8191. Truncated chunk.")
+
+        if current_tokens + tokens > max_tokens or len(current) >= 2048:
             batches.append(current)
             current = []
             current_tokens = 0
@@ -83,16 +121,27 @@ def get_batch_embeddings(chunks, model="text-embedding-3-small", max_tokens=2800
     if current:
         batches.append(current)
 
-    # embed batches
-    embeddings = []
-    for batch in batches:
-        response = client.embeddings.create(model=model, input=batch)
-        embeddings.extend([d.embedding for d in response.data])
+    results = []
 
-    return embeddings
+    print(f"Processing {len(batches)} batches...")
+
+    for i, batch_chunks in enumerate(batches):
+        try:
+            response = call_openai_api(batch_chunks)
+            batch_embeddings = [d.embedding for d in response.data]
+            paired_data = list(zip(batch_chunks, batch_embeddings))
+            results.extend(paired_data)
+
+        except Exception as e:
+            print(f"Failed to embed batch {i}. Skipping these chunks. Error: {e}")
+            print(f"Chunk: {batches[i]}")
+            raise e
+
+    return results
 
 
 def main():
+    print(f"Processing document {document_key} of workflow {table}")
     # 1. Read the document from S3 and normalize
     if bucket == "local":
         with open(document_key, "r") as f:
@@ -111,9 +160,11 @@ def main():
         if hasattr(chunker, "split_text")
         else [chunk.text for chunk in chunker(normalized_text)]
     )
+    # Remove empty chunks (OpenAI embedding does not accept them)
+    valid_chunks = [c for c in chunks if c and c.strip()]
 
     # 3. Embed
-    embeddings = get_batch_embeddings(chunks)
+    chunk_embedding_pairs = get_mapped_embeddings(valid_chunks)
 
     # 4. Insert into Postgres
     try:
@@ -122,14 +173,14 @@ def main():
 
         insert_sql = f"""
             INSERT INTO {table}
-            (document_key, chunk_id, chunk_text, embedding)
+            (document_key, chunk_index, chunk_text, embedding)
             VALUES (%s, %s, %s, %s)
         """
 
-        for index, chunk in enumerate(chunks):
+        for index, (chunk, embedding) in enumerate(chunk_embedding_pairs):
             cursor.execute(
                 insert_sql,
-                (document_key, index, chunk, embeddings[index]),
+                (document_key, index, chunk, embedding),
             )
     except Exception as e:
         print(("Error creating workflow.", e))
