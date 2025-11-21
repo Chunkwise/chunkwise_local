@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://chunkwise-alb-1987919860.us-east-1.elb.amazonaws.com",
+        target: "http://chunkwise-alb-1341063601.us-east-1.elb.amazonaws.com",
         changeOrigin: true,
         secure: false,
       },
