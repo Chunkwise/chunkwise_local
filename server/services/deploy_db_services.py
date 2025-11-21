@@ -34,7 +34,7 @@ def ensure_pgvector_and_table(
         """
     CREATE TABLE IF NOT EXISTS {table} (
         id BIGSERIAL PRIMARY KEY,
-        workflow_id TEXT NOT NULL,
+        document_key TEXT NOT NULL,
         chunk_index INTEGER NOT NULL,
         chunk_text TEXT,
         embedding vector(%s)
