@@ -222,7 +222,7 @@ async def visualize(workflow_id: int) -> VisualizeResponse:
 
 @router.get("/workflows/{workflow_id}/evaluation")
 @handle_endpoint_exceptions
-async def evaluate(workflow_id: int) -> EvaluationMetrics:
+async def evaluate(workflow_id: int) -> EvaluationResponse:
     """
     Receives chunker configs and a document_id from the client, which it then
     sends to the evaluation server. Once it receives a response, it gets the necessary
@@ -237,7 +237,7 @@ async def evaluate(workflow_id: int) -> EvaluationMetrics:
     workflow_update = Workflow(evaluation_metrics=metrics[0])
     update_workflow(workflow_id, workflow_update.model_dump())
 
-    return metrics[0]
+    return evaluation
 
 
 @router.post("/documents")
