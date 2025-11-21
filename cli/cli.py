@@ -1,18 +1,16 @@
-import os
 import json
-import subprocess
-from pathlib import Path
 import typer
 from rich import print
 from rich.pretty import pprint
 from rich.prompt import Prompt, Confirm, InvalidResponse
+from pathlib import Path
+import subprocess
 
-# aws secretsmanager create-secret --name chunkwise/openai-api-key --secret-string aklsdjlkasjdlkjsa
-# aws secretsmanager delete-secret --secret-id chunkwise/openai-api-key --force-delete-without-recovery --region us-east-1
+# DELETE SECRET: aws secretsmanager delete-secret --secret-id chunkwise/openai-api-key --force-delete-without-recovery --region us-east-1
 
-app = typer.Typer()
 
 CDK_DIR = Path(__file__).resolve().parent.parent / "cdk"
+CLIENT_DIR = Path(__file__).resolve().parent.parent / "client"
 
 
 def validate_key(key):
@@ -21,12 +19,12 @@ def validate_key(key):
 
 
 def display_logo():
-    with open("logo.txt") as logo_file:
+    with open("cli/logo.txt") as logo_file:
         logo_text = logo_file.read()
 
     print(f"[#00BCF7]{logo_text}")
 
-    with open("chunkwise_monospace.txt") as name_file:
+    with open("cli/chunkwise_monospace.txt") as name_file:
         text = name_file.read()
 
     print(f"[white]{text}")
@@ -68,6 +66,51 @@ def ensure_cdk_dependencies():
     typer.echo("✅ CDK dependencies ready!")
 
 
+def ensure_npm_dependencies():
+    """
+    Ensures that the client-side npm dependencies are installed.
+    If node_modules/ does not exist, runs `npm install` in the client directory.
+    """
+
+    node_modules = CLIENT_DIR / "node_modules"
+    package_json = CLIENT_DIR / "package.json"
+
+    if not package_json.exists():
+        typer.echo("⚠️ No package.json found in client directory; skipping NPM install.")
+        return
+
+    if node_modules.exists():
+        typer.echo("📦 Client NPM dependencies already installed.")
+        return
+
+    typer.echo("📦 Installing NPM dependencies for client...")
+
+    try:
+        proc = subprocess.Popen(
+            ["npm", "install"],
+            cwd=CLIENT_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        for line in proc.stdout:
+            typer.echo(line.rstrip())
+
+        proc.wait()
+
+        if proc.returncode != 0:
+            typer.echo("❌ NPM install failed.")
+            raise typer.Exit(code=1)
+
+    except FileNotFoundError:
+        typer.echo("❌ npm is not installed or not in PATH.")
+        raise typer.Exit(code=1)
+
+    typer.echo("✅ Client NPM dependencies ready!")
+
+
 def run_cdk_command(*args):
     """
     Runs a CDK command inside the CDK directory.
@@ -101,6 +144,39 @@ def run_cdk_command(*args):
 
     except FileNotFoundError:
         typer.echo("❌ Error: CDK is not installed or not in PATH.")
+        raise typer.Exit(code=1)
+
+
+def run_client_command(*args):
+    """
+    Runs a npm command from the client directory.
+    """
+
+    # ensure_node_dependencies()
+
+    typer.echo(f"👉 Running: npm run {' '.join(args)} (in {CLIENT_DIR})")
+
+    try:
+        proc = subprocess.Popen(
+            ["npm", "run"] + list(args),
+            cwd=CLIENT_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        # Stream output line-by-line
+        for line in proc.stdout:
+            typer.echo(line.rstrip())
+
+        proc.wait()
+
+        if proc.returncode != 0:
+            raise typer.Exit(code=proc.returncode)
+
+    except FileNotFoundError:
+        typer.echo("❌ Error: Packages are not installed or not in PATH.")
         raise typer.Exit(code=1)
 
 
@@ -145,6 +221,9 @@ def create_secret(secret_name, secret_value):
     except FileNotFoundError:
         typer.echo("❌ Error: CLI is not installed or not in PATH.")
         raise typer.Exit(code=1)
+
+
+app = typer.Typer()
 
 
 @app.command()
@@ -218,10 +297,16 @@ def destroy():
     """
     Calls the cdk destroy command.
     """
-    run_cdk_command("destroy", "ChunkwiseEcsStack", "--force")
-    run_cdk_command("destroy", "ChunkwiseLoadBalancerStack", "--force")
-    run_cdk_command("destroy", "ChunkwiseDatabaseStack", "--force")
-    run_cdk_command("destroy", "ChunkwiseNetworkStack", "--force")
+    confirm = Confirm.ask(f"[#00BCF7]Are you sure?")
+    print()
+
+    if confirm:
+        run_cdk_command("destroy", "ChunkwiseEcsStack", "--force")
+        run_cdk_command("destroy", "ChunkwiseLoadBalancerStack", "--force")
+        run_cdk_command("destroy", "ChunkwiseDatabaseStack", "--force")
+        run_cdk_command("destroy", "ChunkwiseNetworkStack", "--force")
+    else:
+        print(f"[red]Stack destruction cancelled.")
 
 
 @app.command()
@@ -229,8 +314,9 @@ def client_build():
     """
     Calls the client build command.
     """
-    print("building the client...")
-    print("client built")
+    ensure_npm_dependencies()
+    run_client_command("build")
+    print(f"[green]✅ Client built!")
 
 
 @app.command()
@@ -238,8 +324,8 @@ def client_start():
     """
     Calls the client start command.
     """
-    print("starting the client...")
-    print("client running")
+    ensure_npm_dependencies()
+    run_client_command("preview")
 
 
 @app.command()
