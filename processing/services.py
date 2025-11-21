@@ -31,27 +31,23 @@ def add_vectors(chunk_embedding_pairs) -> None:
     Add chunks, embedding vectors, and data into PostgreSQL vector database
     """
     try:
-        connection = get_db_connection()
-        cursor = connection.cursor()
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                insert_sql = f"""
+                    INSERT INTO {table}
+                    (document_key, chunk_index, chunk_text, embedding)
+                    VALUES (%s, %s, %s, %s)
+                """
 
-        insert_sql = f"""
-            INSERT INTO {table}
-            (document_key, chunk_index, chunk_text, embedding)
-            VALUES (%s, %s, %s, %s)
-        """
-
-        for index, (chunk, embedding) in enumerate(chunk_embedding_pairs):
-            cursor.execute(
-                insert_sql,
-                (document_key, index, chunk, embedding),
-            )
+                for index, (chunk, embedding) in enumerate(chunk_embedding_pairs):
+                    cursor.execute(
+                        insert_sql,
+                        (document_key, index, chunk, embedding),
+                    )
+        print("Database connection closed.")
     except Exception as e:
         print(("Error creating workflow.", e))
         raise e
-    finally:
-        if connection:
-            connection.close()
-            print("Database connection closed.")
 
 
 def normalize_document(content: str) -> str:
