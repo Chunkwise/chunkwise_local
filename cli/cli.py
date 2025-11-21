@@ -1,8 +1,15 @@
 import os
+import json
 import typer
 from rich import print
+from rich.prompt import Prompt, Confirm, InvalidResponse
 
 app = typer.Typer()
+
+
+def validate_key(key):
+    if not isinstance(key, str) or len(key) == 0:
+        raise InvalidResponse("Please enter a string with characters")
 
 
 def display_logo():
@@ -18,12 +25,58 @@ def display_logo():
 
 
 @app.command()
-def deploy(openai_api_key: str, region: str = "us-east-1a", confirm: bool = True):
+def deploy():
+    """
+    This command displays the beautiful Chunkwise logo, then it
+    gathers some information from the user which it puts into a
+    JSON string to send to the AWS CDK.
+    """
+    display_logo()
+
+    openai_api_key = Prompt.ask(
+        f"[#00BCF7]OpenAI Api key", password=False
+    )  # Could make password True to hide while typing
+    print()
+
+    validate_key(openai_api_key)
+    region = Prompt.ask(
+        f"[#00BCF7]What region would you like to deploy Chunkwise in?",
+        # Default available regions
+        choices=[
+            "ap-northeast-1",
+            "ap-northeast-2",
+            "ap-northeast-3",
+            "ap-south-1",
+            "ap-southeast-1",
+            "ap-southeast-2",
+            "ca-central-1",
+            "eu-central-1",
+            "eu-north-1",
+            "eu-west-1",
+            "eu-west-2",
+            "eu-west-3",
+            "sa-east-1",
+            "us-east-1",
+            "us-east-2",
+            "us-west-1",
+            "us-west-2",
+        ],
+        show_choices=False,
+        default="us-east-1",
+    )
+    print()
+
+    confirm = Confirm.ask(f"[#00BCF7]Are you sure?")
+    print()
+
     if confirm:
-        display_logo()
-        print(f"creating VPC in {region}...")
-        print(f"creating secret {openai_api_key}...")
-        print("AWS Stack deployed")
+        options = {
+            "openai_api_key": openai_api_key,
+            "region": region,
+        }
+        options_json = json.dumps(options)
+
+        print(f"deploying stack with options: {options}...")
     else:
         print("deployment cancelled")
 
