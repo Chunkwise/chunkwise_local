@@ -19,12 +19,12 @@ def validate_key(key):
 
 
 def display_logo():
-    with open("cli/logo.txt") as logo_file:
+    with open("logo.txt") as logo_file:
         logo_text = logo_file.read()
 
     print(f"[#00BCF7]{logo_text}")
 
-    with open("cli/chunkwise_monospace.txt") as name_file:
+    with open("chunkwise_monospace.txt") as name_file:
         text = name_file.read()
 
     print(f"[white]{text}")
@@ -289,7 +289,7 @@ def deploy():
             f"options={options_json}",
         )
     else:
-        print(f"[red]Deployment cancelled")
+        print(f"[red]❌Deployment cancelled")
 
 
 @app.command()
@@ -306,7 +306,7 @@ def destroy():
         run_cdk_command("destroy", "ChunkwiseDatabaseStack", "--force")
         run_cdk_command("destroy", "ChunkwiseNetworkStack", "--force")
     else:
-        print(f"[red]Stack destruction cancelled.")
+        print(f"[red]❌Stack destruction cancelled.")
 
 
 @app.command()
