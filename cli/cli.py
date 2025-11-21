@@ -29,7 +29,8 @@ def deploy():
     """
     This command displays the beautiful Chunkwise logo, then it
     gathers some information from the user which it puts into a
-    JSON string to send to the AWS CDK.
+    JSON string to send to the AWS CDK. Finally it will trigger
+    the `cdk deploy` command.
     """
     display_logo()
 
@@ -76,32 +77,42 @@ def deploy():
         }
         options_json = json.dumps(options)
 
-        print(f"deploying stack with options: {options}...")
+        print(f"[green]Deploying stack with options: {options}...")
     else:
-        print("deployment cancelled")
+        print(f"[red]Deployment cancelled")
 
 
 @app.command()
-def destroy(include_rds: bool = False):
+def destroy():
+    """
+    Calls the cdk destroy command.
+    """
     print("AWS Stack destroyed")
-
-    if include_rds:
-        print("RDS instance destroyed")
 
 
 @app.command()
 def client_build():
+    """
+    Calls the client build command.
+    """
     print("building the client...")
     print("client built")
 
 
 @app.command()
 def client_start():
+    """
+    Calls the client start command.
+    """
     print("starting the client...")
     print("client running")
 
 
 @app.command()
 def client():
+    """
+    Calls the client build then client start commands
+    in squence.
+    """
     client_build()
     client_start()
