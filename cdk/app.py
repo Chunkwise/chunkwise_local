@@ -13,18 +13,14 @@ app = cdk.App()
 options = app.node.try_get_context("options")
 options_json = json.loads(options)
 
-if (
-    not options
-    or not isinstance(options_json, dict)
-    or not "openai_api_key" in options_json
-):
-    raise ValueError("Must provide a key and region")
+if not isinstance(options_json, dict):
+    raise AttributeError("Must provide an options in JSON format")
 
 
 # Get environment variables or use defaults, for the reason use the one passed in as context
 env = cdk.Environment(
     account=os.getenv("CDK_DEFAULT_ACCOUNT"),
-    region=options_json["region"] or os.getenv("CDK_DEFAULT_REGION", "us-east-1"),
+    region=options_json.get("region") or os.getenv("CDK_DEFAULT_REGION", "us-east-1"),
 )
 
 # Stack 1: Network Infrastructure (VPC, Subnets, NAT Gateways, etc.)
