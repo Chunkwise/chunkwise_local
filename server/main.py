@@ -11,7 +11,6 @@ import hashlib
 from server_types import (
     VisualizeResponse,
     EvaluationResponse,
-    EvaluationMetrics,
     Workflow,
     DeployRequest,
 )
