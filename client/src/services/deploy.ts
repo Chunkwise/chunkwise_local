@@ -7,11 +7,11 @@ export interface S3Credentials {
 export interface RDSReadyPayload {
   ok: boolean;
   stage: "rds-ready";
-  db_instance_identifier: string;
   endpoint: string;
   port: number;
   database: string;
-  username_secret_arn: string;
+  user: string;
+  password: string;
   table_name: string;
   notes?: string;
 }
