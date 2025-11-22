@@ -223,6 +223,42 @@ def create_secret(secret_name, secret_value):
         raise typer.Exit(code=1)
 
 
+def write_env_file(client_dir: str, values: dict):
+    """
+    Creates or updates a .env file inside the client directory.
+
+    Args:
+        client_dir (str): Path to the client folder.
+        values (dict): Key/value pairs to write into .env.
+    """
+
+    client_path = Path(client_dir)
+    env_path = client_path / ".env"
+
+    # Ensure directory exists
+    client_path.mkdir(parents=True, exist_ok=True)
+
+    # Load existing variables (if .env already exists)
+    existing = {}
+    if env_path.exists():
+        with env_path.open("r") as f:
+            for line in f:
+                line = line.strip()
+                if "=" in line and not line.startswith("#"):
+                    key, val = line.split("=", 1)
+                    existing[key] = val
+
+    # Update with new values
+    existing.update(values)
+
+    # Write everything back
+    with env_path.open("w") as f:
+        for key, val in existing.items():
+            f.write(f"{key}={val}\n")
+
+    print(f"✔ Successfully wrote {len(values)} values to {env_path}")
+
+
 app = typer.Typer()
 
 
@@ -310,10 +346,11 @@ def destroy():
 
 
 @app.command()
-def client_build():
+def client_build(alb_uri: str):
     """
     Calls the client build command.
     """
+    write_env_file("../client", {"ALB_URI": alb_uri})
     ensure_npm_dependencies()
     run_client_command("build")
     print(f"[green]✅ Client built!")
@@ -329,10 +366,10 @@ def client_start():
 
 
 @app.command()
-def client():
+def client(alb_uri: str):
     """
     Calls the client build then client start commands
     in squence.
     """
-    client_build()
+    client_build(alb_uri)
     client_start()

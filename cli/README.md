@@ -4,6 +4,8 @@
 
 This folder contains the command line interface provided by a
 library called Typer. To use it, first run `poetry install`.
+Next activate the virtual environment with
+`eval $(poetry env activate)`.
 
 Once you've done that the below commands are available to you.
 
@@ -24,10 +26,14 @@ the created secrets.
 
 Runs both the `client-build` and `client-start` commands.
 
-`typer cli.py run client-build`
+`typer cli.py run client-build <YOUR_ALB_DNS_HERE>`
 
 Builds the React client.
 
-`typer cli.py run client-start`
+`typer cli.py run client-start <YOUR_ALB_DNS_HERE>`
 
 Runs a built client using Vite. To stop the server use Ctrl^C.
+
+# If you would like to destroy the created secret immediately use this command:
+
+`aws secretsmanager delete-secret --secret-id chunkwise/openai-api-key --force-delete-without-recovery --region <YOUR_REGION_HERE>`
