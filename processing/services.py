@@ -67,7 +67,7 @@ def get_s3_document_text(local: bool = False) -> str:
     AWS deployment: reads a document from a S3 bucket and returns normalized text
     """
     if local:
-        with open(document_key, "r") as f:
+        with open(document_key, "r", encoding="utf-8") as f:
             text = f.read()
     else:
         s3 = boto3.client("s3")
