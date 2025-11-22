@@ -5,11 +5,13 @@ This modules provides the server the functions that it needs to interact with th
 import os
 import json
 from typing import Dict, Any
-import dotenv
+from dotenv import load_dotenv
 import psycopg2
 from psycopg2 import OperationalError, sql
 from server_types import ChunkerConfig
 from pydantic import TypeAdapter
+
+load_dotenv()
 
 COLUMN_NAMES: tuple[str, ...] = (
     "id",
@@ -27,8 +29,6 @@ PASSWORD = os.getenv("DB_PASSWORD")
 ENDPOINT = os.getenv("DB_HOST")
 PORT = os.getenv("DB_PORT")
 REGION = "us-east-1"
-
-dotenv.load_dotenv()
 
 
 def setup_schema():
@@ -279,6 +279,44 @@ def get_workflow_info(workflow_id) -> tuple[str, ChunkerConfig]:
         chunker_config = adapter.validate_json(chunking_strategy_json)
 
         return document_title, chunker_config
+
+    except Exception as e:
+        print("Error retrieving workflow info:", e)
+        raise e
+    finally:
+        if connection:
+            connection.close()
+            print("Database connection closed.")
+
+
+def get_chunker_config(workflow_id) -> ChunkerConfig:
+    """
+    Retrieves both the document_title and chunking_strategy (as a ChunkerConfig)
+    for a given workflow_id.
+    """
+    connection = None
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        query = """
+            SELECT chunking_strategy
+            FROM workflow
+            WHERE id = %s
+        """
+        cursor.execute(query, (workflow_id,))
+        print(query)
+
+        result = cursor.fetchone()
+        if not result:
+            raise ValueError(f"No workflow found with id {workflow_id}")
+
+        chunking_strategy_json = result[0]
+
+        adapter = TypeAdapter(ChunkerConfig)
+        chunker_config = adapter.validate_json(chunking_strategy_json)
+
+        return chunker_config
 
     except Exception as e:
         print("Error retrieving workflow info:", e)

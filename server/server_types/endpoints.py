@@ -39,3 +39,9 @@ class Workflow(BaseModel):
     chunks_stats: ChunkStatistics | str | None = None
     visualization_html: str | None = None
     evaluation_metrics: EvaluationMetrics | str | None = None
+
+
+class DeployRequest(BaseModel):
+    s3_access_key: str
+    s3_secret_key: str
+    s3_bucket: str
