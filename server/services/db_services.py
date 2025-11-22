@@ -2,6 +2,7 @@
 This modules provides the server the functions that it needs to interact with the database.
 """
 
+import os
 import json
 from typing import Dict, Any
 from contextlib import contextmanager
@@ -63,19 +64,19 @@ def get_db_connection(
     """
     connection = None
     try:
-        db_connection = psycopg2.connect(
+        connection = psycopg2.connect(
             host=host,
             port=port,
             database=database,
             user=user,
             password=password,
         )
-        db_connection.autocommit = True
+        connection.autocommit = True
         print("Successfully connected to database at %s", host)
-        yield db_connection
+        yield connection
 
     except OperationalError as e:
-        print(("Error connecting to the databaseat %s: %s", host, e))
+        print("Error connecting to the databaseat %s: %s", host, e)
         raise e
     finally:
         if connection:
@@ -113,7 +114,6 @@ def setup_schema():
     Creates a row in the workflow table and returns the id of the
     created workflow.
     """
-    connection = None
     try:
         with get_evaluation_db_connection() as connection:
             cursor = connection.cursor()
@@ -179,7 +179,6 @@ def create_workflow(workflow_title: str) -> Dict[str, Any]:
     Creates a row in the workflow table and returns the id of the
     created workflow.
     """
-    connection = None
     try:
         with get_evaluation_db_connection() as connection:
             cursor = connection.cursor()
@@ -210,7 +209,6 @@ def update_workflow(
     Takes an id and an object with Workflow properties and sets the
     corresponding columns in the database to match.
     """
-    connection = None
     try:
         with get_evaluation_db_connection() as connection:
             cursor = connection.cursor()
@@ -253,7 +251,6 @@ def delete_workflow(workflow_id: int) -> bool:
     Deletes a workflow and returns a boolean representing whether the
     operation was successful.
     """
-    connection = None
     try:
         with get_evaluation_db_connection() as connection:
             cursor = connection.cursor()
@@ -272,7 +269,6 @@ def get_all_workflows() -> list[Dict[str, Any]]:
     """
     Returns a list containing all of the workflows stored in the database.
     """
-    connection = None
     try:
         with get_evaluation_db_connection() as connection:
             cursor = connection.cursor()
@@ -296,7 +292,6 @@ def get_workflow_info(workflow_id) -> tuple[str, ChunkerConfig]:
     Retrieves both the document_title and chunking_strategy (as a ChunkerConfig)
     for a given workflow_id.
     """
-    connection = None
     try:
         with get_evaluation_db_connection() as connection:
             cursor = connection.cursor()
@@ -329,7 +324,6 @@ def get_chunker_config(workflow_id) -> ChunkerConfig:
     Retrieves both the document_title and chunking_strategy (as a ChunkerConfig)
     for a given workflow_id.
     """
-    connection = None
     try:
         with get_evaluation_db_connection() as connection:
             cursor = connection.cursor()
