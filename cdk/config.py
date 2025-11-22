@@ -61,7 +61,7 @@ VECTOR_RDS_CONFIG = {
     "port": 5432,
     "allocated_storage": 100,  # GB - larger initial size
     "max_allocated_storage": 500,  # GB - room to grow
-    "backup_retention_days": 3,
+    "backup_retention_days": 0,
     "multi_az": False,  # Set to True for production HA
     "deletion_protection": False,  # Set to True for production
     "publicly_accessible": True,  # Allow users to export embeddings
@@ -71,10 +71,9 @@ VECTOR_RDS_CONFIG = {
 # AWS Batch Configuration
 BATCH_CONFIG = {
     "max_vcpus": 32,  # Maximum vCPUs for compute environment
-    "job_cpu": 1024,  # 1 vCPU per job
+    "job_cpu": 1,  # 1 vCPU per job
     "job_memory": 2048,  # 2 GB per job
     "assign_public_ip": True,  # Use public IP to save NAT Gateway costs
-    "log_retention_days": 7,  # CloudWatch Logs retention
 }
 
 # S3 Configuration

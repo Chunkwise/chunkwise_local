@@ -179,7 +179,7 @@ class BatchStack(Stack):
             self,
             "BatchLogGroup",
             log_group_name="/aws/batch/chunkwise-processing",
-            retention=logs.RetentionDays(config.BATCH_CONFIG["log_retention_days"]),
+            retention=logs.RetentionDays.ONE_WEEK,
             removal_policy=RemovalPolicy.DESTROY,
         )
 
