@@ -8,7 +8,6 @@ import traceback
 import re
 import logging
 import hashlib
-import json
 from server_types import (
     VisualizeResponse,
     EvaluationResponse,
@@ -348,7 +347,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             secret_response = secretsmanager.get_secret_value(
                 SecretId=VECTOR_DB_SECRET_NAME
             )
-            secret_arn = secret_response["ARN"] 
+            secret_arn = secret_response["ARN"]
         except Exception as e:
             yield sse_event(
                 {"ok": False, "stage": "secrets-get", "error": str(e)}, event="error"
@@ -488,8 +487,6 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                                 "name": "CHUNKER_CONFIG",
                                 "value": chunker_config.model_dump_json(),
                             },
-                            # Openai API key
-                            {"name": "OPENAI_API_KEY", "value": os.getenv("OPENAI_API_KEY")},
                         ]
                     },
                 )

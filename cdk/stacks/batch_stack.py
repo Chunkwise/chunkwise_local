@@ -124,7 +124,7 @@ class BatchStack(Stack):
         # Grant access to read OpenAI secret
         openai_secret_arn = (
             f"arn:aws:secretsmanager:{self.region}:{self.account}:"
-            f"secret:chunkwise/openai-api-key"
+            f"secret:chunkwise/openai-api-key-*"
         )
         self.batch_execution_role.add_to_policy(
             iam.PolicyStatement(
