@@ -2,18 +2,14 @@
 Contains service calls to the services implemented by the chunkwise team.
 """
 
-import os
 import requests
-import dotenv
 from server_types import EvaluationResponse, Chunk
-
-
-dotenv.load_dotenv()
-
-CHUNKING_SERVICE_HOST = os.getenv("CHUNKING_SERVICE_HOST", "localhost")
-CHUNKING_SERVICE_PORT = int(os.getenv("CHUNKING_SERVICE_PORT", "1111"))
-EVALUATION_SERVICE_HOST = os.getenv("EVALUATION_SERVICE_HOST", "localhost")
-EVALUATION_SERVICE_PORT = int(os.getenv("EVALUATION_SERVICE_PORT", "2222"))
+from config import (
+    CHUNKING_SERVICE_HOST,
+    CHUNKING_SERVICE_PORT,
+    EVALUATION_SERVICE_HOST,
+    EVALUATION_SERVICE_PORT,
+)
 
 
 async def get_chunks(chunker_config, document) -> list[Chunk]:

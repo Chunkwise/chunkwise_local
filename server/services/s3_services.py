@@ -6,13 +6,9 @@ ids of files in a bucket.
 
 import os
 import logging
-import dotenv
 import boto3
 from botocore.exceptions import ClientError
-
-dotenv.load_dotenv()
-
-BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+from config import BUCKET_NAME
 
 
 async def upload_s3_file(document_id):

@@ -2,16 +2,19 @@
 This modules provides the server the functions that it needs to interact with the database.
 """
 
-import os
 import json
 from typing import Dict, Any
-from dotenv import load_dotenv
 import psycopg2
 from psycopg2 import OperationalError, sql
 from server_types import ChunkerConfig
 from pydantic import TypeAdapter
-
-load_dotenv()
+from config import (
+    DBNAME,
+    ENDPOINT,
+    USER,
+    PORT,
+    PASSWORD,
+)
 
 COLUMN_NAMES: tuple[str, ...] = (
     "id",
@@ -23,12 +26,6 @@ COLUMN_NAMES: tuple[str, ...] = (
     "visualization_html",
     "evaluation_metrics",
 )
-DBNAME = os.getenv("DB_NAME")
-USER = os.getenv("DB_USER")
-PASSWORD = os.getenv("DB_PASSWORD")
-ENDPOINT = os.getenv("DB_HOST")
-PORT = os.getenv("DB_PORT")
-REGION = "us-east-1"
 
 
 def setup_schema():
@@ -98,17 +95,23 @@ def format_workflow(workflow: tuple) -> Dict[str, Any]:
     return formatted_result_dict
 
 
-def get_db_connection():
+def get_db_connection(
+    host: str = ENDPOINT,
+    port: str = PORT,
+    database: str = DBNAME,
+    user: str = USER,
+    password: str = PASSWORD,
+):
     """
     Creates and returns a connection object for the database.
     """
     try:
         db_connection = psycopg2.connect(
-            host=ENDPOINT,
-            port=PORT,
-            database=DBNAME,
-            user=USER,
-            password=PASSWORD,
+            host=host,
+            port=port,
+            database=database,
+            user=user,
+            password=password,
         )
         db_connection.autocommit = True
         print("Successfully connected to database.")
@@ -325,3 +328,49 @@ def get_chunker_config(workflow_id) -> ChunkerConfig:
         if connection:
             connection.close()
             print("Database connection closed.")
+
+
+def ensure_pgvector_and_table(
+    conn, workflow_id: str, table_prefix: str = "workflow_", embedding_dim: int = 1536
+):
+    table_name = f"{table_prefix}{workflow_id}"
+    with conn.cursor() as cur:
+
+        # Install pgvector extension if not exists
+        cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+
+        # Remove table if it exists
+        remove_table_sql = sql.SQL("DROP TABLE IF EXISTS {table};").format(
+            table=sql.Identifier(table_name)
+        )
+        cur.execute(remove_table_sql)
+
+        # Create table
+        create_table_sql = sql.SQL(
+            """
+        CREATE TABLE {table} (
+            id BIGSERIAL PRIMARY KEY,
+            document_key TEXT NOT NULL,
+            chunk_index INTEGER NOT NULL,
+            chunk_text TEXT,
+            embedding vector(%s)
+        );
+        """
+        ).format(table=sql.Identifier(table_name))
+        cur.execute(create_table_sql, (embedding_dim,))
+
+        # Create index on embedding column
+        idx_sql = sql.SQL(
+            "CREATE INDEX IF NOT EXISTS {idx_name} ON {table} USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);"
+        ).format(
+            idx_name=sql.Identifier(f"{table_name}_emb_idx"),
+            table=sql.Identifier(table_name),
+        )
+        cur.execute(idx_sql)
+
+        # Truncate table if exists
+        cur.execute(
+            sql.SQL("TRUNCATE TABLE {table};").format(table=sql.Identifier(table_name))
+        )
+
+    return table_name
