@@ -6,7 +6,6 @@ from .s3_services import (
     delete_s3_file,
 )
 from .db_services import (
-    setup_schema,
     create_workflow,
     update_workflow,
     delete_workflow,
@@ -15,6 +14,9 @@ from .db_services import (
     get_chunker_config,
     ensure_pgvector_and_table,
     get_db_connection,
+    get_production_db_config,
+    verify_evaluation_db,
+    verify_production_db,
 )
 
 __all__ = [
@@ -24,7 +26,6 @@ __all__ = [
     "upload_s3_file",
     "get_s3_file_names",
     "delete_s3_file",
-    "setup_schema",
     "create_workflow",
     "update_workflow",
     "delete_workflow",
@@ -32,4 +33,7 @@ __all__ = [
     "get_workflow_info",
     "get_chunker_config",
     "ensure_pgvector_and_table",
+    "get_production_db_config",
+    "verify_evaluation_db",
+    "verify_production_db",
 ]

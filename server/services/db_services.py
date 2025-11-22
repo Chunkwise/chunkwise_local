@@ -9,7 +9,7 @@ from contextlib import contextmanager
 import psycopg2
 from psycopg2 import OperationalError, sql
 from server_types import ChunkerConfig
-from pydantic import TypeAdapter
+from pydantic import BaseModel, TypeAdapter
 import boto3
 
 COLUMN_NAMES: tuple[str, ...] = (
@@ -23,8 +23,19 @@ COLUMN_NAMES: tuple[str, ...] = (
     "evaluation_metrics",
 )
 
+
+class DbConfig(BaseModel):
+    """DB configuration"""
+
+    host: str
+    port: int
+    database: str
+    user: str
+    password: str
+
+
 # Cache for database credentials (avoid repeated Secrets Manager calls)
-_db_credentials_cache = {}
+_db_credentials_cache: Dict[str, Dict[str, Any]] = {}
 
 
 def get_db_credentials(secret_name: str) -> dict:
@@ -50,14 +61,84 @@ def get_db_credentials(secret_name: str) -> dict:
         raise
 
 
+def build_db_config_from_secret(
+    *,
+    secret_name: str,
+    default_host: str = None,
+    default_port: int | str | None = None,
+    default_dbname: str = None,
+) -> DbConfig:
+    """
+    Build a DbConfig from a Secrets Manager secret, with optional defaults
+    from environment/config for host/port/dbname.
+    """
+    creds = get_db_credentials(secret_name)
+
+    host = creds.get("host", default_host)
+    port_raw = creds.get("port", default_port)
+    dbname = creds.get("dbname", default_dbname)
+    user = creds.get("username")
+    password = creds.get("password")
+
+    if not host or not dbname or not user or not password:
+        raise RuntimeError(
+            f"Incomplete DB credentials for secret {secret_name}: "
+            f"host={host}, dbname={dbname}, user={user}"
+        )
+
+    port = int(port_raw) if port_raw is not None else 5432
+
+    return DbConfig(
+        host=host,
+        port=port,
+        database=dbname,
+        user=user,
+        password=password,
+    )
+
+
+def get_evaluation_db_config(secret_name: str | None = None) -> DbConfig:
+    """
+    Build DbConfig for the evaluation database.
+    """
+    resolved_secret_name = (
+        secret_name or os.getenv("DB_SECRET_NAME") or "chunkwise/db-credentials"
+    )
+
+    return build_db_config_from_secret(
+        secret_name=resolved_secret_name,
+        default_host=os.getenv("DB_HOST"),
+        default_port=os.getenv("DB_PORT", "5432"),
+        default_dbname=os.getenv("DB_NAME"),
+    )
+
+
+def get_production_db_config(
+    *,
+    secret_name: str | None = None,
+    default_host: str | None = None,
+    default_port: int | str | None = None,
+    default_dbname: str | None = None,
+) -> DbConfig:
+    """
+    Build DbConfig for the production (vector) database.
+    """
+    resolved_secret_name = (
+        secret_name
+        or os.getenv("VECTOR_DB_SECRET_NAME")
+        or "chunkwise/production-db-credentials"
+    )
+
+    return build_db_config_from_secret(
+        secret_name=resolved_secret_name,
+        default_host=default_host,
+        default_port=default_port,
+        default_dbname=default_dbname,
+    )
+
+
 @contextmanager
-def get_db_connection(
-    host: str,
-    port: str,
-    database: str,
-    user: str,
-    password: str,
-):
+def get_db_connection(config: DbConfig):
     """
     Context manager for database connections.
     Automatically closes connection when done.
@@ -65,18 +146,18 @@ def get_db_connection(
     connection = None
     try:
         connection = psycopg2.connect(
-            host=host,
-            port=port,
-            database=database,
-            user=user,
-            password=password,
+            host=config.host,
+            port=config.port,
+            database=config.database,
+            user=config.user,
+            password=config.password,
         )
         connection.autocommit = True
-        print("Successfully connected to database at %s", host)
+        print("Successfully connected to database at %s", config.host)
         yield connection
 
     except OperationalError as e:
-        print("Error connecting to the databaseat %s: %s", host, e)
+        print("Error connecting to the database at %s: %s", config.host, e)
         raise e
     finally:
         if connection:
@@ -87,65 +168,93 @@ def get_db_connection(
 def get_evaluation_db_connection():
     """
     Creates and returns a connection object for the evaluation database.
-    Reads credentials from Secrets Manager.
+    Reads credentials from Secrets Manager (secret name from env).
     """
 
-    # Get credentials from Secrets Manager
-    db_creds = get_db_credentials("chunkwise/database-credentials")
-
-    # Also try environment variables as fallback
-    host = db_creds.get("host", os.getenv("DB_HOST"))
-    port = int(db_creds.get("port", os.getenv("DB_PORT", "5432")))
-    database = db_creds.get("dbname", os.getenv("DB_NAME"))
-    user = db_creds.get("username")
-    password = db_creds.get("password")
-
-    return get_db_connection(
-        host=host,
-        port=port,
-        database=database,
-        user=user,
-        password=password,
-    )
+    cfg = get_evaluation_db_config()
+    return get_db_connection(cfg)
 
 
-def setup_schema():
+def setup_evaluation_schema(conn) -> None:
     """
-    Creates a row in the workflow table and returns the id of the
-    created workflow.
+    Creates the workflow table in the evaluation database if it doesn't exist.
     """
-    try:
-        with get_evaluation_db_connection() as connection:
-            cursor = connection.cursor()
-
+    with conn.cursor() as cursor:
+        cursor.execute(
+            """
+                SELECT COUNT(*) FROM information_schema.tables
+                WHERE table_schema = 'public'
+                AND table_name = 'workflow'
+            """
+        )
+        if cursor.fetchone()[0] == 0:
             cursor.execute(
                 """
-                    SELECT COUNT(*) FROM information_schema.tables
-                    WHERE table_schema = 'public'
-                    AND table_name = 'workflow'
+                    CREATE TABLE workflow (
+                    id SERIAL PRIMARY KEY,
+                    title varchar(50) NOT NULL,
+                    created_at timestamptz NOT NULL DEFAULT NOW(),
+                    document_title TEXT,
+                    chunking_strategy TEXT,
+                    chunks_stats TEXT,
+                    visualization_html TEXT,
+                    evaluation_metrics TEXT
+                    );
                 """
             )
-            if cursor.fetchone()[0] == 0:
-                cursor.execute(
-                    """
-                        CREATE TABLE workflow (
-                        id SERIAL PRIMARY KEY,
-                        title varchar(50) NOT NULL,
-                        created_at timestamptz NOT NULL DEFAULT NOW(),
-                        document_title TEXT,
-                        chunking_strategy TEXT,
-                        chunks_stats TEXT,
-                        visualization_html TEXT,
-                        evaluation_metrics TEXT
-                        );
-                    """
-                )
-                print("Created workflow table")
-            else:
-                print("Workflow table already exists")
+            print("Created workflow table")
+        else:
+            print("Workflow table already exists")
+
+
+def verify_evaluation_db() -> bool:
+    """
+    Verify connection to evaluation database and initialize schema.
+    Called during server startup.
+
+    Returns:
+        bool: True if successful
+    """
+    try:
+        cfg = get_evaluation_db_config()
+        with get_db_connection(cfg) as conn:
+            setup_evaluation_schema(conn)
+        print("Evaluation database schema initialized")
+        return True
     except Exception as e:
-        print(("Error setting up database.", e))
-        raise e
+        print(f"Failed to initialize evaluation database: {e}")
+        raise
+
+
+def verify_production_db(
+    *,
+    vector_db_host: str = None,
+    vector_db_port: int = 5432,
+    vector_db_name: str = None,
+    vector_db_secret_name: str = "chunkwise/production-db-credentials",
+) -> bool:
+    """
+    Verify connection to production vector database.
+    Called during server startup.
+    """
+    if not vector_db_host:
+        print("⚠️  Production database not configured (VECTOR_DB_HOST not set)")
+        return False
+
+    try:
+        cfg = get_production_db_config(
+            secret_name=vector_db_secret_name,
+            default_host=vector_db_host,
+            default_port=vector_db_port,
+            default_dbname=vector_db_name,
+        )
+        with get_db_connection(cfg) as conn:
+            with conn.cursor():
+                print("Connected to production vector DB")
+        return True
+    except Exception as e:
+        print(f"Failed to connect to production vector database: {e}")
+        raise
 
 
 def format_workflow(workflow: tuple) -> Dict[str, Any]:
@@ -329,10 +438,10 @@ def get_chunker_config(workflow_id) -> ChunkerConfig:
             cursor = connection.cursor()
 
             query = """
-                SELECT chunking_strategy
-                FROM workflow
-                WHERE id = %s
-            """
+                        SELECT chunking_strategy
+                        FROM workflow
+                        WHERE id = %s
+                    """
             cursor.execute(query, (workflow_id,))
             print(query)
 
@@ -374,13 +483,13 @@ def ensure_pgvector_and_table(
         # Create table
         create_table_sql = sql.SQL(
             """
-            CREATE TABLE {table} (
-                id BIGSERIAL PRIMARY KEY,
-                document_key TEXT NOT NULL,
-                chunk_index INTEGER NOT NULL,
-                chunk_text TEXT,
-                embedding vector(%s)
-            );
+                CREATE TABLE {table} (
+                    id BIGSERIAL PRIMARY KEY,
+                    document_key TEXT NOT NULL,
+                    chunk_index INTEGER NOT NULL,
+                    chunk_text TEXT,
+                    embedding vector(%s)
+                );
             """
         ).format(table=sql.Identifier(table_name))
         cursor.execute(create_table_sql, (embedding_dim,))

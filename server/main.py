@@ -32,7 +32,6 @@ from services import (
     get_s3_file_names,
     get_evaluation,
     get_chunks,
-    setup_schema,
     create_workflow,
     update_workflow,
     delete_workflow,
@@ -40,13 +39,12 @@ from services import (
     get_workflow_info,
     get_chunker_config,
     get_db_connection,
+    get_production_db_config,
+    verify_evaluation_db,
+    verify_production_db,
     ensure_pgvector_and_table,
 )
 from config import (
-    DB_HOST,
-    DB_PORT,
-    DB_NAME,
-    DB_SECRET_NAME,
     VECTOR_DB_HOST,
     VECTOR_DB_PORT,
     VECTOR_DB_NAME,
@@ -70,22 +68,6 @@ logging.basicConfig(
 )
 
 
-def get_db_credentials(secret_name: str) -> dict:
-    """
-    Get database credentials from AWS Secrets Manager.
-
-    Returns dict with keys: username, password, host, port, dbname, engine
-    """
-    try:
-        secretsmanager = boto3.client("secretsmanager")
-        secret_response = secretsmanager.get_secret_value(SecretId=secret_name)
-        secret = json.loads(secret_response["SecretString"])
-        return secret
-    except Exception as e:
-        logging.error("Failed to get secret %s: %s", secret_name, e)
-        raise
-
-
 @app.on_event("startup")
 async def startup_event():
     """
@@ -97,44 +79,25 @@ async def startup_event():
     # Initialzing evaluaiton database schema (for experimentation workflows)
     logging.info("Initializing database schema...")
     try:
-        db_creds = get_db_credentials(DB_SECRET_NAME)
-        setup_schema()
+        verify_evaluation_db()
         logging.info("Evaluation database schema initialized")
     except Exception as e:
         logging.exception("Failed to initialize evaluation database: %s", e)
         raise
 
     # Verify production database connection (for deployment workflows)
-    if VECTOR_DB_HOST:
-        try:
-            logging.info("Verifying production database connection...")
+    logging.info("Verifying production database connection...")
+    try:
 
-            # Get production DB credentials from Secrets Manager
-            vec_db_creds = get_db_credentials(VECTOR_DB_SECRET_NAME)
-
-            # Extract credentials (all stored in Secrets Manager)
-            db_user = vec_db_creds.get("username")
-            db_password = vec_db_creds.get("password")
-            db_host = vec_db_creds.get("host", VECTOR_DB_HOST)
-            db_port = int(vec_db_creds.get("port", VECTOR_DB_PORT))
-            db_name = vec_db_creds.get("dbname", VECTOR_DB_NAME)
-
-            # Test connection
-            with get_db_connection(
-                host=db_host,
-                port=db_port,
-                database=db_name,
-                user=db_user,
-                password=db_password,
-            ) as conn:
-                with conn.cursor():
-                    logging.info("Connected to production vector DB")
-
-        except Exception as e:
-            logging.exception("Failed to connect to production vector database: %s", e)
-            raise
-    else:
-        logging.warning("⚠️  VECTOR_DB_HOST not set - deploy endpoint will not work")
+        verify_production_db(
+            vector_db_host=VECTOR_DB_HOST,
+            vector_db_port=VECTOR_DB_PORT,
+            vector_db_name=VECTOR_DB_NAME,
+            vector_db_secret_name=VECTOR_DB_SECRET_NAME,
+        )
+    except Exception as e:
+        logging.exception("Failed to connect to production vector database: %s", e)
+        raise
 
     logging.info("✅ Startup complete! Server ready.")
 
@@ -373,38 +336,28 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             )
             return
 
-        # Get production vector database credentials from Secrets Manager
         try:
-            prod_db_creds = get_db_credentials(VECTOR_DB_SECRET_NAME)
+            prod_cfg = get_production_db_config(
+                secret_name=VECTOR_DB_SECRET_NAME,
+                default_host=VECTOR_DB_HOST,
+                default_port=VECTOR_DB_PORT,
+                default_dbname=VECTOR_DB_NAME,
+            )
 
-            # Extract all connection details from secret
-            vec_db_user = prod_db_creds.get("username")
-            vec_db_password = prod_db_creds.get("password")
-            vec_db_host = prod_db_creds.get("host", VECTOR_DB_HOST)
-            vec_db_port = int(prod_db_creds.get("port", VECTOR_DB_PORT))
-            vec_db_name = prod_db_creds.get("dbname", VECTOR_DB_NAME)
-
-            # Get secret ARN for client reference
             secretsmanager = boto3.client("secretsmanager")
             secret_response = secretsmanager.get_secret_value(
                 SecretId=VECTOR_DB_SECRET_NAME
             )
-            secret_arn = secret_response["ARN"]
+            secret_arn = secret_response["ARN"] 
         except Exception as e:
             yield sse_event(
                 {"ok": False, "stage": "secrets-get", "error": str(e)}, event="error"
             )
             return
 
-        # Connect to vector DB and create table for this workflow
+        # --- Create pgvector table for this workflow ---
         try:
-            with get_db_connection(
-                host=vec_db_host,
-                port=vec_db_port,
-                database=vec_db_name,
-                user=vec_db_user,
-                password=vec_db_password,
-            ) as conn:
+            with get_db_connection(prod_cfg) as conn:
                 table_name = ensure_pgvector_and_table(
                     conn, workflow_id=workflow_id, embedding_dim=EMBEDDING_DIM
                 )
@@ -416,16 +369,17 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             )
             return
 
-        # Emit rds-ready with secret ARN
+        # Emit rds-ready with connection details
         rds_payload = {
             "ok": True,
             "stage": "rds-ready",
-            "endpoint": vec_db_host,
-            "port": vec_db_port,
-            "database": vec_db_name,
-            "user": vec_db_user,
-            "password": vec_db_password,
+            "endpoint": prod_cfg.host,
+            "port": prod_cfg.port,
+            "database": prod_cfg.database,
+            "user": prod_cfg.user,
+            "password": prod_cfg.password,
             "table_name": table_name,
+            "secret_arn": secret_arn,
         }
         yield sse_event(rds_payload, event="rds-ready")
 
@@ -523,11 +477,11 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                                 "value": req.s3_secret_key,
                             },
                             # Vector database connection info
-                            {"name": "VECTOR_DB_HOST", "value": vec_db_host},
-                            {"name": "VECTOR_DB_PORT", "value": str(vec_db_port)},
-                            {"name": "VECTOR_DB_NAME", "value": vec_db_name},
-                            {"name": "VECTOR_DB_USER", "value": vec_db_user},
-                            {"name": "VECTOR_DB_PASSWORD", "value": vec_db_password},
+                            {"name": "VECTOR_DB_HOST", "value": prod_cfg.host},
+                            {"name": "VECTOR_DB_PORT", "value": str(prod_cfg.port)},
+                            {"name": "VECTOR_DB_NAME", "value": prod_cfg.database},
+                            {"name": "VECTOR_DB_USER", "value": prod_cfg.user},
+                            {"name": "VECTOR_DB_PASSWORD", "value": prod_cfg.password},
                             {"name": "VECTOR_DB_TABLE", "value": table_name},
                             # Chunking configuration
                             {
@@ -575,7 +529,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 "ok": True,
                 "stage": "done",
                 "summary": {
-                    "database": f"{vec_db_host}:{vec_db_port}/{vec_db_name}",
+                    "database": f"{prod_cfg.host}:{prod_cfg.port}/{prod_cfg.database}",
                     "table": table_name,
                     "documents_processed": len(job_ids),
                     "message": "Jobs submitted successfully. Monitor progress in AWS Batch console.",

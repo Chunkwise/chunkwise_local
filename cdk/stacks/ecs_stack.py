@@ -150,6 +150,10 @@ class EcsStack(Stack):
 
         # Grant S3 access to task role
         self.documents_bucket.grant_read_write(self.task_role)
+        # Grant permissions to read database credentials from Secrets Manager
+        self.database.secret.grant_read(self.task_role)
+        self.vector_database.secret.grant_read(self.task_role)
+        self._get_openai_secret().grant_read(self.task_role)
 
         # Grant permissions for server to interact with AWS Batch (will be used by the deploy endpoint)
         self.task_role.add_to_policy(
@@ -176,9 +180,6 @@ class EcsStack(Stack):
                 resources=["*"],
             )
         )
-
-        # Grant permissions to read vector DB credentials
-        self.vector_database.secret.grant_read(self.task_role)
 
         # Note: iam:PassRole permission for Batch roles will be added by BatchStack
         # when it creates the Batch IAM roles, to avoid circular dependency
@@ -365,10 +366,12 @@ class EcsStack(Stack):
                 "DB_HOST": self.database.instance_endpoint.hostname,
                 "DB_NAME": config.RDS_CONFIG["database_name"],
                 "DB_PORT": str(config.RDS_CONFIG["port"]),
+                "DB_SECRET_NAME": self.database.secret.secret_name,
                 # Vector Database (for deploy endpoint)
                 "VECTOR_DB_HOST": self.vector_database.instance_endpoint.hostname,
                 "VECTOR_DB_NAME": config.VECTOR_RDS_CONFIG["database_name"],
                 "VECTOR_DB_PORT": str(config.VECTOR_RDS_CONFIG["port"]),
+                "VECTOR_DB_SECRET_NAME": self.vector_database.secret.secret_name,
                 # S3
                 "S3_BUCKET_NAME": self.documents_bucket.bucket_name,
                 # Service discovery endpoints
