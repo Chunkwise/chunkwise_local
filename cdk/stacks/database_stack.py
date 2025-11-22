@@ -50,7 +50,7 @@ class DatabaseStack(Stack):
             self,
             "ChunkwiseDbCredentials",
             username="postgres",
-            secret_name="chunkwise/database-credentials",
+            secret_name="chunkwise/db-credentials",
         )
 
         # Create RDS PostgreSQL instance for evaluation

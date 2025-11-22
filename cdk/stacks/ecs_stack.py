@@ -232,9 +232,6 @@ class EcsStack(Stack):
                     self._get_openai_secret()
                 ),
             },
-            environment={
-                "S3_BUCKET_NAME": self.documents_bucket.bucket_name,
-            },
             health_check=ecs.HealthCheck(
                 command=["CMD-SHELL", "curl -f http://localhost:80/health || exit 1"],
                 interval=Duration.seconds(30),
@@ -363,15 +360,6 @@ class EcsStack(Stack):
             logging=ecs.LogDrivers.aws_logs(
                 stream_prefix="server", log_group=log_group
             ),
-            secrets={
-                # Load database credentials from Secrets Manager
-                "DB_PASSWORD": ecs.Secret.from_secrets_manager(
-                    self.database.secret, "password"
-                ),
-                "DB_USER": ecs.Secret.from_secrets_manager(
-                    self.database.secret, "username"
-                ),
-            },
             environment={
                 # Evaluation Database
                 "DB_HOST": self.database.instance_endpoint.hostname,
