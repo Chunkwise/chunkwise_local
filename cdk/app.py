@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import json
 import aws_cdk as cdk
 from stacks.network_stack import NetworkStack
 from stacks.database_stack import DatabaseStack
@@ -8,10 +9,22 @@ from stacks.load_balancer_stack import LoadBalancerStack
 
 app = cdk.App()
 
-# Get environment variables or use defaults
+# CDK now expects a json string as context
+options = app.node.try_get_context("options")
+if options:
+    options_json = json.loads(options)
+
+    if not isinstance(options_json, dict):
+        raise AttributeError("Must provide an options in JSON format")
+else:
+    options_json = None
+
+
+# Get environment variables or use defaults, for the reason use the one passed in as context
 env = cdk.Environment(
     account=os.getenv("CDK_DEFAULT_ACCOUNT"),
-    region=os.getenv("CDK_DEFAULT_REGION", "us-east-1"),
+    region=(options_json and options_json.get("region"))
+    or os.getenv("CDK_DEFAULT_REGION", "us-east-1"),
 )
 
 # Stack 1: Network Infrastructure (VPC, Subnets, NAT Gateways, etc.)

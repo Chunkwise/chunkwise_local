@@ -1,16 +1,17 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": {
-        target: "http://chunkwise-alb-1341063601.us-east-1.elb.amazonaws.com",
-        changeOrigin: true,
-        secure: false,
-      },
+      "/api": process.env.ALB_URI
+        ? `http://${process.env.ALB_URI}`
+        : "http://localhost:8000",
     },
   },
 });
