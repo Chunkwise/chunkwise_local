@@ -12,4 +12,3 @@ COPY services.py .
 COPY utils.py .
 
 CMD ["python", "process_document.py"]
-
