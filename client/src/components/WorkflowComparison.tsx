@@ -22,6 +22,9 @@ const EVALUATION_METRIC_KEYS: Record<keyof EvaluationMetrics, string> = {
   precision_omega_mean: "Precision omega mean",
 };
 
+// Blue color for progress bars
+const PROGRESS_BAR_COLOR = "#3b82f6";
+
 type Props = {
   chunkers: Chunker[];
   workflows: Workflow[];
@@ -61,13 +64,6 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
       .filter((value): value is string => Boolean(value));
 
     return configPairs.join(", ");
-  };
-
-  const getRatingColor = (value: number): string => {
-    const percentage = value * 100;
-    if (percentage >= 80) return "#48bb78"; // green
-    if (percentage >= 60) return "#f6ad55"; // orange
-    return "#fc8181"; // red
   };
 
   return (
@@ -166,10 +162,10 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                     <h4 className="comparison-section-title">
                       Evaluation Results
                     </h4>
-                    {workflow.evaluation_metrics ? (
+                    {workflow.evaluation_response?.results?.[0] ? (
                       (() => {
                         const metrics =
-                          workflow.evaluation_metrics as EvaluationMetrics;
+                          workflow.evaluation_response.results[0] as EvaluationMetrics;
                         return (
                           <div className="comparison-evaluation">
                             {(
@@ -198,7 +194,7 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                                       className="comparison-progress-fill"
                                       style={{
                                         width: `${width}%`,
-                                        backgroundColor: getRatingColor(value),
+                                        backgroundColor: PROGRESS_BAR_COLOR,
                                       }}
                                     />
                                   </div>

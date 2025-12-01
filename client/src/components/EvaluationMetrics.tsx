@@ -1,42 +1,33 @@
-import type { EvaluationMetrics as Metrics } from "../types";
+import type { EvaluationResponse } from "../types";
 
 interface EvaluationMetricsProps {
-  metrics: Metrics;
+  evaluationResponse: EvaluationResponse;
 }
 
-type Rating = "Bad" | "Good" | "Excellent";
+// Blue color palette for progress bars
+const PROGRESS_BAR_COLOR = "#3b82f6"; // Primary blue
 
-const getRating = (value: number): Rating => {
-  const percentage = value * 100;
-  if (percentage >= 80) return "Excellent";
-  if (percentage >= 60) return "Good";
-  return "Bad";
-};
-
-const getRatingColor = (rating: Rating): string => {
-  switch (rating) {
-    case "Excellent":
-      return "#48bb78"; // green
-    case "Good":
-      return "#f6ad55"; // orange
-    case "Bad":
-      return "#fc8181"; // red
+const EvaluationMetrics = ({ evaluationResponse }: EvaluationMetricsProps) => {
+  const metrics = evaluationResponse.results[0];
+  
+  if (!metrics) {
+    return (
+      <div className="evaluation-container">
+        <p className="muted">No evaluation results available</p>
+      </div>
+    );
   }
-};
 
-const EvaluationMetrics = ({ metrics }: EvaluationMetricsProps) => {
-  const precisionPercent = (metrics.precision_mean * 100).toFixed(1);
-  const recallPercent = (metrics.recall_mean * 100).toFixed(1);
-  const iouPercent = (metrics.iou_mean * 100).toFixed(1);
-  const precisionOmegaPercent = (metrics.precision_omega_mean * 100).toFixed(1);
+  const precisionValue = metrics.precision_mean.toFixed(3);
+  const recallValue = metrics.recall_mean.toFixed(3);
+  const iouValue = metrics.iou_mean.toFixed(3);
+  const precisionOmegaValue = metrics.precision_omega_mean.toFixed(3);
 
-  const overallRating = getRating(
-    (metrics.precision_mean +
-      metrics.recall_mean +
-      metrics.iou_mean +
-      metrics.precision_omega_mean) /
-      4
-  );
+  // For progress bar width, convert to percentage
+  const precisionPercent = metrics.precision_mean * 100;
+  const recallPercent = metrics.recall_mean * 100;
+  const iouPercent = metrics.iou_mean * 100;
+  const precisionOmegaPercent = metrics.precision_omega_mean * 100;
 
   return (
     <div className="evaluation-container">
@@ -47,16 +38,25 @@ const EvaluationMetrics = ({ metrics }: EvaluationMetricsProps) => {
             Performance metrics for your chunking strategy
           </p>
         </div>
-        <span className={`rating-badge rating-${overallRating.toLowerCase()}`}>
-          {overallRating}
-        </span>
+      </div>
+
+      <div className="queries-info">
+        <p>
+          <strong>Queries S3 Path:</strong>{" "}
+          <code>{evaluationResponse.queries_s3_key}</code>
+        </p>
+        <p className="queries-status">
+          {evaluationResponse.queries_generated
+            ? `✓ New queries were generated${evaluationResponse.num_queries ? ` (${evaluationResponse.num_queries} queries)` : ""}`
+            : "✓ Existing queries were used"}
+        </p>
       </div>
 
       <div className="metrics-list">
         <div className="metric-item">
           <div className="metric-header">
             <span className="metric-name">Precision</span>
-            <span className="metric-value">{precisionPercent}%</span>
+            <span className="metric-value">{precisionValue}</span>
           </div>
           <p className="metric-description">Accuracy of retrieved chunks</p>
           <div className="progress-bar">
@@ -64,9 +64,7 @@ const EvaluationMetrics = ({ metrics }: EvaluationMetricsProps) => {
               className="progress-fill"
               style={{
                 width: `${precisionPercent}%`,
-                backgroundColor: getRatingColor(
-                  getRating(metrics.precision_mean)
-                ),
+                backgroundColor: PROGRESS_BAR_COLOR,
               }}
             />
           </div>
@@ -75,7 +73,7 @@ const EvaluationMetrics = ({ metrics }: EvaluationMetricsProps) => {
         <div className="metric-item">
           <div className="metric-header">
             <span className="metric-name">Precision Omega</span>
-            <span className="metric-value">{precisionOmegaPercent}%</span>
+            <span className="metric-value">{precisionOmegaValue}</span>
           </div>
           <p className="metric-description">Weighted precision metric</p>
           <div className="progress-bar">
@@ -83,9 +81,7 @@ const EvaluationMetrics = ({ metrics }: EvaluationMetricsProps) => {
               className="progress-fill"
               style={{
                 width: `${precisionOmegaPercent}%`,
-                backgroundColor: getRatingColor(
-                  getRating(metrics.precision_omega_mean)
-                ),
+                backgroundColor: PROGRESS_BAR_COLOR,
               }}
             />
           </div>
@@ -94,7 +90,7 @@ const EvaluationMetrics = ({ metrics }: EvaluationMetricsProps) => {
         <div className="metric-item">
           <div className="metric-header">
             <span className="metric-name">Recall</span>
-            <span className="metric-value">{recallPercent}%</span>
+            <span className="metric-value">{recallValue}</span>
           </div>
           <p className="metric-description">Coverage of relevant information</p>
           <div className="progress-bar">
@@ -102,7 +98,7 @@ const EvaluationMetrics = ({ metrics }: EvaluationMetricsProps) => {
               className="progress-fill"
               style={{
                 width: `${recallPercent}%`,
-                backgroundColor: getRatingColor(getRating(metrics.recall_mean)),
+                backgroundColor: PROGRESS_BAR_COLOR,
               }}
             />
           </div>
@@ -111,7 +107,7 @@ const EvaluationMetrics = ({ metrics }: EvaluationMetricsProps) => {
         <div className="metric-item">
           <div className="metric-header">
             <span className="metric-name">IoU</span>
-            <span className="metric-value">{iouPercent}%</span>
+            <span className="metric-value">{iouValue}</span>
           </div>
           <p className="metric-description">Intersection over Union score</p>
           <div className="progress-bar">
@@ -119,7 +115,7 @@ const EvaluationMetrics = ({ metrics }: EvaluationMetricsProps) => {
               className="progress-fill"
               style={{
                 width: `${iouPercent}%`,
-                backgroundColor: getRatingColor(getRating(metrics.iou_mean)),
+                backgroundColor: PROGRESS_BAR_COLOR,
               }}
             />
           </div>

@@ -657,6 +657,38 @@ html,
   color: #2d3748;
 }
 
+.queries-info {
+  background: #f0f7ff;
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 24px;
+  border: 1px solid #bfdbfe;
+}
+
+.queries-info p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #1e40af;
+}
+
+.queries-info p:last-child {
+  margin-bottom: 0;
+}
+
+.queries-info code {
+  background: #dbeafe;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.queries-status {
+  font-weight: 500;
+  color: #1d4ed8;
+}
+
 /* Workflow Comparison */
 .comparison-view {
   display: flex;
