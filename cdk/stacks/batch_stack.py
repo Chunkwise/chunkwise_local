@@ -280,7 +280,7 @@ class BatchStack(Stack):
                         "name": "OPENAI_API_KEY",
                         "valueFrom": (
                             f"arn:aws:secretsmanager:{self.region}:{self.account}:"
-                            f"secret:chunkwise/openai-api-key"
+                            f"secret:chunkwise/openai-api-key:OPENAI_API_KEY::"
                         ),
                     }
                 ],
