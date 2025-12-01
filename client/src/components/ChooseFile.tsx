@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Workflow } from "../types";
 import { uploadFile } from "../services/documents";
+import ErrorMessage from "./ErrorMessage";
 
 interface ChooseFileProps {
   workflow: Workflow;
@@ -61,12 +62,15 @@ const ChooseFile = ({
   };
 
   return (
-    <div className="details-row">
-      <h2 className="section-title">File</h2>
-      <div className="box">
+    <div className="section">
+      <h2 className="section-header">
+        <span className="icon">description</span>
+        <span className="title-md">File</span>
+      </h2>
+      <div className="card">
         <div className="file-controls">
           <select
-            className="file-select"
+            className="select"
             value={workflow.document_title || ""}
             onChange={(event) => handleSelectChange(event.target.value)}
             disabled={isLoadingFiles || isUploadingFile}
@@ -93,27 +97,39 @@ const ChooseFile = ({
           />
         </div>
 
-        {error && <div className="error">{error}</div>}
+        {error && <ErrorMessage message={error} />}
 
         {isLoadingFiles && (
-          <div className="muted">Loading available files...</div>
+          <div className="text-muted flex items-center gap-2 mt-2">
+            <span className="icon spinner">sync</span>
+            Loading available files...
+          </div>
         )}
 
-        {isUploadingFile && <div className="muted">Uploading...</div>}
+        {isUploadingFile && (
+          <div className="text-muted flex items-center gap-2 mt-2">
+            <span className="icon spinner">sync</span>
+            Uploading...
+          </div>
+        )}
 
         {workflow.document_title ? (
           <div className="file-preview">
-            <div className="file-name">Selected: {workflow.document_title}</div>
+            <span className="icon">insert_drive_file</span>
+            <span className="file-name">{workflow.document_title}</span>
             <button
-              className="btn btn-sm"
+              className="btn btn-icon btn-sm"
               onClick={() => onFileChange(undefined)}
               title="Remove selection"
             >
-              x
+              <span className="icon icon-sm">close</span>
             </button>
           </div>
         ) : (
-          <div className="muted">No document selected</div>
+          <div className="text-muted mt-2">
+            <span className="icon icon-sm">info</span>
+            No document selected
+          </div>
         )}
       </div>
     </div>

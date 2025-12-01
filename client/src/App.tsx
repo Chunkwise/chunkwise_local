@@ -6,6 +6,7 @@ import Header from "./components/Header";
 import WorkflowList from "./components/WorkflowList";
 import WorkflowDetails from "./components/WorkflowDetails";
 import WorkflowComparison from "./components/WorkflowComparison";
+import ErrorMessage from "./components/ErrorMessage";
 import { getChunkers } from "./services/chunkers";
 import { getFiles } from "./services/documents";
 import {
@@ -182,23 +183,18 @@ export default function App() {
   };
 
   return (
-    <div className="app-root">
+    <div className="app">
       <Header />
 
       {error && (
-        <div className="error-banner">
-          <span>{error}</span>
-          <button
-            className="error-close"
-            onClick={() => setError(null)}
-            aria-label="Dismiss error"
-          >
-            x
-          </button>
-        </div>
+        <ErrorMessage
+          message={error}
+          onDismiss={() => setError(null)}
+          variant="banner"
+        />
       )}
 
-      <div className="main-layout">
+      <div className="layout">
         <aside className="sidebar">
           <WorkflowList
             workflows={workflowState.workflows}
@@ -214,7 +210,7 @@ export default function App() {
           />
         </aside>
 
-        <main className="main-content">
+        <main className="content">
           {comparisonState.isComparing ? (
             <WorkflowComparison
               chunkers={chunkers}

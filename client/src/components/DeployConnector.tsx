@@ -9,6 +9,7 @@ import {
 } from "../services/deploy";
 import S3CredentialsForm from "./S3CredentialsForm";
 import RDSConnectionDetails from "./RDSConnectionDetails";
+import ErrorMessage from "./ErrorMessage";
 
 interface DeployConnectorProps {
   workflow: Workflow;
@@ -164,29 +165,51 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
     error: "Deployment could not be completed.",
   } as const;
 
+  const getStatusIcon = (currentStatus: typeof status): string => {
+    switch (currentStatus) {
+      case "running":
+        return "sync";
+      case "success":
+        return "check_circle";
+      case "error":
+        return "error";
+      default:
+        return "info";
+    }
+  };
+
   return (
-    <div className="details-row">
-      <h2 className="section-title">Deploy</h2>
-      <div className="box">
-        <div className="muted">
+    <div className="section">
+      <h2 className="section-header">
+        <span className="icon">cloud_upload</span>
+        <span className="title-md">Deploy</span>
+      </h2>
+      <div className="card">
+        <div className="text-muted">
+          <span className="icon icon-sm">storage</span>
           Connect your Amazon S3 bucket to import and deploy chunked data.
         </div>
 
-        <div className="muted" style={{ margin: "8px 0" }}>
+        <div className={`text-muted mt-2 flex items-center gap-1 ${status === "running" ? "spinner" : ""}`}>
+          <span className={`icon icon-sm ${status === "running" ? "spinner" : ""}`}>
+            {getStatusIcon(status)}
+          </span>
           {statusCopy[status]}
         </div>
 
         <button
-          className="btn btn-primary"
+          className="btn btn-primary mt-3"
           type="button"
           onClick={handleToggleForm}
           disabled={!hasChunkingStrategy || isSubmitting}
         >
+          <span className="icon icon-sm">link</span>
           Connect to Amazon S3
         </button>
 
         {!hasChunkingStrategy && (
-          <div className="muted">
+          <div className="text-muted mt-2">
+            <span className="icon icon-sm">warning</span>
             Configure a chunker before setting up deployment.
           </div>
         )}
@@ -199,51 +222,37 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
           />
         )}
 
-        {error && <div className="error">{error}</div>}
+        {error && <ErrorMessage message={error} />}
 
         {s3Details && (
-          <div className="deployment-summary" style={{ marginTop: "16px" }}>
-            <div className="muted">
+          <div className="deploy-summary">
+            <div className="text-muted flex items-center gap-1">
+              <span className="icon icon-sm">check_circle</span>
               Verified bucket <strong>{s3Details.bucket}</strong>
             </div>
           </div>
         )}
 
         {rdsDetails && (
-          <div style={{ marginTop: "16px" }}>
+          <div className="mt-4">
             <RDSConnectionDetails details={rdsDetails} />
           </div>
         )}
 
         {events.length > 0 && (
-          <div style={{ marginTop: "16px" }}>
-            <div className="muted" style={{ marginBottom: "8px" }}>
+          <div className="deploy-log">
+            <div className="deploy-log-title">
+              <span className="icon icon-sm">terminal</span>
               Live deployment log
             </div>
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-              }}
-            >
+            <ul className="deploy-log-list">
               {events.map((event, index) => (
-                <li
-                  key={`${event.type}-${index}`}
-                  style={{
-                    border: "1px solid var(--border)",
-                    borderRadius: "6px",
-                    padding: "8px 12px",
-                    background: "#f9fafb",
-                  }}
-                >
-                  <div style={{ fontWeight: 600 }}>
+                <li key={`${event.type}-${index}`} className="deploy-log-item">
+                  <div className="deploy-log-item-title">
+                    <span className="icon icon-sm">arrow_right</span>
                     {describeEventTitle(event)}
                   </div>
-                  <div className="muted">{describeEventDetails(event)}</div>
+                  <div className="text-muted">{describeEventDetails(event)}</div>
                 </li>
               ))}
             </ul>

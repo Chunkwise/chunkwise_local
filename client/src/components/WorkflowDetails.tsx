@@ -8,6 +8,7 @@ import ChunkStats from "./ChunkStats";
 import VisualizationDisplay from "./VisualizationDisplay";
 import Evaluation from "./Evaluation";
 import DeployConnector from "./DeployConnector";
+import ErrorMessage from "./ErrorMessage";
 import { getVisualization } from "../services/visualization";
 import { getEvaluation } from "../services/evaluation";
 
@@ -65,8 +66,8 @@ const WorkflowDetails = ({
   if (!workflow) {
     return (
       <div className="placeholder">
-        Select or create a workflow to upload/choose a file and configure
-        chunkers.
+        <span className="icon icon-lg">touch_app</span>
+        <span>Select or create a workflow to get started</span>
       </div>
     );
   }
@@ -229,30 +230,11 @@ const WorkflowDetails = ({
   return (
     <div className="details">
       {error && (
-        <div
-          style={{
-            padding: "1rem",
-            backgroundColor: "#fee",
-            color: "#c00",
-            borderRadius: "4px",
-            marginBottom: "1rem",
-          }}
-        >
-          {error}
-          <button
-            onClick={() => setError(null)}
-            style={{
-              marginLeft: "1rem",
-              background: "transparent",
-              border: "none",
-              color: "#c00",
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            x
-          </button>
-        </div>
+        <ErrorMessage
+          message={error}
+          onDismiss={() => setError(null)}
+          variant="banner"
+        />
       )}
 
       <ChooseFile
@@ -271,19 +253,23 @@ const WorkflowDetails = ({
       />
 
       {workflow.document_title && workflow.chunking_strategy && (
-        <div className="details-row">
+        <div className="section">
           <div className="evaluation-actions">
             <button
-              className="btn btn-evaluate"
+              className="btn-evaluate"
               onClick={handleRunEvaluation}
               disabled={!evaluationEnabled || isEvaluating}
             >
               {isEvaluating ? (
                 <>
-                  <span className="spinner">⟳</span> Running Evaluation...
+                  <span className="icon spinner">sync</span>
+                  Running Evaluation...
                 </>
               ) : (
-                <>⚡ Run Evaluation</>
+                <>
+                  <span className="icon">bolt</span>
+                  Run Evaluation
+                </>
               )}
             </button>
           </div>
@@ -297,9 +283,9 @@ const WorkflowDetails = ({
               visualization: (
                 <div className="tab-panel">
                   {isLoadingViz && (
-                    <div className="muted">
-                      <span className="spinner">⟳</span> Loading
-                      visualization...
+                    <div className="text-muted flex items-center gap-2">
+                      <span className="icon spinner">sync</span>
+                      Loading visualization...
                     </div>
                   )}
                   {workflow.chunks_stats &&
@@ -312,7 +298,8 @@ const WorkflowDetails = ({
                       />
                     </>
                   ) : !isLoadingViz ? (
-                    <p className="muted">
+                    <p className="text-muted">
+                      <span className="icon icon-sm">info</span>
                       Select a chunker to see visualization
                     </p>
                   ) : null}
@@ -322,7 +309,8 @@ const WorkflowDetails = ({
                 <Evaluation evaluationResponse={workflow.evaluation_response} />
               ) : (
                 <div className="tab-panel">
-                  <p className="muted">
+                  <p className="text-muted">
+                    <span className="icon icon-sm">info</span>
                     Run evaluation to see performance metrics
                   </p>
                 </div>
@@ -333,7 +321,8 @@ const WorkflowDetails = ({
                 </div>
               ) : (
                 <div className="tab-panel">
-                  <p className="muted">
+                  <p className="text-muted">
+                    <span className="icon icon-sm">info</span>
                     Configure a chunker to enable deployment
                   </p>
                 </div>

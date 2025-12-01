@@ -17,9 +17,12 @@ const ChunkerForm = ({
   onConfigChange,
 }: ChunkerFormProps) => {
   return (
-    <div className="details-row">
-      <h2 className="section-title">Chunker & configuration</h2>
-      <div className="box">
+    <div className="section">
+      <h2 className="section-header">
+        <span className="icon">tune</span>
+        <span className="title-md">Chunker & Configuration</span>
+      </h2>
+      <div className="card">
         <div className="field">
           <label className="label">Chunker</label>
           <select
@@ -40,8 +43,9 @@ const ChunkerForm = ({
 
         {workflow.chunking_strategy && selectedChunkerConfig ? (
           <div className="config-area">
-            <div>{selectedChunkerConfig.description}</div>
-            <div className="muted">
+            <div className="text-sm">{selectedChunkerConfig.description}</div>
+            <div className="text-muted">
+              <span className="icon icon-sm">settings</span>
               Configure chunker options (defaults pre-selected)
             </div>
             {Object.keys(selectedChunkerConfig).map((key) =>
@@ -58,7 +62,8 @@ const ChunkerForm = ({
             )}
           </div>
         ) : (
-          <div className="muted">
+          <div className="text-muted mt-2">
+            <span className="icon icon-sm">info</span>
             Choose a chunker to preview its config options.
           </div>
         )}

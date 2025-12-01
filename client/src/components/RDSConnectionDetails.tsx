@@ -24,33 +24,22 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
   };
 
   return (
+<<<<<<< HEAD
     <div className="deployment-summary" aria-live="polite">
       <div className="muted">
         RDS instance is online.
+=======
+    <div className="deploy-summary" aria-live="polite">
+      <div className="text-muted flex items-center gap-1">
+        <span className="icon icon-sm">dns</span>
+        RDS instance <strong>{details.db_instance_identifier}</strong> is online.
+>>>>>>> ea46dae (Add CSS change)
       </div>
-      <div className="muted" style={{ marginTop: "8px" }}>
+      <div className="text-muted mt-2">
         Use the connection string below for psql-compatible clients:
       </div>
-      <div
-        className="file-preview"
-        style={{
-          marginTop: "12px",
-          alignItems: "stretch",
-          gap: "12px",
-          flexWrap: "wrap",
-        }}
-      >
-        <div
-          style={{
-            flex: "1 1 260px",
-            padding: "8px 10px",
-            border: "1px solid var(--border)",
-            borderRadius: "6px",
-            background: "#f9fafb",
-            fontFamily: "monospace",
-            wordBreak: "break-all",
-          }}
-        >
+      <div className="deploy-connection">
+        <div className="deploy-connection-string">
           {connectionString}
         </div>
         <button
@@ -58,48 +47,46 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
           type="button"
           onClick={() => copyValue(connectionString, "connection")}
         >
-          Copy connection
+          <span className="icon icon-sm">content_copy</span>
+          Copy
         </button>
       </div>
 
-      <dl
-        style={{
-          display: "grid",
-          gridTemplateColumns: "150px 1fr",
-          gap: "8px 12px",
-          marginTop: "16px",
-        }}
-      >
-        <dt className="muted">Endpoint</dt>
-        <dd style={{ margin: 0 }}>{details.endpoint}</dd>
+      <dl className="deploy-details">
+        <dt className="text-muted">
+          <span className="icon icon-sm">language</span> Endpoint
+        </dt>
+        <dd>{details.endpoint}</dd>
 
-        <dt className="muted">Port</dt>
-        <dd style={{ margin: 0 }}>{details.port}</dd>
+        <dt className="text-muted">
+          <span className="icon icon-sm">tag</span> Port
+        </dt>
+        <dd>{details.port}</dd>
 
-        <dt className="muted">Database</dt>
-        <dd style={{ margin: 0 }}>{details.database}</dd>
+        <dt className="text-muted">
+          <span className="icon icon-sm">storage</span> Database
+        </dt>
+        <dd>{details.database}</dd>
 
-        <dt className="muted">Table</dt>
-        <dd style={{ margin: 0 }}>{details.table_name}</dd>
+        <dt className="text-muted">
+          <span className="icon icon-sm">table_chart</span> Table
+        </dt>
+        <dd>{details.table_name}</dd>
 
-        <dt className="muted">Secret ARN</dt>
-        <dd style={{ margin: 0 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              flexWrap: "wrap",
-            }}
-          >
+        <dt className="text-muted">
+          <span className="icon icon-sm">vpn_key</span> Secret ARN
+        </dt>
+        <dd>
+          <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
             <span style={{ wordBreak: "break-all" }}>
               {details.secret_arn}
             </span>
             <button
-              className="btn btn-xs"
+              className="btn btn-sm"
               type="button"
               onClick={() => copyValue(details.secret_arn, "secret")}
             >
+              <span className="icon icon-sm">content_copy</span>
               Copy
             </button>
           </div>
@@ -107,20 +94,22 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
       </dl>
 
       {details.notes && (
-        <div className="muted" style={{ marginTop: "12px" }}>
+        <div className="text-muted mt-3">
+          <span className="icon icon-sm">info</span>
           {details.notes}
         </div>
       )}
 
       {copyState === "error" && (
-        <div className="error" style={{ marginTop: "12px" }}>
+        <div className="error-text mt-3">
+          <span className="icon icon-sm">error</span>
           Could not copy automatically. Please copy the value manually.
         </div>
       )}
       {copyState && copyState !== "error" && (
-        <div className="muted" style={{ color: "#2b6cb0", marginTop: "8px" }}>
-          Copied{" "}
-          {copyState === "connection" ? "connection string" : "secret ARN"}
+        <div className="text-muted mt-2" style={{ color: "var(--color-success)" }}>
+          <span className="icon icon-sm">check_circle</span>
+          Copied {copyState === "connection" ? "connection string" : "secret ARN"}
         </div>
       )}
     </div>

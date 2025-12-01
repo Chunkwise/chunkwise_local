@@ -33,27 +33,28 @@ const TabView = ({
   }, [switchToEvaluation]);
 
   return (
-    <div className="tab-view">
+    <div className="tabs">
       <div className="tab-nav">
         <button
-          className={`tab-button ${
-            activeTab === "visualization" ? "active" : ""
-          }`}
+          className={`tab-btn ${activeTab === "visualization" ? "active" : ""}`}
           onClick={() => setActiveTab("visualization")}
         >
+          <span className="icon icon-sm">bar_chart</span>
           Visualization
         </button>
         <button
-          className={`tab-button ${activeTab === "evaluation" ? "active" : ""}`}
+          className={`tab-btn ${activeTab === "evaluation" ? "active" : ""}`}
           onClick={() => setActiveTab("evaluation")}
           disabled={!hasEvaluation}
         >
+          <span className="icon icon-sm">analytics</span>
           Evaluation
         </button>
         <button
-          className={`tab-button ${activeTab === "deploy" ? "active" : ""}`}
+          className={`tab-btn ${activeTab === "deploy" ? "active" : ""}`}
           onClick={() => setActiveTab("deploy")}
         >
+          <span className="icon icon-sm">cloud_upload</span>
           Deploy
         </button>
       </div>

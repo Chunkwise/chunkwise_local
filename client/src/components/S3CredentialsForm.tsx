@@ -46,6 +46,7 @@ const S3CredentialsForm = ({
     <form className="deploy-form" onSubmit={handleSubmit}>
       <div className="field">
         <label className="label" htmlFor="access-key">
+          <span className="icon icon-sm">key</span>
           Access Key
         </label>
         <input
@@ -62,6 +63,7 @@ const S3CredentialsForm = ({
 
       <div className="field">
         <label className="label" htmlFor="secret-key">
+          <span className="icon icon-sm">lock</span>
           Secret Key
         </label>
         <input
@@ -78,6 +80,7 @@ const S3CredentialsForm = ({
 
       <div className="field">
         <label className="label" htmlFor="bucket-name">
+          <span className="icon icon-sm">folder</span>
           Bucket Name
         </label>
         <input
@@ -99,6 +102,7 @@ const S3CredentialsForm = ({
           onClick={handleCancel}
           disabled={isSubmitting}
         >
+          <span className="icon icon-sm">close</span>
           Cancel
         </button>
         <button
@@ -106,6 +110,9 @@ const S3CredentialsForm = ({
           type="submit"
           disabled={isSubmitting}
         >
+          <span className={`icon icon-sm ${isSubmitting ? "spinner" : ""}`}>
+            {isSubmitting ? "sync" : "link"}
+          </span>
           {isSubmitting ? "Connecting..." : "Connect"}
         </button>
       </div>
