@@ -7,7 +7,7 @@ interface EvaluationMetricsProps {
 // Blue color palette for progress bars
 const PROGRESS_BAR_COLOR = "#3b82f6"; // Primary blue
 
-const EvaluationMetrics = ({ evaluationResponse }: EvaluationMetricsProps) => {
+const Evaluation = ({ evaluationResponse }: EvaluationMetricsProps) => {
   const metrics = evaluationResponse.results[0];
   
   if (!metrics) {
@@ -131,4 +131,4 @@ const EvaluationMetrics = ({ evaluationResponse }: EvaluationMetricsProps) => {
   );
 };
 
-export default EvaluationMetrics;
+export default Evaluation;
