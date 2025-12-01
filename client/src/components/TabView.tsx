@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-
-export type Tab = "visualization" | "evaluation" | "deploy";
+import type { Tab } from "../types";
 
 interface TabViewProps {
   workflowId?: string;
@@ -13,7 +12,12 @@ interface TabViewProps {
   };
 }
 
-const TabView = ({ workflowId, hasEvaluation, switchToEvaluation = false, children }: TabViewProps) => {
+const TabView = ({
+  workflowId,
+  hasEvaluation,
+  switchToEvaluation = false,
+  children,
+}: TabViewProps) => {
   const [activeTab, setActiveTab] = useState<Tab>("visualization");
 
   // Reset to visualization
@@ -40,9 +44,7 @@ const TabView = ({ workflowId, hasEvaluation, switchToEvaluation = false, childr
           Visualization
         </button>
         <button
-          className={`tab-button ${
-            activeTab === "evaluation" ? "active" : ""
-          }`}
+          className={`tab-button ${activeTab === "evaluation" ? "active" : ""}`}
           onClick={() => setActiveTab("evaluation")}
           disabled={!hasEvaluation}
         >
@@ -59,8 +61,8 @@ const TabView = ({ workflowId, hasEvaluation, switchToEvaluation = false, childr
         {activeTab === "visualization"
           ? children.visualization
           : activeTab === "evaluation"
-            ? children.evaluation
-            : children.deploy}
+          ? children.evaluation
+          : children.deploy}
       </div>
     </div>
   );

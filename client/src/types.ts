@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-export const StageSchema = z.enum(["Draft", "Configured", "Evaluated"]);
+export type Stage = "Draft" | "Configured" | "Evaluated";
 
-export type Stage = z.infer<typeof StageSchema>;
+export type Tab = "visualization" | "evaluation" | "deploy";
 
 export interface File {
   document_title: string;
