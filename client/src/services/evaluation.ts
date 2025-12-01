@@ -20,7 +20,7 @@ export const getEvaluation = async (
     corpus_id: "corpus-12345",
     document_s3_key: "documents/sample-doc.pdf",
     queries_s3_key:
-      "s3://chunkwise-bucket/queries/generated-queries-12345.json",
+      "queries/generated-queries-12345.json",
     queries_generated: true,
     num_queries: 50,
     chunkers_evaluated: ["langchain recursive"],
