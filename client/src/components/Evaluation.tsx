@@ -1,15 +1,21 @@
-import type { EvaluationResponse } from "../types";
+import type { EvaluationResponse, EvaluationMetrics } from "../types";
 
-interface EvaluationMetricsProps {
+interface EvaluationProps {
   evaluationResponse: EvaluationResponse;
 }
 
-// Blue color palette for progress bars
-const PROGRESS_BAR_COLOR = "#3b82f6"; // Primary blue
+const PROGRESS_BAR_COLOR = "#3b82f6";
 
-const Evaluation = ({ evaluationResponse }: EvaluationMetricsProps) => {
+const METRIC_CONFIG: { key: keyof EvaluationMetrics; name: string; description: string }[] = [
+  { key: "precision_mean", name: "Precision", description: "Accuracy of retrieved chunks" },
+  { key: "precision_omega_mean", name: "Precision Omega", description: "Weighted precision metric" },
+  { key: "recall_mean", name: "Recall", description: "Coverage of relevant information" },
+  { key: "iou_mean", name: "IoU", description: "Intersection over Union score" },
+];
+
+const Evaluation = ({ evaluationResponse }: EvaluationProps) => {
   const metrics = evaluationResponse.results[0];
-  
+
   if (!metrics) {
     return (
       <div className="evaluation-container">
@@ -17,17 +23,6 @@ const Evaluation = ({ evaluationResponse }: EvaluationMetricsProps) => {
       </div>
     );
   }
-
-  const precisionValue = metrics.precision_mean.toFixed(3);
-  const recallValue = metrics.recall_mean.toFixed(3);
-  const iouValue = metrics.iou_mean.toFixed(3);
-  const precisionOmegaValue = metrics.precision_omega_mean.toFixed(3);
-
-  // For progress bar width, convert to percentage
-  const precisionPercent = metrics.precision_mean * 100;
-  const recallPercent = metrics.recall_mean * 100;
-  const iouPercent = metrics.iou_mean * 100;
-  const precisionOmegaPercent = metrics.precision_omega_mean * 100;
 
   return (
     <div className="evaluation-container">
@@ -41,91 +36,36 @@ const Evaluation = ({ evaluationResponse }: EvaluationMetricsProps) => {
       </div>
 
       <div className="queries-info">
-        <p>
-          <strong>Queries S3 Path:</strong>{" "}
-          <code>{evaluationResponse.queries_s3_key}</code>
-        </p>
         <p className="queries-status">
           {evaluationResponse.queries_generated
-            ? `✓ New queries were generated${evaluationResponse.num_queries ? ` (${evaluationResponse.num_queries} queries)` : ""}`
+            ? `✓ New queries were generated (${evaluationResponse.num_queries ?? 0} queries)`
             : "✓ Existing queries were used"}
+        </p>
+        <p>
+          <strong>Queries Path:</strong>{" "}
+          <code>{evaluationResponse.queries_s3_key}</code>
         </p>
       </div>
 
       <div className="metrics-list">
-        <div className="metric-item">
-          <div className="metric-header">
-            <span className="metric-name">Precision</span>
-            <span className="metric-value">{precisionValue}</span>
+        {METRIC_CONFIG.map(({ key, name, description }) => (
+          <div key={key} className="metric-item">
+            <div className="metric-header">
+              <span className="metric-name">{name}</span>
+              <span className="metric-value">{metrics[key].toFixed(3)}</span>
+            </div>
+            <p className="metric-description">{description}</p>
+            <div className="progress-bar">
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${metrics[key] * 100}%`,
+                  backgroundColor: PROGRESS_BAR_COLOR,
+                }}
+              />
+            </div>
           </div>
-          <p className="metric-description">Accuracy of retrieved chunks</p>
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${precisionPercent}%`,
-                backgroundColor: PROGRESS_BAR_COLOR,
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="metric-item">
-          <div className="metric-header">
-            <span className="metric-name">Precision Omega</span>
-            <span className="metric-value">{precisionOmegaValue}</span>
-          </div>
-          <p className="metric-description">Weighted precision metric</p>
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${precisionOmegaPercent}%`,
-                backgroundColor: PROGRESS_BAR_COLOR,
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="metric-item">
-          <div className="metric-header">
-            <span className="metric-name">Recall</span>
-            <span className="metric-value">{recallValue}</span>
-          </div>
-          <p className="metric-description">Coverage of relevant information</p>
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${recallPercent}%`,
-                backgroundColor: PROGRESS_BAR_COLOR,
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="metric-item">
-          <div className="metric-header">
-            <span className="metric-name">IoU</span>
-            <span className="metric-value">{iouValue}</span>
-          </div>
-          <p className="metric-description">Intersection over Union score</p>
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${iouPercent}%`,
-                backgroundColor: PROGRESS_BAR_COLOR,
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="evaluation-note">
-        <strong>Note:</strong> These metrics are calculated based on a test
-        query set to evaluate how well your chunking strategy performs for
-        retrieval tasks.
+        ))}
       </div>
     </div>
   );
