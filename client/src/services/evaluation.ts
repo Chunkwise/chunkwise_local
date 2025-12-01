@@ -1,7 +1,7 @@
 // import axios from "axios";
 // import { EvaluationResponseSchema, type EvaluationResponse } from "../types";
 
-// export const getEvaluationMetrics = async (
+// export const getEvaluation = async (
 //   workflowId: string
 // ): Promise<EvaluationResponse> => {
 //   const response = await axios.get(`/api/workflows/${workflowId}/evaluation`);
@@ -10,7 +10,7 @@
 
 // For local testing on Saurabh's machine
 import { type EvaluationResponse } from "../types";
-export const getEvaluationMetrics = async (
+export const getEvaluation = async (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _workflowId: string
 ): Promise<EvaluationResponse> => {

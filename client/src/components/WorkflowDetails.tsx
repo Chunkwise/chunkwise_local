@@ -4,12 +4,12 @@ import type { Workflow, Chunker } from "../types";
 import ChooseFile from "./ChooseFile";
 import ChunkerForm from "./ChunkerForm";
 import TabView from "./TabView";
-import EvaluationMetrics from "./EvaluationMetrics";
 import ChunkStats from "./ChunkStats";
 import VisualizationDisplay from "./VisualizationDisplay";
+import Evaluation from "./Evaluation";
 import DeployConnector from "./DeployConnector";
 import { getVisualization } from "../services/visualization";
-import { getEvaluationMetrics } from "../services/evaluation";
+import { getEvaluation } from "../services/evaluation";
 
 type Props = {
   chunkers: Chunker[];
@@ -209,7 +209,7 @@ const WorkflowDetails = ({
     setError(null);
 
     try {
-      const evaluationResponse = await getEvaluationMetrics(workflow.id);
+      const evaluationResponse = await getEvaluation(workflow.id);
       await onPatchWorkflow({
         evaluation_response: evaluationResponse,
       });
@@ -319,9 +319,7 @@ const WorkflowDetails = ({
                 </div>
               ),
               evaluation: workflow.evaluation_response ? (
-                <EvaluationMetrics
-                  evaluationResponse={workflow.evaluation_response}
-                />
+                <Evaluation evaluationResponse={workflow.evaluation_response} />
               ) : (
                 <div className="tab-panel">
                   <p className="muted">
