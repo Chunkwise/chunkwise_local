@@ -65,6 +65,19 @@ export const EvaluationMetricsSchema = z.object({
 
 export type EvaluationMetrics = z.infer<typeof EvaluationMetricsSchema>;
 
+export const EvaluationResponseSchema = z.object({
+  embedding_model: z.string(),
+  corpus_id: z.string(),
+  document_s3_key: z.string(),
+  queries_s3_key: z.string(),
+  queries_generated: z.boolean(),
+  num_queries: z.number().nullable().optional(),
+  chunkers_evaluated: z.array(z.string()),
+  results: z.array(EvaluationMetricsSchema),
+});
+
+export type EvaluationResponse = z.infer<typeof EvaluationResponseSchema>;
+
 export const WorkflowResponseSchema = z.object({
   id: z.union([z.string(), z.number()]).transform((value) => String(value)),
   title: z.string(),
@@ -78,8 +91,8 @@ export const WorkflowResponseSchema = z.object({
     .union([ChunkStatisticsSchema, z.string(), z.null()])
     .optional(),
   visualization_html: z.string().optional().nullable(),
-  evaluation_metrics: z
-    .union([EvaluationMetricsSchema, z.string(), z.null()])
+  evaluation_response: z
+    .union([EvaluationResponseSchema, z.string(), z.null()])
     .optional(),
 });
 
@@ -92,5 +105,5 @@ export interface Workflow {
   chunking_strategy?: ChunkingStrategy;
   chunks_stats?: ChunkStatistics;
   visualization_html?: string | null;
-  evaluation_metrics?: EvaluationMetrics;
+  evaluation_response?: EvaluationResponse;
 }

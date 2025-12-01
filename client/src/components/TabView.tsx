@@ -1,7 +1,10 @@
 import { useState } from "react";
 
+export type Tab = "visualization" | "evaluation" | "deploy";
+
 interface TabViewProps {
   hasEvaluation: boolean;
+  defaultTab?: Tab;
   children: {
     visualization: React.ReactNode;
     evaluation: React.ReactNode;
@@ -9,10 +12,8 @@ interface TabViewProps {
   };
 }
 
-type Tab = "visualization" | "evaluation" | "deploy";
-
-const TabView = ({ hasEvaluation, children }: TabViewProps) => {
-  const [activeTab, setActiveTab] = useState<Tab>("visualization");
+const TabView = ({ hasEvaluation, defaultTab = "visualization", children }: TabViewProps) => {
+  const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
 
   return (
     <div className="tab-view">
