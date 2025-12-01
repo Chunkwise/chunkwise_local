@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export type Tab = "visualization" | "evaluation" | "deploy";
 
 interface TabViewProps {
+  workflowId?: string;
   hasEvaluation: boolean;
-  defaultTab?: Tab;
+  switchToEvaluation?: boolean;
   children: {
     visualization: React.ReactNode;
     evaluation: React.ReactNode;
@@ -12,8 +13,20 @@ interface TabViewProps {
   };
 }
 
-const TabView = ({ hasEvaluation, defaultTab = "visualization", children }: TabViewProps) => {
-  const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
+const TabView = ({ workflowId, hasEvaluation, switchToEvaluation = false, children }: TabViewProps) => {
+  const [activeTab, setActiveTab] = useState<Tab>("visualization");
+
+  // Reset to visualization
+  useEffect(() => {
+    setActiveTab("visualization");
+  }, [workflowId]);
+
+  // Switch to evaluation
+  useEffect(() => {
+    if (switchToEvaluation) {
+      setActiveTab("evaluation");
+    }
+  }, [switchToEvaluation]);
 
   return (
     <div className="tab-view">

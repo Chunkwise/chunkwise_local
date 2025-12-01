@@ -3,7 +3,7 @@ import { ZodError } from "zod";
 import type { Workflow, Chunker } from "../types";
 import ChooseFile from "./ChooseFile";
 import ChunkerForm from "./ChunkerForm";
-import TabView, { type Tab } from "./TabView";
+import TabView from "./TabView";
 import EvaluationMetrics from "./EvaluationMetrics";
 import ChunkStats from "./ChunkStats";
 import VisualizationDisplay from "./VisualizationDisplay";
@@ -35,14 +35,8 @@ const WorkflowDetails = ({
   );
   const [isLoadingViz, setIsLoadingViz] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [switchToEvaluation, setSwitchToEvaluation] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Track default tab - changes to "evaluation" after evaluation completes
-  const [defaultTab, setDefaultTab] = useState<Tab>("visualization");
-  // Counter to force TabView remount (incremented on evaluation completion)
-  const [tabResetCounter, setTabResetCounter] = useState(0);
-  
-  // Key combines workflow ID and counter - workflow change resets to viz, counter change after eval switches to eval tab
-  const tabKey = `${workflow?.id ?? "none"}-${tabResetCounter}`;
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -52,12 +46,6 @@ const WorkflowDetails = ({
       }
     };
   }, [configChangeTimer]);
-
-  // Reset to visualization tab when workflow changes
-  useEffect(() => {
-    setDefaultTab("visualization");
-    setTabResetCounter(0);
-  }, [workflow?.id]);
 
   // Sync local config with workflow changes
   useEffect(() => {
@@ -150,7 +138,7 @@ const WorkflowDetails = ({
     }
   }
 
-  // Handlers for chunker and config change
+  // Handler for chunker change
   async function handleChunkerChange(name: string) {
     setError(null);
     try {
@@ -180,6 +168,7 @@ const WorkflowDetails = ({
     }
   }
 
+  // Handler for config change
   async function handleConfigChange(key: string, value: number) {
     if (!workflow?.chunking_strategy) return;
     setError(null);
@@ -224,9 +213,7 @@ const WorkflowDetails = ({
       await onPatchWorkflow({
         evaluation_response: evaluationResponse,
       });
-      // Switch to evaluation tab when data loads by remounting TabView with new default
-      setDefaultTab("evaluation");
-      setTabResetCounter((c) => c + 1);
+      setSwitchToEvaluation(true);
     } catch (error: unknown) {
       console.error("Failed to run evaluation:", error);
       if (error instanceof ZodError) {
@@ -301,10 +288,10 @@ const WorkflowDetails = ({
             </button>
           </div>
 
-          <TabView 
-            key={tabKey}
+          <TabView
+            workflowId={workflow.id}
             hasEvaluation={!!workflow.evaluation_response}
-            defaultTab={defaultTab}
+            switchToEvaluation={switchToEvaluation}
           >
             {{
               visualization: (
@@ -332,7 +319,9 @@ const WorkflowDetails = ({
                 </div>
               ),
               evaluation: workflow.evaluation_response ? (
-                <EvaluationMetrics evaluationResponse={workflow.evaluation_response} />
+                <EvaluationMetrics
+                  evaluationResponse={workflow.evaluation_response}
+                />
               ) : (
                 <div className="tab-panel">
                   <p className="muted">
