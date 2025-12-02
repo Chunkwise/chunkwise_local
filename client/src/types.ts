@@ -91,8 +91,8 @@ export const WorkflowResponseSchema = z.object({
     .union([ChunkStatisticsSchema, z.string(), z.null()])
     .optional(),
   visualization_html: z.string().optional().nullable(),
-  evaluation_response: z
-    .union([EvaluationResponseSchema, z.string(), z.null()])
+  evaluation_metrics: z
+    .union([EvaluationMetricsSchema, z.string(), z.null()])
     .optional(),
 });
 
@@ -105,5 +105,5 @@ export interface Workflow {
   chunking_strategy?: ChunkingStrategy;
   chunks_stats?: ChunkStatistics;
   visualization_html?: string | null;
-  evaluation_response?: EvaluationResponse;
+  evaluation_metrics?: EvaluationMetrics;
 }
