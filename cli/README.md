@@ -28,7 +28,8 @@ Runs both the `client-build` and `client-start` commands.
 
 `typer cli.py run client-build <YOUR_ALB_DNS_HERE>`
 
-Builds the React client.
+Builds the React client. The ALB DNS must be retreived manually
+from AWS this can be done through the AWS console.
 
 `typer cli.py run client-start <YOUR_ALB_DNS_HERE>`
 
