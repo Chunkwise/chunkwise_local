@@ -10,9 +10,8 @@ export interface RDSReadyPayload {
   endpoint: string;
   port: number;
   database: string;
-  user: string;
-  password: string;
   table_name: string;
+  secret_arn: string;
   notes?: string;
 }
 

@@ -375,8 +375,6 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             "endpoint": prod_cfg.host,
             "port": prod_cfg.port,
             "database": prod_cfg.database,
-            "user": prod_cfg.user,
-            "password": prod_cfg.password,
             "table_name": table_name,
             "secret_arn": secret_arn,
         }

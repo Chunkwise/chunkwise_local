@@ -93,12 +93,12 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
             }}
           >
             <span style={{ wordBreak: "break-all" }}>
-              {details.username_secret_arn}
+              {details.secret_arn}
             </span>
             <button
               className="btn btn-xs"
               type="button"
-              onClick={() => copyValue(details.username_secret_arn, "secret")}
+              onClick={() => copyValue(details.secret_arn, "secret")}
             >
               Copy
             </button>
