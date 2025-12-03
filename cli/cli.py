@@ -178,7 +178,7 @@ def run_client_command(*args):
         raise typer.Exit(code=1)
 
 
-def create_secret(secret_name, secret_value):
+def create_secret(secret_name, secret_value, region=None):
     """
     Runs a AWS CLI command inside to create a secret.
     """
@@ -187,7 +187,11 @@ def create_secret(secret_name, secret_value):
         if not secret_name or not secret_value:
             raise ValueError("secret name and value must be provided")
 
-        client = boto3.client("secretsmanager")
+        if region:
+            client = boto3.client("secretsmanager", region_name=region)
+        else:
+            client = boto3.client("secretsmanager")
+
         client.create_secret(Name=secret_name, SecretString=secret_value)
 
         print(f"[green]✅ AWS Secret created!")
@@ -297,15 +301,16 @@ def deploy():
         account_id = boto3.client("sts").get_caller_identity().get("Account")
 
         ensure_cdk_dependencies()
-        create_secret("chunkwise/openai-api-key", openai_api_key)
 
         if region != "my default":
+            create_secret("chunkwise/openai-api-key", openai_api_key, region)
             run_cdk_command("bootstrap", f"aws://{account_id}/{region}")
         else:
+            create_secret("chunkwise/openai-api-key", openai_api_key)
             run_cdk_command("bootstrap")
 
         run_cdk_command(
-            "deploy",
+            "synth",
             "--all",
             "--require-approval",
             "never",
