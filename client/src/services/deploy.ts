@@ -33,12 +33,23 @@ export interface DeployDonePayload {
   stage: "done";
 }
 
+export interface JobsUpdatedPayload {
+  ok: true;
+  stage: "jobs-updated";
+  statuses: {
+    "succeeded": number,
+    "failed": number,
+    "total": number,
+  };
+}
+
 export type DeployWorkflowEvent =
   | { type: "rds-ready"; data: RDSReadyPayload }
   | { type: "s3-connected"; data: S3ConnectedPayload }
   | { type: "s3-error"; data: DeployErrorPayload }
   | { type: "error"; data: DeployErrorPayload }
   | { type: "done"; data: DeployDonePayload }
+  | { type: "jobs-updated"; data: JobsUpdatedPayload }
   | { type: "message"; data: unknown };
 
 interface DeployWorkflowOptions {

@@ -118,6 +118,8 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
         return "S3 connected";
       case "s3-error":
         return "S3 error";
+      case "jobs-updated":
+        return "Jobs Status";
       case "error":
         return "Deployment error";
       case "done":
@@ -133,6 +135,8 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
         return `Instance ${event.data.db_instance_identifier} at ${event.data.endpoint}:${event.data.port}`;
       case "s3-connected":
         return `Verified bucket ${event.data.bucket}`;
+      case "jobs-updated":
+        return `${event.data.statuses.completed} completed and ${event.data.statuses.failed} failed out of ${event.data.statuses.total} total jobs.`
       case "s3-error":
       case "error":
         return `${event.data.stage}: ${event.data.error}`;

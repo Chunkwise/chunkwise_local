@@ -499,17 +499,31 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                     return
                 job_ids.append(response["jobId"])
 
-            yield sse_event(
-                {
-                    "ok": True,
-                    "stage": "jobs-submitted",
-                    "count": len(job_ids),
-                    "documents": keys,
-                    "job_ids": job_ids[:10],  # Only show first 10 to avoid huge payload
-                    "message": f"Submitted {len(job_ids)} jobs to AWS Batch",
-                },
-                event="jobs-submitted",
-            )
+            # Poll AWS Batch for job statuses every 10 seconds until all jobs are completed
+            jobs_status = {"succeeded": 0, "failed": 0, "total": len(job_ids)}
+            while (
+                jobs_status["succeeded"] + jobs_status["failed"] < jobs_status["total"]
+            ):
+                jobs_status["succeeded"] = 0
+                jobs_status["failed"] = 0
+                MAX_JOBS = 100
+                for index in range(0, len(job_ids), MAX_JOBS):
+                    batch_jobs = job_ids[index : index + MAX_JOBS]
+                    response = batch_client.describe_jobs(batch_jobs)
+                    for job in response["jobs"]:
+                        if job["status"] == "SUCCEEDED":
+                            jobs_status["succeeded"] += 1
+                        elif job["status"] == "FAILED":
+                            jobs_status["failed"] += 1
+                # Update client with jobs status
+                yield sse_event(
+                    {
+                        "ok": True,
+                        "stage": "jobs-updated",
+                        "statuses": jobs_status,
+                    },
+                    event="jobs-updated",
+                )
         except Exception as e:
             yield sse_event(
                 {
