@@ -360,6 +360,9 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 table_name = ensure_pgvector_and_table(
                     conn, workflow_id=workflow_id, embedding_dim=EMBEDDING_DIM
                 )
+            # Add table name to workflow table in evaluation database
+            workflow_update = Workflow(deploy_table_name=table_name)
+            update_workflow(workflow_id, workflow_update.model_dump())
         except Exception as e:
             tb = traceback.format_exc()
             yield sse_event(

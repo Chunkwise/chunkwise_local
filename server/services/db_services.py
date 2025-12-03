@@ -198,7 +198,8 @@ def setup_evaluation_schema(conn) -> None:
                     chunking_strategy TEXT,
                     chunks_stats TEXT,
                     visualization_html TEXT,
-                    evaluation_metrics TEXT
+                    evaluation_metrics TEXT,
+                    deploy_table_name TEXT
                     );
                 """
             )
