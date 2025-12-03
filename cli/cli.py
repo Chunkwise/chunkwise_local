@@ -1,4 +1,5 @@
 import json
+import boto3
 import typer
 from rich import print
 from rich.pretty import pprint
@@ -116,8 +117,6 @@ def run_cdk_command(*args):
     Runs a CDK command inside the CDK directory.
     Streams output live and preserves exit codes.
     """
-
-    ensure_cdk_dependencies()
 
     typer.echo(f"👉 Running: cdk {' '.join(args)} (in {CDK_DIR})")
 
@@ -312,8 +311,11 @@ def deploy():
             "region": "" if region == "my default" else region,
         }
         options_json = json.dumps(options)
+        account_id = boto3.client("sts").get_caller_identity().get("Account")
 
+        ensure_cdk_dependencies()
         create_secret("chunkwise/openai-api-key", openai_api_key)
+        run_cdk_command("bootstrap", f"aws://{account_id}/{region}")
         run_cdk_command(
             "deploy",
             "--all",
@@ -325,7 +327,7 @@ def deploy():
 
         print(f"[green]✅ Stacks successfullly deployed")
     else:
-        print(f"[red]❌Deployment cancelled")
+        print(f"[red]❌ Deployment cancelled")
 
 
 @app.command()
@@ -337,13 +339,14 @@ def destroy():
     print()
 
     if confirm:
+        ensure_cdk_dependencies()
         run_cdk_command("destroy", "ChunkwiseEcsStack", "--force")
         run_cdk_command("destroy", "--all", "--force")
 
         print(f"[green]✅ Stacks successfullly destroyed")
 
     else:
-        print(f"[red]❌Stack destruction cancelled.")
+        print(f"[red]❌ Stack destruction cancelled.")
 
 
 @app.command()
