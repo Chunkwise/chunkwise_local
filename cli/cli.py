@@ -140,8 +140,6 @@ def run_cdk_command(*args):
         if proc.returncode != 0:
             raise typer.Exit(code=proc.returncode)
 
-        typer.echo("✅ Stacks deployed!")
-
     except FileNotFoundError:
         typer.echo("❌ Error: CDK is not installed or not in PATH.")
         raise typer.Exit(code=1)
@@ -256,7 +254,7 @@ def write_env_file(client_dir: str, values: dict):
         for key, val in existing.items():
             f.write(f"{key}={val}\n")
 
-    print(f"✔ Successfully wrote {len(values)} values to {env_path}")
+    print(f"[green]✅ Successfully wrote {len(values)} values to {env_path}")
 
 
 app = typer.Typer()
@@ -324,6 +322,8 @@ def deploy():
             "-c",
             f"options={options_json}",
         )
+
+        print(f"[green]✅ Stacks successfullly deployed")
     else:
         print(f"[red]❌Deployment cancelled")
 
@@ -338,9 +338,10 @@ def destroy():
 
     if confirm:
         run_cdk_command("destroy", "ChunkwiseEcsStack", "--force")
-        run_cdk_command("destroy", "ChunkwiseLoadBalancerStack", "--force")
-        run_cdk_command("destroy", "ChunkwiseDatabaseStack", "--force")
-        run_cdk_command("destroy", "ChunkwiseNetworkStack", "--force")
+        run_cdk_command("destroy", "--all", "--force")
+
+        print(f"[green]✅ Stacks successfullly destroyed")
+
     else:
         print(f"[red]❌Stack destruction cancelled.")
 
