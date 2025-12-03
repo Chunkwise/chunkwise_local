@@ -310,7 +310,7 @@ def deploy():
             run_cdk_command("bootstrap")
 
         run_cdk_command(
-            "synth",
+            "deploy",
             "--all",
             "--require-approval",
             "never",

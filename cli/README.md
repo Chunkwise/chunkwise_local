@@ -14,7 +14,8 @@ Once you've done that the below commands are available to you.
 `typer cli.py run deploy`
 
 Initiates a user interface that gathers the necessary information
-to deploy an AWS stack, then triggers the deployment.
+to deploy the stacks. It then installs necessary dependencies,
+creates a secret, and bootstraps and deploys the stacks.
 
 `typer cli.py run destroy`
 
