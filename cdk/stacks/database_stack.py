@@ -151,9 +151,7 @@ class DatabaseStack(Stack):
                 ec2.InstanceClass.BURSTABLE4_GRAVITON, ec2.InstanceSize.MICRO
             ),
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(
-                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
-            ),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
             security_groups=[self.production_db_security_group],
             # Database configuration
             database_name=config.VECTOR_RDS_CONFIG["database_name"],
@@ -161,9 +159,7 @@ class DatabaseStack(Stack):
             credentials=rds.Credentials.from_secret(self.production_db_credentials),
             # Storage configuration
             allocated_storage=config.VECTOR_RDS_CONFIG["allocated_storage"],
-            max_allocated_storage=config.VECTOR_RDS_CONFIG[
-                "max_allocated_storage"
-            ],
+            max_allocated_storage=config.VECTOR_RDS_CONFIG["max_allocated_storage"],
             storage_type=rds.StorageType.GP3,
             storage_encrypted=True,
             # Backup configuration
