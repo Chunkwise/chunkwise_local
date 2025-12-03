@@ -1,5 +1,6 @@
 import json
 import boto3
+from botocore.exceptions import ClientError
 import typer
 from rich import print
 from rich.pretty import pprint
@@ -182,42 +183,24 @@ def create_secret(secret_name, secret_value):
     Runs a AWS CLI command inside to create a secret.
     """
 
-    typer.echo(
-        f"👉 Running: aws secretsmanager create-secret --name {secret_name} --secret-string *******"
-    )
-
     try:
-        proc = subprocess.Popen(
-            [
-                "aws",
-                "secretsmanager",
-                "create-secret",
-                "--name",
-                secret_name,
-                "--secret-string",
-                secret_value,
-            ],
-            cwd=CDK_DIR,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
+        if not secret_name or not secret_value:
+            raise ValueError("secret name and value must be provided")
 
-        # Stream output line-by-line
-        for line in proc.stdout:
-            typer.echo(line.rstrip())
+        client = boto3.client("secretsmanager")
+        client.create_secret(Name=secret_name, SecretString=secret_value)
 
-        proc.wait()
-
-        if proc.returncode != 0:
-            raise typer.Exit(code=proc.returncode)
-
-        typer.echo("✅ AWS Secret created!")
+        print(f"[green]✅ AWS Secret created!")
 
     except FileNotFoundError:
         typer.echo("❌ Error: CLI is not installed or not in PATH.")
         raise typer.Exit(code=1)
+
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ResourceExistsException":
+            print(f"[green]✅ Secret already exists")
+        else:
+            raise
 
 
 def write_env_file(client_dir: str, values: dict):
@@ -315,7 +298,12 @@ def deploy():
 
         ensure_cdk_dependencies()
         create_secret("chunkwise/openai-api-key", openai_api_key)
-        run_cdk_command("bootstrap", f"aws://{account_id}/{region}")
+
+        if region != "my default":
+            run_cdk_command("bootstrap", f"aws://{account_id}/{region}")
+        else:
+            run_cdk_command("bootstrap")
+
         run_cdk_command(
             "deploy",
             "--all",
@@ -327,7 +315,7 @@ def deploy():
 
         print(f"[green]✅ Stacks successfullly deployed")
     else:
-        print(f"[red]❌ Deployment cancelled")
+        print(f"[red]❌ Stack deployment cancelled")
 
 
 @app.command()
