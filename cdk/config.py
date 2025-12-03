@@ -9,6 +9,7 @@ DOCKER_IMAGES = {
     "server": "public.ecr.aws/x7l1y0z0/chunkwise-server:latest",
     "chunking": "public.ecr.aws/x7l1y0z0/chunkwise-chunking:latest",
     "evaluation": "public.ecr.aws/x7l1y0z0/chunkwise-evaluation:latest",
+    "processing": "public.ecr.aws/x7l1y0z0/chunkwise-processing:latest",
 }
 
 # VPC Configuration
@@ -40,39 +41,74 @@ ECS_CONFIG = {
     },
 }
 
-# RDS Configuration
+# RDS Configuration (Evaluation Database)
 RDS_CONFIG = {
     "instance_type": "t4g.micro",
     "database_name": "chunkwise",
     "port": 5432,
     "allocated_storage": 20,  # GB
     "max_allocated_storage": 100,  # GB - for autoscaling
-    "backup_retention_days": 0,
+    "backup_retention_days": 0, # Free tier option
     "multi_az": False,  # Set to True for production
     "deletion_protection": False,  # Set to True for production
+    "publicly_accessible": False,  # Keep evaluation DB private
+}
+
+# Vector RDS Configuration (Deployment Database)
+VECTOR_RDS_CONFIG = {
+    "instance_type": "t4g.micro",  # Same as evaluation DB
+    "database_name": "chunkwise_production",
+    "port": 5432,
+    "allocated_storage": 100,  # GB - larger initial size
+    "max_allocated_storage": 500,  # GB - room to grow
+    "backup_retention_days": 0, # Free tier option
+    "multi_az": False,  # Set to True for production HA
+    "deletion_protection": False,  # Set to True for production
+    "publicly_accessible": True,  # Allow users to export embeddings
+    "allowed_cidrs": [],
+}
+
+# AWS Batch Configuration
+BATCH_CONFIG = {
+    "max_vcpus": 32,  # Maximum vCPUs for compute environment
+    "job_cpu": 1,  # 1 vCPU per job
+    "job_memory": 2048,  # 2 GB per job
+    "assign_public_ip": True,  # Use public IP to save NAT Gateway costs
 }
 
 # S3 Configuration
 S3_CONFIG = {"bucket_name_prefix": "chunkwise"}  # Will append account ID
 
 # Environment Variables
-# WARNING: These will be stored as plaintext in ECS task definitions
-# For production, use AWS Secrets Manager
+# These are set dynamically by the stacks and injected into ECS task definitions
+# Listed for documentation purposes
 ENVIRONMENT_VARIABLES = {
-    # Database credentials (will be set from RDS stack)
-    # "DB_HOST": "",  # Set dynamically
-    # "DB_NAME": "chunkwise",
-    # "DB_USER": "postgres",
-    # "DB_PASSWORD": "",  # Set dynamically
-    # API Keys - UPDATE THESE WITH YOUR ACTUAL KEYS
-    # OPENAI_API_KEY": is loaded from AWS Secrets Manager: chunkwise/openai-api-key
-    # S3 Bucket - will be set dynamically
-    # "S3_BUCKET_NAME": "",
-    # Service Discovery - will be set dynamically
-    # "CHUNKING_SERVICE_HOST": "chunking.chunkwise",
-    # "CHUNKING_SERVICE_PORT": "80",
-    # "EVALUATION_SERVICE_HOST": "evaluation.chunkwise",
+    # Evaluation Database (set by DatabaseStack)
+    # "DB_HOST": evaluation_db.instance_endpoint.hostname
+    # "DB_NAME": "chunkwise"
+    # "DB_PORT": "5432"
+    # "DB_USER": from Secrets Manager
+    # "DB_PASSWORD": from Secrets Manager
+    
+    # Production Vector Database (set by DatabaseStack)
+    # "VECTOR_DB_HOST": production_db.instance_endpoint.hostname
+    # "VECTOR_DB_NAME": "chunkwise_production"
+    # "VECTOR_DB_PORT": "5432"
+    
+    # S3 Bucket (set by EcsStack)
+    # "S3_BUCKET_NAME": documents_bucket.bucket_name
+    
+    # Service Discovery (set by EcsStack)
+    # "CHUNKING_SERVICE_HOST": "chunking.chunkwise"
+    # "CHUNKING_SERVICE_PORT": "80"
+    # "EVALUATION_SERVICE_HOST": "evaluation.chunkwise"
     # "EVALUATION_SERVICE_PORT": "80"
+    
+    # Embedding Configuration
+    # "EMBEDDING_DIM": "1536"
+    
+    # Secrets from Secrets Manager
+    # "OPENAI_API_KEY": from chunkwise/openai-api-key
 }
 
 # Cloud Map Configuration

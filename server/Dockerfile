@@ -10,5 +10,6 @@ COPY main.py .
 COPY services/ ./services/
 COPY server_types/ ./server_types/
 COPY utils/ ./utils/
+COPY config/ ./config
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]

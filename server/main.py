@@ -11,7 +11,6 @@ import hashlib
 from server_types import (
     VisualizeResponse,
     EvaluationResponse,
-    EvaluationMetrics,
     Workflow,
     DeployRequest,
 )
@@ -23,7 +22,6 @@ from utils import (
     handle_endpoint_exceptions,
     Visualizer,
     adjustable_configs,
-    secret_name_for_instance,
     sse_event,
 )
 from services import (
@@ -33,19 +31,24 @@ from services import (
     get_s3_file_names,
     get_evaluation,
     get_chunks,
-    setup_schema,
     create_workflow,
     update_workflow,
     delete_workflow,
     get_all_workflows,
     get_workflow_info,
     get_chunker_config,
-    create_preprovisioned_instance_if_missing,
-    describe_instance,
-    ensure_secret,
-    get_secret,
-    connect_db,
+    get_db_connection,
+    get_production_db_config,
+    verify_evaluation_db,
+    verify_production_db,
     ensure_pgvector_and_table,
+)
+from config import (
+    VECTOR_DB_HOST,
+    VECTOR_DB_PORT,
+    VECTOR_DB_NAME,
+    VECTOR_DB_SECRET_NAME,
+    EMBEDDING_DIM,
 )
 from fastapi import FastAPI, APIRouter, Body, HTTPException
 from fastapi.responses import StreamingResponse
@@ -63,37 +66,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 
-# OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-
-# Configuration for RDS via env
-# PREPROV_DB_IDENTIFIER = os.environ.get("PREPROV_DB_IDENTIFIER", "shared-wf-db")
-# SHARED_DB_NAME = os.environ.get("SHARED_DB_NAME")
-# RDS_MASTER_USER = os.environ.get("RDS_MASTER_USER")
-# RDS_INSTANCE_CLASS = os.environ.get("RDS_INSTANCE_CLASS")
-# RDS_ENGINE_VERSION = os.environ.get("RDS_ENGINE_VERSION")
-# RDS_ALLOCATED_STORAGE = int(os.environ.get("RDS_ALLOCATED_STORAGE"))
-# RDS_PUBLIC = os.environ.get("RDS_PUBLIC", "true").lower() == "true"
-# RDS_WAIT_TIMEOUT = int(os.environ.get("RDS_WAIT_TIMEOUT"))
-# RDS_SG_IDS = os.environ.get("RDS_SG_IDS")
-# RDS_SG_LIST = RDS_SG_IDS.split(",") if RDS_SG_IDS else None
-# RDS_SUBNET_GROUP = os.environ.get("RDS_SUBNET_GROUP")
-# EMBEDDING_DIM = int(os.environ.get("EMBEDDING_DIM"))
-PREPROV_DB_IDENTIFIER = "shared-wf-db"
-SHARED_DB_NAME = "shared_workflows_db"
-RDS_MASTER_USER = "workflow_admin"
-RDS_INSTANCE_CLASS = "db.t4g.micro"
-RDS_ENGINE_VERSION = "17.6"
-RDS_ALLOCATED_STORAGE = 20
-RDS_PUBLIC = True
-RDS_WAIT_TIMEOUT = 1800
-RDS_SG_LIST = ["sg-0f6017ebfe24c5d18"]
-RDS_SUBNET_GROUP = (
-    "chunkwisedatabasestack-chunkwisedatabasesubnetgroup40683a3c-tl3pubq3rvt7"
-)
-EMBEDDING_DIM = 1536
-# master_password = "postgres"
-# master_user = "postgres"
-
 
 @app.on_event("startup")
 async def startup_event():
@@ -101,64 +73,32 @@ async def startup_event():
     Initialize database schema on application startup, and
     ensure RDS instance and Secrets Manager secret exist.
     """
+    logging.info("🚀 Starting Chunkwise server...")
+
+    # Initialzing evaluaiton database schema (for experimentation workflows)
     logging.info("Initializing database schema...")
-    setup_schema()
-    logging.info("Database schema initialized successfully")
-
-    # Prepare a deterministic secret name and ensure credentials exist
-    secret_name = secret_name_for_instance(PREPROV_DB_IDENTIFIER)
     try:
-        sec_val, sec_arn = ensure_secret(secret_name, username=RDS_MASTER_USER)
+        verify_evaluation_db()
+        logging.info("Evaluation database schema initialized")
     except Exception as e:
-        logging.exception(
-            "Failed to ensure secret in Secrets Manager at startup: %s", e
-        )
+        logging.exception("Failed to initialize evaluation database: %s", e)
         raise
 
-    # Creds to provision/verify instance
-    master_password = sec_val["password"]
-    master_user = sec_val["username"]
-
-    # Create RDS instance if missing and wait for it to be available
+    # Verify production database connection (for deployment workflows)
+    logging.info("Verifying production database connection...")
     try:
-        info = create_preprovisioned_instance_if_missing(
-            db_identifier=PREPROV_DB_IDENTIFIER,
-            master_username=master_user,
-            master_password=master_password,
-            db_name=SHARED_DB_NAME,
-            engine_version=RDS_ENGINE_VERSION,
-            db_instance_class=RDS_INSTANCE_CLASS,
-            allocated_storage=RDS_ALLOCATED_STORAGE,
-            vpc_security_group_ids=RDS_SG_LIST,
-            db_subnet_group_name=RDS_SUBNET_GROUP,
-            publicly_accessible=RDS_PUBLIC,
-            wait_timeout=RDS_WAIT_TIMEOUT,
+
+        verify_production_db(
+            vector_db_host=VECTOR_DB_HOST,
+            vector_db_port=VECTOR_DB_PORT,
+            vector_db_name=VECTOR_DB_NAME,
+            vector_db_secret_name=VECTOR_DB_SECRET_NAME,
         )
     except Exception as e:
-        logging.exception("Failed to create/wait for RDS instance at startup: %s", e)
+        logging.exception("Failed to connect to production vector database: %s", e)
         raise
 
-    # Quick check to see if we can connect to the DB
-    try:
-        connection = connect_db(
-            host=info["address"],
-            port=info["port"],
-            user=master_user,
-            password=master_password,
-            dbname=SHARED_DB_NAME,
-        )
-        connection.close()
-    except Exception as e:
-        logging.exception("Failed DB connection: %s", e)
-        raise
-
-    logging.info(
-        "Startup: RDS instance %s available at %s:%s; secret ARN: %s",
-        PREPROV_DB_IDENTIFIER,
-        info["address"],
-        info["port"],
-        sec_arn,
-    )
+    logging.info("✅ Startup complete! Server ready.")
 
 
 origins = [
@@ -369,49 +309,57 @@ async def remove_workflow(workflow_id: int):
 @handle_endpoint_exceptions
 async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
     """
-    SSE POST: assumes startup has provisioned the RDS instance and Secrets Manager secret.
-    Streams: rds-ready (with secret ARN), s3-connected (or s3-error), done.
+    Deploy a workflow to process, chunk, and embed documents from user's S3 bucket using AWS Batch.
+
+    This endpoint:
+    1. Creates a table in the production database for this workflow
+    2. Verifies access to user's S3 bucket
+    3. Submits AWS Batch jobs to process each document
+    4. Streams progress via Server-Sent Events (SSE)
+
+    Events: rds-ready, s3-connected, jobs-submitted, done
     """
 
     chunker_config = get_chunker_config(workflow_id)
 
     def event_generator():
-        # Ensure instance is available and get endpoint
-        try:
-            info = describe_instance(PREPROV_DB_IDENTIFIER)
-            address = info["address"]
-            port = info["port"]
-        except Exception as e:
+        # Verify production DB is configured
+        if not VECTOR_DB_HOST:
             yield sse_event(
-                {"ok": False, "stage": "rds-describe", "error": str(e)}, event="error"
+                {
+                    "ok": False,
+                    "stage": "config",
+                    "error": "Production database not configured",
+                },
+                event="error",
             )
             return
 
-        # Get secret ARN and runtime secret
-        secret_name = secret_name_for_instance(PREPROV_DB_IDENTIFIER)
         try:
-            secret_json, arn = get_secret(secret_name)
-            master_user = secret_json.get("username")
-            master_password = secret_json.get("password")
+            prod_cfg = get_production_db_config(
+                secret_name=VECTOR_DB_SECRET_NAME,
+                default_host=VECTOR_DB_HOST,
+                default_port=VECTOR_DB_PORT,
+                default_dbname=VECTOR_DB_NAME,
+            )
+
+            secretsmanager = boto3.client("secretsmanager")
+            secret_response = secretsmanager.get_secret_value(
+                SecretId=VECTOR_DB_SECRET_NAME
+            )
+            secret_arn = secret_response["ARN"]
         except Exception as e:
             yield sse_event(
                 {"ok": False, "stage": "secrets-get", "error": str(e)}, event="error"
             )
             return
 
-        # Connect and ensure table and truncate
-        conn = None
+        # --- Create pgvector table for this workflow ---
         try:
-            conn = connect_db(
-                host=address,
-                port=port,
-                user=master_user,
-                password=master_password,
-                dbname=SHARED_DB_NAME,
-            )
-            table_name = ensure_pgvector_and_table(
-                conn, workflow_id=workflow_id, embedding_dim=EMBEDDING_DIM
-            )
+            with get_db_connection(prod_cfg) as conn:
+                table_name = ensure_pgvector_and_table(
+                    conn, workflow_id=workflow_id, embedding_dim=EMBEDDING_DIM
+                )
         except Exception as e:
             tb = traceback.format_exc()
             yield sse_event(
@@ -419,22 +367,16 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 event="error",
             )
             return
-        finally:
-            if conn:
-                conn.close()
 
-        # Emit rds-ready with secret ARN
+        # Emit rds-ready with connection details
         rds_payload = {
             "ok": True,
             "stage": "rds-ready",
-            "db_instance_identifier": PREPROV_DB_IDENTIFIER,
-            "endpoint": address,
-            "port": port,
-            "database": SHARED_DB_NAME,
-            "username_secret_arn": arn,
-            # "username_secret_arn": "postgres/postgres for testing",
+            "endpoint": prod_cfg.host,
+            "port": prod_cfg.port,
+            "database": prod_cfg.database,
             "table_name": table_name,
-            "notes": "The ARN references the master credentials in Secrets Manager. Grant caller IAM permission to read it if client needs credentials.",
+            "secret_arn": secret_arn,
         }
         yield sse_event(rds_payload, event="rds-ready")
 
@@ -446,6 +388,8 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 aws_secret_access_key=req.s3_secret_key,
             )
             bucket = req.s3_bucket
+
+            # Verify bucket access
             try:
                 s3_client.head_bucket(Bucket=bucket)
                 yield sse_event(
@@ -464,13 +408,18 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 return
         except NoCredentialsError:
             yield sse_event(
-                {"ok": False, "stage": "s3", "error": "invalid S3 credentials"},
+                {"ok": False, "stage": "s3", "error": "Invalid S3 credentials"},
                 event="s3-error",
             )
             return
         except EndpointConnectionError as e:
             yield sse_event(
-                {"ok": False, "stage": "s3", "error": str(e)}, event="s3-error"
+                {
+                    "ok": False,
+                    "stage": "s3",
+                    "error": f"Cannot connect to S3: {str(e)}",
+                },
+                event="s3-error",
             )
             return
         except Exception as e:
@@ -479,11 +428,12 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             )
             return
 
+        # List documents in S3 bucket and submit Batch jobs
         try:
-            # Create a job for each document in S3 using AWS Batch
             paginator = s3_client.get_paginator("list_objects_v2")
             keys = []
 
+            # Find all .txt and .md files
             for page in paginator.paginate(Bucket=bucket):
                 for obj in page.get("Contents", []):
                     key = obj["Key"]
@@ -491,30 +441,48 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                         keys.append(key)
             if not keys:
                 yield sse_event(
-                    {"ok": True, "stage": "no-documents"}, event="no-documents"
+                    {
+                        "ok": True,
+                        "stage": "no-documents",
+                        "message": "No .txt or .md files found in bucket",
+                    },
+                    event="no-documents",
                 )
                 yield sse_event({"ok": True, "stage": "done"}, event="done")
                 return
-            batch = boto3.client("batch")
+
+            # Submit AWS Batch jobs for each document
+            batch_client = boto3.client("batch")
             job_ids = []
 
             for doc_key in keys:
+                # Create safe job name from document key hash
                 safe_name = hashlib.sha1(doc_key.encode()).hexdigest()[:10]
-                response = batch.submit_job(
+
+                response = batch_client.submit_job(
                     jobName=f"chunkwise-{safe_name}",
                     jobQueue="chunkwise-job-queue",
                     jobDefinition="chunkwise-job-definition",
                     containerOverrides={
                         "environment": [
+                            # Document and S3 info
                             {"name": "DOCUMENT_KEY", "value": doc_key},
                             {"name": "BUCKET_NAME", "value": bucket},
-                            {"name": "DB_HOST", "value": address},
-                            {"name": "DB_USER", "value": master_user},
-                            {"name": "DB_PASSWORD", "value": master_password},
-                            {"name": "DB_NAME", "value": SHARED_DB_NAME},
-                            {"name": "DB_TABLE", "value": table_name},
+                            {"name": "AWS_ACCESS_KEY_ID", "value": req.s3_access_key},
                             {
-                                "name": "CHUNK_CONFIG",
+                                "name": "AWS_SECRET_ACCESS_KEY",
+                                "value": req.s3_secret_key,
+                            },
+                            # Vector database connection info
+                            {"name": "VECTOR_DB_HOST", "value": prod_cfg.host},
+                            {"name": "VECTOR_DB_PORT", "value": str(prod_cfg.port)},
+                            {"name": "VECTOR_DB_NAME", "value": prod_cfg.database},
+                            {"name": "VECTOR_DB_USER", "value": prod_cfg.user},
+                            {"name": "VECTOR_DB_PASSWORD", "value": prod_cfg.password},
+                            {"name": "VECTOR_DB_TABLE", "value": table_name},
+                            # Chunking configuration
+                            {
+                                "name": "CHUNKER_CONFIG",
                                 "value": chunker_config.model_dump_json(),
                             },
                         ]
@@ -527,13 +495,43 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                     )
                     return
                 job_ids.append(response["jobId"])
+
+            yield sse_event(
+                {
+                    "ok": True,
+                    "stage": "jobs-submitted",
+                    "count": len(job_ids),
+                    "documents": keys,
+                    "job_ids": job_ids[:10],  # Only show first 10 to avoid huge payload
+                    "message": f"Submitted {len(job_ids)} jobs to AWS Batch",
+                },
+                event="jobs-submitted",
+            )
         except Exception as e:
             yield sse_event(
-                {"ok": False, "stage": "batch", "error": str(e)}, event="batch-error"
+                {
+                    "ok": False,
+                    "stage": "batch",
+                    "error": str(e),
+                    "trace": traceback.format_exc(),
+                },
+                event="batch-error",
             )
             return
 
-        yield sse_event({"ok": True, "stage": "done"}, event="done")
+        yield sse_event(
+            {
+                "ok": True,
+                "stage": "done",
+                "summary": {
+                    "database": f"{prod_cfg.host}:{prod_cfg.port}/{prod_cfg.database}",
+                    "table": table_name,
+                    "documents_processed": len(job_ids),
+                    "message": "Jobs submitted successfully. Monitor progress in AWS Batch console.",
+                },
+            },
+            event="done",
+        )
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 

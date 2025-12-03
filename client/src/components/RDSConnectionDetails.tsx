@@ -26,8 +26,7 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
   return (
     <div className="deployment-summary" aria-live="polite">
       <div className="muted">
-        RDS instance <strong>{details.db_instance_identifier}</strong> is
-        online.
+        RDS instance is online.
       </div>
       <div className="muted" style={{ marginTop: "8px" }}>
         Use the connection string below for psql-compatible clients:
@@ -94,12 +93,12 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
             }}
           >
             <span style={{ wordBreak: "break-all" }}>
-              {details.username_secret_arn}
+              {details.secret_arn}
             </span>
             <button
               className="btn btn-xs"
               type="button"
-              onClick={() => copyValue(details.username_secret_arn, "secret")}
+              onClick={() => copyValue(details.secret_arn, "secret")}
             >
               Copy
             </button>
