@@ -8,6 +8,7 @@ import traceback
 import re
 import logging
 import hashlib
+import asyncio
 from server_types import (
     VisualizeResponse,
     EvaluationResponse,
@@ -322,7 +323,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
 
     chunker_config = get_chunker_config(workflow_id)
 
-    def event_generator():
+    async def event_generator():
         # Verify production DB is configured
         if not VECTOR_DB_HOST:
             yield sse_event(
@@ -360,6 +361,9 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 table_name = ensure_pgvector_and_table(
                     conn, workflow_id=workflow_id, embedding_dim=EMBEDDING_DIM
                 )
+            # Add table name to workflow table in evaluation database
+            workflow_update = Workflow(deploy_table_name=table_name)
+            update_workflow(workflow_id, workflow_update.model_dump())
         except Exception as e:
             tb = traceback.format_exc()
             yield sse_event(
@@ -377,6 +381,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             "database": prod_cfg.database,
             "table_name": table_name,
             "secret_arn": secret_arn,
+            "db_instance_identifier": prod_cfg.db_instance_identifier,
         }
         yield sse_event(rds_payload, event="rds-ready")
 
@@ -496,17 +501,32 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                     return
                 job_ids.append(response["jobId"])
 
-            yield sse_event(
-                {
-                    "ok": True,
-                    "stage": "jobs-submitted",
-                    "count": len(job_ids),
-                    "documents": keys,
-                    "job_ids": job_ids[:10],  # Only show first 10 to avoid huge payload
-                    "message": f"Submitted {len(job_ids)} jobs to AWS Batch",
-                },
-                event="jobs-submitted",
-            )
+            # Poll AWS Batch for job statuses every 10 seconds until all jobs are completed
+            jobs_status = {"succeeded": 0, "failed": 0, "total": len(job_ids)}
+            while (
+                jobs_status["succeeded"] + jobs_status["failed"] < jobs_status["total"]
+            ):
+                jobs_status["succeeded"] = 0
+                jobs_status["failed"] = 0
+                MAX_JOBS = 100
+                for index in range(0, len(job_ids), MAX_JOBS):
+                    batch_jobs = job_ids[index : index + MAX_JOBS]
+                    response = batch_client.describe_jobs(jobs=batch_jobs)
+                    for job in response["jobs"]:
+                        if job["status"] == "SUCCEEDED":
+                            jobs_status["succeeded"] += 1
+                        elif job["status"] == "FAILED":
+                            jobs_status["failed"] += 1
+                # Update client with jobs status
+                yield sse_event(
+                    {
+                        "ok": True,
+                        "stage": "jobs-updated",
+                        "statuses": jobs_status,
+                    },
+                    event="jobs-updated",
+                )
+                await asyncio.sleep(10)
         except Exception as e:
             yield sse_event(
                 {

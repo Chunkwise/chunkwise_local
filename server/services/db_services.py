@@ -32,6 +32,7 @@ class DbConfig(BaseModel):
     database: str
     user: str
     password: str
+    db_instance_identifier: str
 
 
 # Cache for database credentials (avoid repeated Secrets Manager calls)
@@ -79,6 +80,7 @@ def build_db_config_from_secret(
     dbname = creds.get("dbname", default_dbname)
     user = creds.get("username")
     password = creds.get("password")
+    db_instance_identifier = creds.get("dbInstanceIdentifier")
 
     if not host or not dbname or not user or not password:
         raise RuntimeError(
@@ -94,6 +96,7 @@ def build_db_config_from_secret(
         database=dbname,
         user=user,
         password=password,
+        db_instance_identifier=db_instance_identifier,
     )
 
 
@@ -198,7 +201,8 @@ def setup_evaluation_schema(conn) -> None:
                     chunking_strategy TEXT,
                     chunks_stats TEXT,
                     visualization_html TEXT,
-                    evaluation_metrics TEXT
+                    evaluation_metrics TEXT,
+                    deploy_table_name TEXT
                     );
                 """
             )
