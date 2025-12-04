@@ -59,7 +59,7 @@ def retry_with_backoff(func, retries=9, initial_delay=2, backoff_factor=1.5):
 
 
 def get_mapped_embeddings(
-    chunks: list[str], model="text-embedding-3-small", max_tokens=280000
+    chunks: list[str], model="text-embedding-3-large", max_tokens=280000
 ):
     """
     Takes in chunks as a list of strings

@@ -35,7 +35,12 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
   }, []);
 
   const appendEvent = (event: DeployWorkflowEvent) => {
-    setEvents((previous) => [...previous, event]);
+    setEvents((previous) => {
+      if (event.type === "jobs-updated") {
+        return [...previous.filter(event => event.type !== "jobs-updated"), event];
+      }
+      return [...previous, event];
+    });
 
     switch (event.type) {
       case "rds-ready":
@@ -118,6 +123,10 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
         return "S3 connected";
       case "s3-error":
         return "S3 error";
+      case "batch-error":
+        return "Batch error";
+      case "jobs-updated":
+        return "Jobs Status";
       case "error":
         return "Deployment error";
       case "done":
@@ -130,9 +139,12 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
   const describeEventDetails = (event: DeployWorkflowEvent): string => {
     switch (event.type) {
       case "rds-ready":
-        return `Instance ${event.data.db_instance_identifier} at ${event.data.endpoint}:${event.data.port}`;
+        return `Instance ${event.data.db_instance_identifier}`;
       case "s3-connected":
         return `Verified bucket ${event.data.bucket}`;
+      case "jobs-updated":
+        return `${event.data.statuses.succeeded} succeeded and ${event.data.statuses.failed} failed out of ${event.data.statuses.total} total jobs.`
+      case "batch-error":
       case "s3-error":
       case "error":
         return `${event.data.stage}: ${event.data.error}`;

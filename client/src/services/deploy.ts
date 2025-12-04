@@ -12,6 +12,7 @@ export interface RDSReadyPayload {
   database: string;
   table_name: string;
   secret_arn: string;
+  db_instance_identifier: string;
   notes?: string;
   db_instance_identifier?: string;
 }
@@ -34,12 +35,24 @@ export interface DeployDonePayload {
   stage: "done";
 }
 
+export interface JobsUpdatedPayload {
+  ok: true;
+  stage: "jobs-updated";
+  statuses: {
+    "succeeded": number,
+    "failed": number,
+    "total": number,
+  };
+}
+
 export type DeployWorkflowEvent =
   | { type: "rds-ready"; data: RDSReadyPayload }
   | { type: "s3-connected"; data: S3ConnectedPayload }
   | { type: "s3-error"; data: DeployErrorPayload }
+  | { type: "batch-error"; data: DeployErrorPayload }
   | { type: "error"; data: DeployErrorPayload }
   | { type: "done"; data: DeployDonePayload }
+  | { type: "jobs-updated"; data: JobsUpdatedPayload }
   | { type: "message"; data: unknown };
 
 interface DeployWorkflowOptions {
@@ -84,6 +97,10 @@ const mapEvent = (eventName: string): DeployWorkflowEvent["type"] => {
       return "s3-connected";
     case "s3-error":
       return "s3-error";
+    case "batch-error":
+      return "batch-error";
+    case "jobs-updated":
+      return "jobs-updated";
     case "error":
       return "error";
     case "done":

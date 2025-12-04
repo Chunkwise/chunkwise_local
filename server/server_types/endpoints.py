@@ -39,6 +39,7 @@ class Workflow(BaseModel):
     chunks_stats: ChunkStatistics | str | None = None
     visualization_html: str | None = None
     evaluation_metrics: EvaluationMetrics | str | None = None
+    deploy_table_name: str | None = None
 
 
 class DeployRequest(BaseModel):
