@@ -222,15 +222,25 @@ def create_secret(secret_name, secret_value, region=None):
 
         print(f"[green]✅ AWS Secret created!")
 
-    except FileNotFoundError:
-        typer.echo("❌ Error: CLI is not installed or not in PATH.")
-        raise typer.Exit(code=1)
-
     except ClientError as e:
         if e.response["Error"]["Code"] == "ResourceExistsException":
             print(f"[green]✅ Secret already exists")
         else:
             raise
+
+
+def delete_secret(secret_name, region):
+    if not secret_name:
+        raise ValueError("secret name must be provided")
+
+    if region:
+        client = boto3.client("secretsmanager", region_name=region)
+    else:
+        client = boto3.client("secretsmanager")
+
+    client.delete_secret(SecretId=secret_name, ForceDeleteWithoutRecovery=True)
+
+    print(f"[green]✅ AWS Secret deleted!")
 
 
 def write_env_file(client_dir: str, values: dict):
@@ -398,6 +408,7 @@ def destroy(
             "destroy", "ChunkwiseEcsStack", "--force", "-c", f"options={options_json}"
         )
         run_cdk_command("destroy", "--all", "--force", "-c", f"options={options_json}")
+        delete_secret("chunkwise/openai-api-key", region)
 
         print(f"[green]✅ Stacks successfullly destroyed")
 
