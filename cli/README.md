@@ -23,16 +23,18 @@ Forcefully deletes all of the AWS stacks created by deploy. Note
 that this doesn't destroy the S3 bucket, RDS instances, or
 the created secrets.
 
-`typer cli.py run client`
+`typer cli.py run client --region=<NON_DEFAULT_REGION_HERE>`
 
 Runs both the `client-build` and `client-start` commands.
 
-`typer cli.py run client-build <YOUR_ALB_DNS_HERE>`
+`typer cli.py run client-build --region=<NON_DEFAULT_REGION_HERE>`
 
-Builds the React client. The ALB DNS must be retreived manually
-from AWS this can be done through the AWS console.
+Builds the React client. The ALB DNS is retreived automatically,
+but if the stack was deployed in a region other than the default,
+you must pass in the region as well. Otherwise region can be left
+off.
 
-`typer cli.py run client-start <YOUR_ALB_DNS_HERE>`
+`typer cli.py run client-start`
 
 Runs a built client using Vite. To stop the server use Ctrl^C.
 

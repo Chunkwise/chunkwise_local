@@ -13,6 +13,7 @@ export interface RDSReadyPayload {
   table_name: string;
   secret_arn: string;
   notes?: string;
+  db_instance_identifier?: string;
 }
 
 export interface S3ConnectedPayload {

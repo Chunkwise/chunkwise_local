@@ -2,6 +2,7 @@ import json
 import boto3
 from botocore.exceptions import ClientError
 import typer
+from typing_extensions import Annotated
 from rich import print
 from rich.pretty import pprint
 from rich.prompt import Prompt, Confirm, InvalidResponse
@@ -243,6 +244,30 @@ def write_env_file(client_dir: str, values: dict):
     print(f"[green]✅ Successfully wrote {len(values)} values to {env_path}")
 
 
+def get_alb_dns(load_balancer_name, region=None):
+    """
+    Given a load balancer name return the dns.
+
+    :param load_balancer_name: Description
+    """
+    if region:
+        client = boto3.client("elbv2", region_name=region)
+    else:
+        client = boto3.client("elbv2")
+
+    # print(client.describe_load_balancers())
+
+    response = client.describe_load_balancers(
+        Names=[
+            load_balancer_name,
+        ]
+    )
+
+    alb_dns = response["LoadBalancers"][0]["DNSName"]
+
+    return alb_dns
+
+
 app = typer.Typer()
 
 
@@ -343,11 +368,20 @@ def destroy():
 
 
 @app.command()
-def client_build(alb_uri: str):
+def client_build(
+    region: Annotated[
+        str, typer.Option(help="AWS region of the deployed stacks")
+    ] = None,
+):
     """
     Calls the client build command.
     """
-    write_env_file("../client", {"ALB_URI": alb_uri})
+    if region:
+        alb_dns = get_alb_dns("chunkwise-alb", region)
+    else:
+        alb_dns = get_alb_dns("chunkwise-alb")
+
+    write_env_file("../client", {"ALB_URI": alb_dns})
     ensure_npm_dependencies()
     run_client_command("build")
     print(f"[green]✅ Client built!")
@@ -363,10 +397,14 @@ def client_start():
 
 
 @app.command()
-def client(alb_uri: str):
+def client(
+    region: Annotated[
+        str, typer.Option(help="AWS region of the deployed stacks")
+    ] = None,
+):
     """
     Calls the client build then client start commands
     in squence.
     """
-    client_build(alb_uri)
+    client_build(region)
     client_start()
