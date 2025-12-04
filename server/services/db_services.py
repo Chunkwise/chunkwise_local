@@ -21,6 +21,7 @@ COLUMN_NAMES: tuple[str, ...] = (
     "chunks_stats",
     "visualization_html",
     "evaluation_metrics",
+    "deploy_table_name",
 )
 
 
