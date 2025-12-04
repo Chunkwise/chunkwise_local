@@ -25,7 +25,7 @@ if not EMBEDDING_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable is required")
 
 embedding_func = embedding_functions.OpenAIEmbeddingFunction(
-    api_key=EMBEDDING_API_KEY, model_name="text-embedding-3-large"
+    api_key=EMBEDDING_API_KEY, model_name="text-embedding-3-small"
 )
 
 
