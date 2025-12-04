@@ -17,11 +17,12 @@ Initiates a user interface that gathers the necessary information
 to deploy the stacks. It then installs necessary dependencies,
 creates a secret, and bootstraps and deploys the stacks.
 
-`typer cli.py run destroy`
+`typer cli.py run destroy --region=<NON_DEFAULT_REGION_HERE>`
 
 Forcefully deletes all of the AWS stacks created by deploy. Note
 that this doesn't destroy the S3 bucket, RDS instances, or
-the created secrets.
+the created secrets. Also, if you used a non-default region
+make sure to specify that here.
 
 `typer cli.py run client --region=<NON_DEFAULT_REGION_HERE>`
 

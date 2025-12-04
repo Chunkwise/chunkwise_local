@@ -349,17 +349,28 @@ def deploy():
 
 
 @app.command()
-def destroy():
+def destroy(
+    region: Annotated[
+        str, typer.Option(help="AWS region of the deployed stacks")
+    ] = None,
+):
     """
     Calls the cdk destroy command.
     """
     confirm = Confirm.ask(f"[#00BCF7]Are you sure?")
     print()
 
+    options = {
+        "region": "" if region == "my default" else region,
+    }
+    options_json = json.dumps(options)
+
     if confirm:
         ensure_cdk_dependencies()
-        run_cdk_command("destroy", "ChunkwiseEcsStack", "--force")
-        run_cdk_command("destroy", "--all", "--force")
+        run_cdk_command(
+            "destroy", "ChunkwiseEcsStack", "--force", "-c", f"options={options_json}"
+        )
+        run_cdk_command("destroy", "--all", "--force", "-c", f"options={options_json}")
 
         print(f"[green]✅ Stacks successfullly destroyed")
 
