@@ -156,11 +156,11 @@ def get_db_connection(config: DbConfig):
             password=config.password,
         )
         connection.autocommit = True
-        print("Successfully connected to database at %s", config.host)
+        print(f"Successfully connected to database at {config.host}")
         yield connection
 
     except OperationalError as e:
-        print("Error connecting to the database at %s: %s", config.host, e)
+        print(f"Error connecting to the database at {config.host}: {e}")
         raise e
     finally:
         if connection:
