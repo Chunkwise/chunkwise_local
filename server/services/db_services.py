@@ -208,22 +208,6 @@ def setup_evaluation_schema(conn) -> None:
             )
             print("Created workflow table")
         else:
-            cursor.execute(
-                """
-                    DROP TABLE workflow;
-                    CREATE TABLE workflow (
-                    id SERIAL PRIMARY KEY,
-                    title varchar(50) NOT NULL,
-                    created_at timestamptz NOT NULL DEFAULT NOW(),
-                    document_title TEXT,
-                    chunking_strategy TEXT,
-                    chunks_stats TEXT,
-                    visualization_html TEXT,
-                    evaluation_metrics TEXT,
-                    deploy_table_name TEXT
-                    );
-                """
-            )
             print("Workflow table already exists")
 
 
