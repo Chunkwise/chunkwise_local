@@ -8,6 +8,7 @@ import traceback
 import re
 import logging
 import hashlib
+import asyncio
 from server_types import (
     VisualizeResponse,
     EvaluationResponse,
@@ -322,7 +323,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
 
     chunker_config = get_chunker_config(workflow_id)
 
-    def event_generator():
+    async def event_generator():
         # Verify production DB is configured
         if not VECTOR_DB_HOST:
             yield sse_event(
@@ -380,6 +381,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             "database": prod_cfg.database,
             "table_name": table_name,
             "secret_arn": secret_arn,
+            "db_instance_identifier": prod_cfg.db_instance_identifier,
         }
         yield sse_event(rds_payload, event="rds-ready")
 
@@ -509,7 +511,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 MAX_JOBS = 100
                 for index in range(0, len(job_ids), MAX_JOBS):
                     batch_jobs = job_ids[index : index + MAX_JOBS]
-                    response = batch_client.describe_jobs(batch_jobs)
+                    response = batch_client.describe_jobs(jobs=batch_jobs)
                     for job in response["jobs"]:
                         if job["status"] == "SUCCEEDED":
                             jobs_status["succeeded"] += 1
@@ -524,6 +526,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                     },
                     event="jobs-updated",
                 )
+                await asyncio.sleep(10)
         except Exception as e:
             yield sse_event(
                 {
