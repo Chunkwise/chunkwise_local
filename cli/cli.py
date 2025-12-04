@@ -6,11 +6,22 @@ from typing_extensions import Annotated
 from rich import print
 from rich.pretty import pprint
 from rich.prompt import Prompt, Confirm, InvalidResponse
+from rich.live import Live
+from rich.console import Console
+from rich.table import Table
+import re
 from pathlib import Path
 import subprocess
 
-# DELETE SECRET: aws secretsmanager delete-secret --secret-id chunkwise/openai-api-key --force-delete-without-recovery --region us-east-1
 
+DEPLOY_RE = re.compile(
+    r"^(?P<stack>[^|]+)\|\s*(?P<progress>\d+/\d+)\s*\|\s*(?P<time>[^|]+)\|\s*(?P<status>[^|]+)\|\s*(?P<type>[^|]+)\|\s*(?P<resource>.+)$"
+)
+DESTROY_RE = re.compile(
+    r"^(?P<stack>[^|]+)\|\s*(?P<index>\d+)\s*\|\s*(?P<time>[^|]+)\|\s*(?P<status>[^|]+)\|\s*(?P<type>[^|]+)\|\s*(?P<resource>.+)$"
+)
+
+console = Console()
 
 CDK_DIR = Path(__file__).resolve().parent.parent / "cdk"
 CLIENT_DIR = Path(__file__).resolve().parent.parent / "client"
@@ -42,10 +53,10 @@ def ensure_cdk_dependencies():
     req_file = CDK_DIR / "requirements.txt"
 
     if req_file.exists():
-        typer.echo("📦 Ensuring CDK dependencies with pip...")
+        print(f"[yellow]📦 Ensuring CDK dependencies...")
         cmd = ["pip", "install", "-r", "requirements.txt"]
     else:
-        typer.echo("⚠️ No dependency file found in CDK directory.")
+        print(f"[red]⚠️ No dependency file found in CDK directory.")
         return
 
     # Install inside the CDK directory
@@ -57,16 +68,17 @@ def ensure_cdk_dependencies():
         text=True,
     )
 
-    for line in proc.stdout:
-        typer.echo(line.rstrip())
+    # Print the output to the console
+    # for line in proc.stdout:
+    #     typer.echo(line.rstrip())
 
     proc.wait()
 
     if proc.returncode != 0:
-        typer.echo("❌ CDK dependency installation failed.")
+        print(f"[red]❌ CDK dependency installation failed.")
         raise typer.Exit(code=1)
 
-    typer.echo("✅ CDK dependencies ready!")
+    print(f"[green]✅ CDK dependencies ready!")
 
 
 def ensure_npm_dependencies():
@@ -79,14 +91,14 @@ def ensure_npm_dependencies():
     package_json = CLIENT_DIR / "package.json"
 
     if not package_json.exists():
-        typer.echo("⚠️ No package.json found in client directory; skipping NPM install.")
+        print(f"[yellow]⚠️ No package.json found in client directory.")
         return
 
     if node_modules.exists():
-        typer.echo("📦 Client NPM dependencies already installed.")
+        print(f"[green]📦 Client NPM dependencies already installed.")
         return
 
-    typer.echo("📦 Installing NPM dependencies for client...")
+    print(f"[yellow]📦 Installing NPM dependencies for client...")
 
     try:
         proc = subprocess.Popen(
@@ -98,20 +110,21 @@ def ensure_npm_dependencies():
             bufsize=1,
         )
 
-        for line in proc.stdout:
-            typer.echo(line.rstrip())
+        # Log output to the console
+        # for line in proc.stdout:
+        #     typer.echo(line.rstrip())
 
         proc.wait()
 
         if proc.returncode != 0:
-            typer.echo("❌ NPM install failed.")
+            print(f"[red]❌ NPM install failed.")
             raise typer.Exit(code=1)
 
     except FileNotFoundError:
-        typer.echo("❌ npm is not installed or not in PATH.")
+        print(f"[red]❌ NPM is not installed or not in PATH.")
         raise typer.Exit(code=1)
 
-    typer.echo("✅ Client NPM dependencies ready!")
+    print(f"[green]✅ Client NPM dependencies ready!")
 
 
 def run_cdk_command(*args):
@@ -120,30 +133,44 @@ def run_cdk_command(*args):
     Streams output live and preserves exit codes.
     """
 
-    typer.echo(f"👉 Running: cdk {' '.join(args)} (in {CDK_DIR})")
+    print(f"[yellow]👉 Running: cdk {' '.join(args)} (in {CDK_DIR})")
 
-    try:
-        proc = subprocess.Popen(
-            ["cdk"] + list(args),
-            cwd=CDK_DIR,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
+    proc = subprocess.Popen(
+        ["cdk"] + list(args),
+        cwd=CDK_DIR,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
 
-        # Stream output line-by-line
-        for line in proc.stdout:
-            typer.echo(line.rstrip())
+    with Live(console=console, refresh_per_second=10) as live:
+        for raw_line in proc.stdout:
+            line = raw_line.rstrip()
 
-        proc.wait()
+            # Try to parse CloudFormation event lines
+            m = DEPLOY_RE.search(line) if "deploy" in args else DESTROY_RE.search(line)
+            if m:
+                # Extracted fields
+                index = m.group(1)
+                status = m.group(2)
+                resource = m.group(3)
 
-        if proc.returncode != 0:
-            raise typer.Exit(code=proc.returncode)
+                table = Table(title="CloudFormation Progress")
+                table.add_column("Stack")
+                table.add_column("Status")
+                table.add_column("Last update")
 
-    except FileNotFoundError:
-        typer.echo("❌ Error: CDK is not installed or not in PATH.")
-        raise typer.Exit(code=1)
+                table.add_row(index, status, resource)
+                live.update(table)
+            else:
+                # For non-event lines, just print normally
+                # console.print(line)
+                pass
+
+    proc.wait()
+    if proc.returncode != 0:
+        raise typer.Exit(code=proc.returncode)
 
 
 def run_client_command(*args):
@@ -151,9 +178,7 @@ def run_client_command(*args):
     Runs a npm command from the client directory.
     """
 
-    # ensure_node_dependencies()
-
-    typer.echo(f"👉 Running: npm run {' '.join(args)} (in {CLIENT_DIR})")
+    print(f"[yellow]👉 Running: npm run {' '.join(args)} (in {CLIENT_DIR})")
 
     try:
         proc = subprocess.Popen(
@@ -167,7 +192,7 @@ def run_client_command(*args):
 
         # Stream output line-by-line
         for line in proc.stdout:
-            typer.echo(line.rstrip())
+            print(line.rstrip())
 
         proc.wait()
 
@@ -175,7 +200,7 @@ def run_client_command(*args):
             raise typer.Exit(code=proc.returncode)
 
     except FileNotFoundError:
-        typer.echo("❌ Error: Packages are not installed or not in PATH.")
+        print(f"[red]❌ Error: Packages are not installed or not in PATH.")
         raise typer.Exit(code=1)
 
 
@@ -265,6 +290,8 @@ def get_alb_dns(load_balancer_name, region=None):
 
     alb_dns = response["LoadBalancers"][0]["DNSName"]
 
+    print(f"[green]✅ Retrieved load balancer DNS")
+
     return alb_dns
 
 
@@ -282,7 +309,7 @@ def deploy():
     display_logo()
 
     openai_api_key = Prompt.ask(
-        f"[#00BCF7]OpenAI Api key", password=False
+        f"[#00BCF7]OpenAI Api key", password=True
     )  # Could make password True to hide while typing
     print()
     validate_key(openai_api_key)
