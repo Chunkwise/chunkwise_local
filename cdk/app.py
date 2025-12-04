@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 import os
+import warnings
 import json
+
+warnings.filterwarnings(
+    "ignore", message="Typeguard cannot check the", category=UserWarning
+)
+os.environ["PYTHON_TYPE_CHECKING_DISABLE"] = "1"
+
 import aws_cdk as cdk
 from stacks.network_stack import NetworkStack
 from stacks.database_stack import DatabaseStack
 from stacks.ecs_stack import EcsStack
 from stacks.load_balancer_stack import LoadBalancerStack
 from stacks.batch_stack import BatchStack
+
 
 app = cdk.App()
 
