@@ -28,8 +28,9 @@ CLIENT_DIR = Path(__file__).resolve().parent.parent / "client"
 
 
 def validate_key(key):
-    if not isinstance(key, str) or len(key) == 0:
-        raise InvalidResponse("Please enter a string with characters")
+    if not isinstance(key, str) or len(key) == 0 or not key.startswith("sk-"):
+        return False
+    return True
 
 
 def display_logo():
@@ -318,11 +319,13 @@ def deploy():
     """
     display_logo()
 
-    openai_api_key = Prompt.ask(
-        f"[#00BCF7]OpenAI Api key", password=True
-    )  # Could make password True to hide while typing
-    print()
-    validate_key(openai_api_key)
+    openai_api_key = ""
+    while not validate_key(openai_api_key):
+        openai_api_key = Prompt.ask(
+            f"[#00BCF7]OpenAI Api key", password=True
+        )  # Could make password True to hide while typing
+        openai_api_key = openai_api_key.strip()
+        print()
 
     region = Prompt.ask(
         f"[#00BCF7]What region would you like to deploy Chunkwise in?",
@@ -349,8 +352,11 @@ def deploy():
         ],
         show_choices=False,
         default="my default",
+        case_sensitive=False,
     )
     print()
+
+    region = str.lower(region)
 
     confirm = Confirm.ask(f"[#00BCF7]Are you sure?")
     print()
