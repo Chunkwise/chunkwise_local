@@ -14,7 +14,6 @@ export interface RDSReadyPayload {
   secret_arn: string;
   db_instance_identifier: string;
   notes?: string;
-  db_instance_identifier?: string;
 }
 
 export interface S3ConnectedPayload {
@@ -39,9 +38,9 @@ export interface JobsUpdatedPayload {
   ok: true;
   stage: "jobs-updated";
   statuses: {
-    "succeeded": number,
-    "failed": number,
-    "total": number,
+    succeeded: number;
+    failed: number;
+    total: number;
   };
 }
 
