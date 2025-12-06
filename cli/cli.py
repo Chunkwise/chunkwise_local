@@ -241,7 +241,7 @@ def delete_secret(secret_name, region):
 
     client.delete_secret(SecretId=secret_name, ForceDeleteWithoutRecovery=True)
 
-    print(f"[green]✅ AWS Secret deleted!")
+    print(f'[green]✅ AWS Secret "{secret_name}" deleted!')
 
 
 def write_env_file(client_dir: str, values: dict):
