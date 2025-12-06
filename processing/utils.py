@@ -10,7 +10,7 @@ from pydantic import TypeAdapter
 from openai import OpenAI, RateLimitError
 from chunkwise_core import ChunkerConfig
 from chunkwise_core.utils import create_chunker
-from config import openai_api_key, chunker_config
+from config import openai_api_key, chunker_config_json
 
 
 def get_chunks(text: str) -> list[str]:
@@ -20,7 +20,9 @@ def get_chunks(text: str) -> list[str]:
     Cleans chunks because the OpenAI embedding API does not accept empty/whitespace only chunks
     Return chunks as a list of strings
     """
-    adapted_chunker_config = TypeAdapter(ChunkerConfig).validate_json(chunker_config)
+    adapted_chunker_config = TypeAdapter(ChunkerConfig).validate_json(
+        chunker_config_json
+    )
     chunker = create_chunker(adapted_chunker_config)
     chunks = (
         chunker.split_text(text)
@@ -69,6 +71,8 @@ def get_mapped_embeddings(
     """
     client = OpenAI(api_key=openai_api_key)
     enc = tiktoken.get_encoding("cl100k_base")
+    OPENAI_BATCH_LIMIT = 2048
+    OPENAI_EMBEDDING_TOKEN_LIMIT = 8192
 
     # Wrap the API call with our retry logic
     @retry_with_backoff
@@ -85,12 +89,14 @@ def get_mapped_embeddings(
             print(f"Skipping chunk with 0 tokens: {repr(chunk)}")
             continue
 
-        if tokens > 8191:
-            chunk = enc.decode(enc.encode(chunk)[:8191])
-            tokens = 8191
-            print(f"Chunk too large: {tokens} tokens > 8191. Truncated chunk.")
+        if tokens > OPENAI_EMBEDDING_TOKEN_LIMIT:
+            chunk = enc.decode(enc.encode(chunk)[:OPENAI_EMBEDDING_TOKEN_LIMIT])
+            tokens = OPENAI_EMBEDDING_TOKEN_LIMIT
+            print(
+                f"Chunk too large: {tokens} tokens > {OPENAI_EMBEDDING_TOKEN_LIMIT}. Truncated chunk."
+            )
 
-        if current_tokens + tokens > max_tokens or len(current) >= 2048:
+        if current_tokens + tokens > max_tokens or len(current) >= OPENAI_BATCH_LIMIT:
             batches.append(current)
             current = []
             current_tokens = 0

@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 bucket = os.getenv("BUCKET_NAME")
-document_key = os.getenv("DOCUMENT_KEY")
-chunker_config = os.getenv("CHUNKER_CONFIG")
+manifest_key = os.getenv("BATCH_MANIFEST_KEY")
+chunker_config_json = os.getenv("CHUNKER_CONFIG_JSON")
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
 host = os.getenv("VECTOR_DB_HOST")
