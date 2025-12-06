@@ -322,7 +322,7 @@ def deploy():
     openai_api_key = ""
     while not validate_key(openai_api_key):
         openai_api_key = Prompt.ask(
-            f"[#00BCF7]OpenAI Api key", password=True
+            f"[#00BCF7]OpenAI API Key", password=True
         )  # Could make password True to hide while typing
         openai_api_key = openai_api_key.strip()
         print()
