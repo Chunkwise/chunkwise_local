@@ -26,7 +26,6 @@ class EcsStack(Stack):
     - 1 Cloud Map Private DNS Namespace
     - 2 Cloud Map Service Discovery Services (chunking, evaluation)
     - 3 CloudWatch Log Groups
-    - 1 S3 Bucket
     - 2 IAM Roles (Task Execution Role, Task Role)
     - Security Groups
     """
@@ -38,6 +37,7 @@ class EcsStack(Stack):
         vpc: ec2.Vpc,
         database: rds.DatabaseInstance,
         vector_database: rds.DatabaseInstance,
+        documents_bucket: s3.IBucket,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -45,18 +45,7 @@ class EcsStack(Stack):
         self.vpc = vpc
         self.database = database
         self.vector_database = vector_database
-
-        # Create S3 bucket for document storage
-        self.documents_bucket = s3.Bucket(
-            self,
-            "ChunkwiseDocumentsBucket",
-            bucket_name=f"{config.S3_CONFIG['bucket_name_prefix']}-{self.account}",
-            encryption=s3.BucketEncryption.S3_MANAGED,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
-            versioned=False,
-            removal_policy=config.get_removal_policy(),
-            auto_delete_objects=not config.is_production(),  # Only auto-delete in dev
-        )
+        self.documents_bucket = documents_bucket
 
         # Create security group for ECS tasks
         self.ecs_security_group = ec2.SecurityGroup(

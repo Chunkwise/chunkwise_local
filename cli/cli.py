@@ -120,10 +120,6 @@ def ensure_npm_dependencies():
             bufsize=1,
         )
 
-        # Log output to the console
-        # for line in proc.stdout:
-        #     typer.echo(line.rstrip())
-
         proc.wait()
 
         if proc.returncode != 0:
@@ -373,7 +369,7 @@ def deploy():
             f"[yellow]⚠️  Production mode: Databases and S3 will be RETAINED on stack deletion."
         )
         print(
-            f"[yellow]  To use development mode, set ENVIRONMENT='development' in cdk/config.py."
+            f"[yellow]   To use development mode, set ENVIRONMENT='development' in cdk/config.py."
         )
     else:
         print(
@@ -437,8 +433,10 @@ def destroy(
             f"[yellow]   • Database credentials and OpenAI API key in Secrets Manager"
         )
         print()
-        print(f"[yellow]   These resources will continue to incur costs.")
-        print(f"[yellow]   To fully clean up, see instructions in cdk/README.md.")
+        print(
+            f"[yellow]   These resources will continue to incur costs. "
+            "To fully clean up, see instructions in cdk/README.md."
+        )
         print()
     else:
         print(

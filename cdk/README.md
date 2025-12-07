@@ -11,7 +11,7 @@ This CDK application automates the production deployment of Chunkwise, a documen
 
 ### Production Mode (Default - Current Configuration)
 
-- ✅ Databases and S3 are **RETAINED** on stack deletion (data protection)
+- ✅ Databases and S3 are **RETAINED** on deletion of the Database and ECS stacks for data protection
 - ✅ Deletion protection enabled on databases
 - ⚠️ Retained resources continue to incur costs
 - ⚠️ Manual cleanup required when fully decommissioning
@@ -143,7 +143,7 @@ ENVIRONMENT = "production"  # Default - retains data on deletion
 # ENVIRONMENT = "development"  # Destroys all resources on deletion
 ```
 
-**Resource sizes:**
+**Resource allocation and configuration:**
 
 - Default configuration uses AWS Free Tier eligible resources
 - For production workloads, consider upgrading instance types
@@ -247,7 +247,7 @@ cdk deploy --all --dry-run
 
 ## Updating the Deployment
 
-**Recommended for Production Environment: Update in place**
+**Recommended for production environment: Update in place**
 
 ```bash
 cdk deploy --all
@@ -290,7 +290,7 @@ These stacks can be destroyed and redeployed as needed without data loss.
 
 #### For routine teardowns or redeployments:
 
-1. Destroy the application stacks
+1. Destroy the application stacks in the following order
 
 ```bash
 # Destroy ECS stack first
@@ -309,8 +309,8 @@ To redeploy, run `cdk deploy --all`
 
 3. Manually delete retained data resources via AWS Console
 
-- Disable "deletion protection" for RDS instances
-- Delete RDS instances
+- Disable "deletion protection" for both RDS instances (evaluation + production)
+- Delete both RDS instances
 - Delete the S3 bucket (chunkwise-\*)
 
 4. Delete database credentials and OpenAI API key in Secrets Manager
