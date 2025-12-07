@@ -230,7 +230,7 @@ def create_secret(secret_name, secret_value, region=None):
 
     except ClientError as e:
         if e.response["Error"]["Code"] == "ResourceExistsException":
-            print(f"[green]✅ Secret already exists")
+            print(f'[green]✅ Secret "{secret_name}" already exists.')
         else:
             raise
 
@@ -282,7 +282,7 @@ def write_env_file(client_dir: str, values: dict):
         for key, val in existing.items():
             f.write(f"{key}={val}\n")
 
-    print(f"[green]✅ Successfully wrote {len(values)} values to {env_path}")
+    print(f"[green]✅ Successfully wrote {len(values)} values to {env_path}.")
 
 
 def get_alb_dns(load_balancer_name, region=None):
@@ -306,7 +306,7 @@ def get_alb_dns(load_balancer_name, region=None):
 
     alb_dns = response["LoadBalancers"][0]["DNSName"]
 
-    print(f"[green]✅ Retrieved load balancer DNS")
+    print(f"[green]✅ Retrieved load balancer DNS.")
 
     return alb_dns
 
@@ -381,7 +381,7 @@ def deploy():
     print()
 
     if not confirm:
-        print(f"[red]❌ Stack deployment cancelled")
+        print(f"[red]❌ Stack deployment cancelled.")
         return
 
     options = {
@@ -408,7 +408,7 @@ def deploy():
         f"options={options_json}",
     )
 
-    print(f"[green]✅ Stacks successfullly deployed")
+    print(f"[green]✅ Stacks successfullly deployed.")
 
 
 @app.command()
@@ -426,9 +426,8 @@ def destroy(
         print(f"[yellow]⚠️  Production mode: The following resources will be RETAINED:")
         print(f"[yellow]   • Network stack (VPC, Subnets, NAT Gateways, etc.)")
         print(
-            f"[yellow]   • Database stack (2 RDS instances, subnet group, security groups, etc.)"
+            f"[yellow]   • Data stack (2 RDS instances, S3 bucket, DB subnet group, security groups, etc.)"
         )
-        print(f"[yellow]   • S3 bucket (chunkwise-*)")
         print(
             f"[yellow]   • Database credentials and OpenAI API key in Secrets Manager"
         )

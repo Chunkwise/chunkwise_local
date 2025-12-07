@@ -314,6 +314,20 @@ To redeploy, run `cdk deploy --all`
 
 4. Delete database credentials and OpenAI API key in Secrets Manager
 
+```bash
+aws secretsmanager delete-secret \
+  --secret-id chunkwise/db-credentials \
+  --force-delete-without-recovery
+
+aws secretsmanager delete-secret \
+  --secret-id chunkwise/production-db-credentials \
+  --force-delete-without-recovery
+
+aws secretsmanager delete-secret \
+  --secret-id chunkwise/openai-api-key \
+  --force-delete-without-recovery
+```
+
 5. Destroy foundation stacks
 
 ```bash
