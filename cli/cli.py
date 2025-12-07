@@ -221,7 +221,7 @@ def create_secret(secret_name, secret_value, region=None):
 
         client.create_secret(Name=secret_name, SecretString=secret_value)
 
-        print(f"[green]✅ AWS Secret created!")
+        print(f'[green]✅ AWS Secret "{secret_name}" created!')
 
     except ClientError as e:
         if e.response["Error"]["Code"] == "ResourceExistsException":
