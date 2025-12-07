@@ -12,6 +12,7 @@ from rich.table import Table
 import re
 from pathlib import Path
 import subprocess
+import importlib.util
 
 
 DEPLOY_RE = re.compile(
@@ -25,6 +26,14 @@ console = Console()
 
 CDK_DIR = Path(__file__).resolve().parent.parent / "cdk"
 CLIENT_DIR = Path(__file__).resolve().parent.parent / "client"
+
+# Load cdk/config.py dynamically
+CDK_CONFIG_PATH = Path(__file__).resolve().parent.parent / "cdk" / "config.py"
+spec = importlib.util.spec_from_file_location("cdk_config", CDK_CONFIG_PATH)
+cdk_config = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(cdk_config)
+
+env = cdk_config.ENVIRONMENT.lower()  # "production" or "development"
 
 
 def validate_key(key):
@@ -358,46 +367,52 @@ def deploy():
 
     region = str.lower(region)
 
-    # Add production mode warning
-    print(
-        f"[yellow]⚠️ Production mode: Databases and S3 will be RETAINED on stack deletion."
-    )
-    print(
-        f"[yellow]  To use development mode, set ENVIRONMENT='development' in cdk/config.py"
-    )
+    if env == "production":
+        # Add production mode warning
+        print(
+            f"[yellow]⚠️  Production mode: Databases and S3 will be RETAINED on stack deletion."
+        )
+        print(
+            f"[yellow]  To use development mode, set ENVIRONMENT='development' in cdk/config.py."
+        )
+    else:
+        print(
+            "[yellow]⚠️  Development mode: Stacks and secrets will be fully destroyed on teardown."
+        )
     print()
 
     confirm = Confirm.ask(f"[#00BCF7]Are you sure?")
     print()
 
-    if confirm:
-        options = {
-            "region": "" if region == "my default" else region,
-        }
-        options_json = json.dumps(options)
-        account_id = boto3.client("sts").get_caller_identity().get("Account")
-
-        ensure_cdk_dependencies()
-
-        if region != "my default":
-            create_secret("chunkwise/openai-api-key", openai_api_key, region)
-            run_cdk_command("bootstrap", f"aws://{account_id}/{region}")
-        else:
-            create_secret("chunkwise/openai-api-key", openai_api_key)
-            run_cdk_command("bootstrap")
-
-        run_cdk_command(
-            "deploy",
-            "--all",
-            "--require-approval",
-            "never",
-            "-c",
-            f"options={options_json}",
-        )
-
-        print(f"[green]✅ Stacks successfullly deployed")
-    else:
+    if not confirm:
         print(f"[red]❌ Stack deployment cancelled")
+        return
+
+    options = {
+        "region": "" if region == "my default" else region,
+    }
+    options_json = json.dumps(options)
+    account_id = boto3.client("sts").get_caller_identity().get("Account")
+
+    ensure_cdk_dependencies()
+
+    if region != "my default":
+        create_secret("chunkwise/openai-api-key", openai_api_key, region)
+        run_cdk_command("bootstrap", f"aws://{account_id}/{region}")
+    else:
+        create_secret("chunkwise/openai-api-key", openai_api_key)
+        run_cdk_command("bootstrap")
+
+    run_cdk_command(
+        "deploy",
+        "--all",
+        "--require-approval",
+        "never",
+        "-c",
+        f"options={options_json}",
+    )
+
+    print(f"[green]✅ Stacks successfullly deployed")
 
 
 @app.command()
@@ -409,17 +424,27 @@ def destroy(
     """
     Calls the cdk destroy command.
     """
-    # Add production mode warning
-    print(f"[yellow]⚠️ Production mode: The following resources will be RETAINED:")
-    print(
-        f"[yellow]   • RDS databases (chunkwise-evaluation-db, chunkwise-production-db)"
-    )
-    print(f"[yellow]   • S3 bucket (chunkwise-*)")
-    print(f"[yellow]   • Database credentials and OpenAI API key in Secrets Manager")
-    print()
-    print(f"[yellow]   These resources will continue to incur costs")
-    print(f"[yellow]   To fully clean up, see instructions in cdk/README.md")
-    print()
+
+    if env == "production":
+        # Add production mode warning
+        print(f"[yellow]⚠️  Production mode: The following resources will be RETAINED:")
+        print(f"[yellow]   • Network stack (VPC, Subnets, NAT Gateways, etc.)")
+        print(
+            f"[yellow]   • Database stack (2 RDS instances, subnet group, security groups, etc.)"
+        )
+        print(f"[yellow]   • S3 bucket (chunkwise-*)")
+        print(
+            f"[yellow]   • Database credentials and OpenAI API key in Secrets Manager"
+        )
+        print()
+        print(f"[yellow]   These resources will continue to incur costs.")
+        print(f"[yellow]   To fully clean up, see instructions in cdk/README.md.")
+        print()
+    else:
+        print(
+            f"[yellow]⚠️  Development mode: All resources will be destroyed, including secrets."
+        )
+        print()
 
     confirm = Confirm.ask(f"[#00BCF7]Are you sure?")
     print()
@@ -429,18 +454,47 @@ def destroy(
     }
     options_json = json.dumps(options)
 
-    if confirm:
-        ensure_cdk_dependencies()
+    if not confirm:
+        print(f"[red]❌ Stack destruction cancelled.")
+        return
+
+    ensure_cdk_dependencies()
+
+    if env == "production":
+        # Only destroy ECS, Load Balancer, and Batch stacks
         run_cdk_command(
             "destroy", "ChunkwiseEcsStack", "--force", "-c", f"options={options_json}"
         )
-        run_cdk_command("destroy", "--all", "--force", "-c", f"options={options_json}")
+        run_cdk_command(
+            "destroy",
+            "ChunkwiseLoadBalancerStack",
+            "--force",
+            "-c",
+            f"options={options_json}",
+        )
+        run_cdk_command(
+            "destroy", "ChunkwiseBatchStack", "--force", "-c", f"options={options_json}"
+        )
+
+        print(
+            f"[green]✅ ECS, Load Balancer, and Batch stacks destroyed. "
+            "Network and Database stacks and secrets retained."
+        )
+    else:
+        # Destroy all stacks
+        run_cdk_command(
+            "destroy", "ChunkwiseEcsStack", "--force", "-c", f"options={options_json}"
+        )
+        run_cdk_command(
+            "destroy",
+            "--all",
+            "--force",
+            "-c",
+            f"options={options_json}",
+        )
         delete_secret("chunkwise/openai-api-key", region)
 
-        print(f"[green]✅ Stacks successfullly destroyed")
-
-    else:
-        print(f"[red]❌ Stack destruction cancelled.")
+        print(f"[green]✅ All stacks destroyed and secrets deleted.")
 
 
 @app.command()
