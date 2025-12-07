@@ -358,6 +358,15 @@ def deploy():
 
     region = str.lower(region)
 
+    # Add production mode warning
+    print(
+        f"[yellow]⚠️ Production mode: Databases and S3 will be RETAINED on stack deletion."
+    )
+    print(
+        f"[yellow]  To use development mode, set ENVIRONMENT='development' in cdk/config.py"
+    )
+    print()
+
     confirm = Confirm.ask(f"[#00BCF7]Are you sure?")
     print()
 
@@ -400,6 +409,18 @@ def destroy(
     """
     Calls the cdk destroy command.
     """
+    # Add production mode warning
+    print(f"[yellow]⚠️ Production mode: The following resources will be RETAINED:")
+    print(
+        f"[yellow]   • RDS databases (chunkwise-evaluation-db, chunkwise-production-db)"
+    )
+    print(f"[yellow]   • S3 bucket (chunkwise-*)")
+    print(f"[yellow]   • Database credentials and OpenAI API key in Secrets Manager")
+    print()
+    print(f"[yellow]   These resources will continue to incur costs")
+    print(f"[yellow]   To fully clean up, see instructions in cdk/README.md")
+    print()
+
     confirm = Confirm.ask(f"[#00BCF7]Are you sure?")
     print()
 
