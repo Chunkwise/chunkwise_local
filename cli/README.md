@@ -17,12 +17,6 @@ Initiates a user interface that gathers the necessary information
 to deploy the stacks. It then installs necessary dependencies,
 creates a secret, and bootstraps and deploys the AWS stacks.
 
-`typer cli.py run destroy (--region=<NON_DEFAULT_REGION_HERE>)`
-
-Forcefully deletes all of the AWS stacks created by deploy. Note
-that this doesn't destroy the S3 bucket or RDS instances. Also,
-if you used a non-default region make sure to specify that here.
-
 `typer cli.py run client (--region=<NON_DEFAULT_REGION_HERE>)`
 
 Runs both the `client-build` and `client-start` commands.
@@ -38,6 +32,104 @@ off.
 
 Runs a built client using Vite. To stop the server use Ctrl^C.
 
-# If you would like to destroy the created secret manually use this command:
+`typer cli.py run destroy (--region=<NON_DEFAULT_REGION_HERE>)`
 
-`aws secretsmanager delete-secret --secret-id chunkwise/openai-api-key --force-delete-without-recovery --region <YOUR_REGION_HERE>`
+Destroys AWS resources deployed by the CLI.
+Destruction behavior depends on the environment mode (set in `cdk/config.py):
+
+### Development mode
+
+Completely removes all stacks and deletes all secrets:
+
+- All CloudFormation stacks
+- Secrets Manager entries (including database credentials and OpenAI API key)
+- The S3 bucket
+- Both RDS instances
+
+This is a complete teardown.
+
+### Production mode
+
+Only destroys the application-layer stacks:
+
+- ChunkwiseEcsStack
+- ChunkwiseLoadBalancerStack
+- ChunkwiseBatchStack
+
+Retains:
+
+- ChunkwiseNetworkStack
+- ChunkwiseDataStack (including 2 RDS instances and S3 bucket)
+- All database credentials and OpenAI API key in Secrets Manager
+
+This prevents accidental loss of persistent production data.
+
+To fully decommission and remove retained production data, see below.
+
+`typer cli.py run destroy-data (--region=<REGION>)`
+🔥 Permanently deletes all remaining resources after the regular `destroy`, including the data layer and the network stack (PRODUCTION ONLY)
+
+This command irreversibly deletes:
+
+- ChunkwiseDataStack (including 2 RDS instances and the S3 bucket)
+- Database credentials and OpenAI API key secrets
+- Any retained data in ChunkwiseDataStack
+- ChunkwiseNetworkStack
+
+What it does not delete:
+
+- ChunkwiseEcsStack
+- ChunkwiseLoadBalancerStack
+- ChunkwiseBatchStack
+
+How it works:
+`destroy-data` internally:
+
+- Re-deploys ChunkwiseDataStack with `allow_rds_delete=true`
+- Disables deletion protection on both RDS instances
+- Destroys ChunkwiseDataStack
+- Deletes chunkwise/db-credentials and chunkwise/production-db-credentials
+- Destroys ChunkwiseNetworkStack
+
+You will be required to type `DELETE DATA` to confirm.
+
+## Fully removing production resources manually
+
+If you want to completely remove all retained production resources without using the CLI, here are the commands:
+
+Delete the OpenAI API key (optionally add `region` if not using the default one):
+
+```bash
+aws secretsmanager delete-secret \
+ --secret-id chunkwise/openai-api-key \
+ --force-delete-without-recovery \
+ --region <YOUR_REGION>
+```
+
+Delete database credentials (optionally add `region` if not using the default one):
+
+```bash
+aws secretsmanager delete-secret \
+ --secret-id chunkwise/db-credentials \
+ --force-delete-without-recovery \
+ --region <YOUR_REGION>
+
+ aws secretsmanager delete-secret \
+ --secret-id chunkwise/production-db-credentials \
+ --force-delete-without-recovery \
+ --region <YOUR_REGION>
+```
+
+Delete the S3 bucket:
+
+```bash
+aws s3 rm s3://chunkwise-<ACCOUNT_ID> --recursive
+aws s3api delete-bucket --bucket chunkwise-<ACCOUNT_ID>
+```
+
+Delete remaining stacks:
+
+```bash
+cdk destroy ChunkwiseNetworkStack
+cdk destroy ChunkwiseDataStack
+```

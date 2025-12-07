@@ -1,18 +1,16 @@
+import re
+from pathlib import Path
+import subprocess
+import importlib.util
 import json
 import boto3
 from botocore.exceptions import ClientError
 import typer
 from typing_extensions import Annotated
-from rich import print
-from rich.pretty import pprint
-from rich.prompt import Prompt, Confirm, InvalidResponse
+from rich.prompt import Prompt, Confirm
 from rich.live import Live
 from rich.console import Console
 from rich.table import Table
-import re
-from pathlib import Path
-import subprocess
-import importlib.util
 
 
 DEPLOY_RE = re.compile(
@@ -37,21 +35,23 @@ env = cdk_config.ENVIRONMENT.lower()  # "production" or "development"
 
 
 def validate_key(key):
+    """Simple validation for OpenAI API key format."""
     if not isinstance(key, str) or len(key) == 0 or not key.startswith("sk-"):
         return False
     return True
 
 
 def display_logo():
-    with open("logo.txt") as logo_file:
+    """Displays the Chunkwise logo in the terminal."""
+    with open("logo.txt", encoding="utf-8") as logo_file:
         logo_text = logo_file.read()
 
-    print(f"[#00BCF7]{logo_text}")
+    console.print(f"[#00BCF7]{logo_text}")
 
-    with open("chunkwise_monospace.txt") as name_file:
+    with open("chunkwise_monospace.txt", encoding="utf-8") as name_file:
         text = name_file.read()
 
-    print(f"[white]{text}")
+    console.print(f"[white]{text}")
 
 
 def ensure_cdk_dependencies():
@@ -63,10 +63,10 @@ def ensure_cdk_dependencies():
     req_file = CDK_DIR / "requirements.txt"
 
     if req_file.exists():
-        print(f"[yellow]📦 Ensuring CDK dependencies...")
+        console.print("[yellow]📦 Ensuring CDK dependencies...")
         cmd = ["pip", "install", "-r", "requirements.txt"]
     else:
-        print(f"[red]⚠️ No dependency file found in CDK directory.")
+        console.print("[red]⚠️ No dependency file found in CDK directory.")
         return
 
     # Install inside the CDK directory
@@ -78,17 +78,13 @@ def ensure_cdk_dependencies():
         text=True,
     )
 
-    # Print the output to the console
-    # for line in proc.stdout:
-    #     typer.echo(line.rstrip())
-
     proc.wait()
 
     if proc.returncode != 0:
-        print(f"[red]❌ CDK dependency installation failed.")
+        console.print("[red]❌ CDK dependency installation failed.")
         raise typer.Exit(code=1)
 
-    print(f"[green]✅ CDK dependencies ready!")
+    console.print("[green]✅ CDK dependencies ready!")
 
 
 def ensure_npm_dependencies():
@@ -101,14 +97,14 @@ def ensure_npm_dependencies():
     package_json = CLIENT_DIR / "package.json"
 
     if not package_json.exists():
-        print(f"[yellow]⚠️ No package.json found in client directory.")
+        console.print("[yellow]⚠️ No package.json found in client directory.")
         return
 
     if node_modules.exists():
-        print(f"[green]📦 Client NPM dependencies already installed.")
+        console.print("[green]📦 Client NPM dependencies already installed.")
         return
 
-    print(f"[yellow]📦 Installing NPM dependencies for client...")
+    console.print("[yellow]📦 Installing NPM dependencies for client...")
 
     try:
         proc = subprocess.Popen(
@@ -123,14 +119,14 @@ def ensure_npm_dependencies():
         proc.wait()
 
         if proc.returncode != 0:
-            print(f"[red]❌ NPM install failed.")
+            console.print("[red]❌ NPM install failed.")
             raise typer.Exit(code=1)
 
-    except FileNotFoundError:
-        print(f"[red]❌ NPM is not installed or not in PATH.")
-        raise typer.Exit(code=1)
+    except FileNotFoundError as exc:
+        console.print("[red]❌ NPM is not installed or not in PATH.")
+        raise typer.Exit(code=1) from exc
 
-    print(f"[green]✅ Client NPM dependencies ready!")
+    console.print("[green]✅ Client NPM dependencies ready!")
 
 
 def run_cdk_command(*args):
@@ -139,7 +135,7 @@ def run_cdk_command(*args):
     Streams output live and preserves exit codes.
     """
 
-    print(f"[yellow]👉 Running: cdk {' '.join(args)} (in {CDK_DIR})")
+    console.print(f"[yellow]👉 Running: cdk {' '.join(args)} (in {CDK_DIR})")
 
     proc = subprocess.Popen(
         ["cdk"] + list(args),
@@ -169,10 +165,6 @@ def run_cdk_command(*args):
 
                 table.add_row(index, status, resource)
                 live.update(table)
-            else:
-                # For non-event lines, just print normally
-                # console.print(line)
-                pass
 
     proc.wait()
     if proc.returncode != 0:
@@ -184,7 +176,7 @@ def run_client_command(*args):
     Runs a npm command from the client directory.
     """
 
-    print(f"[yellow]👉 Running: npm run {' '.join(args)} (in {CLIENT_DIR})")
+    console.print(f"[yellow]👉 Running: npm run {' '.join(args)} (in {CLIENT_DIR})")
 
     try:
         proc = subprocess.Popen(
@@ -205,9 +197,9 @@ def run_client_command(*args):
         if proc.returncode != 0:
             raise typer.Exit(code=proc.returncode)
 
-    except FileNotFoundError:
-        print(f"[red]❌ Error: Packages are not installed or not in PATH.")
-        raise typer.Exit(code=1)
+    except FileNotFoundError as exc:
+        console.print("[red]❌ Error: Packages are not installed or not in PATH.")
+        raise typer.Exit(code=1) from exc
 
 
 def create_secret(secret_name, secret_value, region=None):
@@ -226,16 +218,17 @@ def create_secret(secret_name, secret_value, region=None):
 
         client.create_secret(Name=secret_name, SecretString=secret_value)
 
-        print(f'[green]✅ AWS Secret "{secret_name}" created!')
+        console.print(f'[green]✅ AWS Secret "{secret_name}" created!')
 
     except ClientError as e:
         if e.response["Error"]["Code"] == "ResourceExistsException":
-            print(f'[green]✅ Secret "{secret_name}" already exists.')
+            console.print(f'[green]✅ Secret "{secret_name}" already exists.')
         else:
             raise
 
 
 def delete_secret(secret_name, region):
+    """Deletes a secret from AWS Secrets Manager."""
     if not secret_name:
         raise ValueError("secret name must be provided")
 
@@ -246,7 +239,7 @@ def delete_secret(secret_name, region):
 
     client.delete_secret(SecretId=secret_name, ForceDeleteWithoutRecovery=True)
 
-    print(f'[green]✅ AWS Secret "{secret_name}" deleted!')
+    console.print(f'[green]✅ AWS Secret "{secret_name}" deleted!')
 
 
 def write_env_file(client_dir: str, values: dict):
@@ -296,8 +289,6 @@ def get_alb_dns(load_balancer_name, region=None):
     else:
         client = boto3.client("elbv2")
 
-    # print(client.describe_load_balancers())
-
     response = client.describe_load_balancers(
         Names=[
             load_balancer_name,
@@ -306,7 +297,7 @@ def get_alb_dns(load_balancer_name, region=None):
 
     alb_dns = response["LoadBalancers"][0]["DNSName"]
 
-    print(f"[green]✅ Retrieved load balancer DNS.")
+    console.print("[green]✅ Retrieved load balancer DNS.")
 
     return alb_dns
 
@@ -327,13 +318,13 @@ def deploy():
     openai_api_key = ""
     while not validate_key(openai_api_key):
         openai_api_key = Prompt.ask(
-            f"[#00BCF7]OpenAI API Key", password=True
+            "[#00BCF7]OpenAI API Key", password=True
         )  # Could make password True to hide while typing
         openai_api_key = openai_api_key.strip()
         print()
 
     region = Prompt.ask(
-        f"[#00BCF7]What region would you like to deploy Chunkwise in?",
+        "[#00BCF7]What region would you like to deploy Chunkwise in?",
         # Default available regions
         choices=[
             "ap-northeast-1",
@@ -361,38 +352,38 @@ def deploy():
     )
     print()
 
-    region = str.lower(region)
+    region = region.lower()
 
     if env == "production":
         # Add production mode warning
-        print(
-            f"[yellow]⚠️  Production mode: Databases and S3 will be RETAINED on stack deletion."
+        console.print(
+            "[yellow]⚠️  Production mode: Databases and S3 will be RETAINED on stack deletion."
         )
-        print(
-            f"[yellow]   To use development mode, set ENVIRONMENT='development' in cdk/config.py."
+        console.print(
+            "[yellow]   To use development mode, set ENVIRONMENT='development' in cdk/config.py."
         )
     else:
-        print(
+        console.print(
             "[yellow]⚠️  Development mode: Stacks and secrets will be fully destroyed on teardown."
         )
     print()
 
-    confirm = Confirm.ask(f"[#00BCF7]Are you sure?")
+    confirm = Confirm.ask("[#00BCF7]Are you sure?")
     print()
 
     if not confirm:
-        print(f"[red]❌ Stack deployment cancelled.")
+        console.print("[red]❌ Stack deployment cancelled.")
         return
 
-    options = {
-        "region": "" if region == "my default" else region,
-    }
+    region = None if region == "my default" else region
+
+    options = {"region": region}
     options_json = json.dumps(options)
     account_id = boto3.client("sts").get_caller_identity().get("Account")
 
     ensure_cdk_dependencies()
 
-    if region != "my default":
+    if region is not None:
         create_secret("chunkwise/openai-api-key", openai_api_key, region)
         run_cdk_command("bootstrap", f"aws://{account_id}/{region}")
     else:
@@ -408,7 +399,7 @@ def deploy():
         f"options={options_json}",
     )
 
-    print(f"[green]✅ Stacks successfullly deployed.")
+    console.print("[green]✅ Stacks successfullly deployed.")
 
 
 @app.command()
@@ -423,27 +414,29 @@ def destroy(
 
     if env == "production":
         # Add production mode warning
-        print(f"[yellow]⚠️  Production mode: The following resources will be RETAINED:")
-        print(f"[yellow]   • Network stack (VPC, Subnets, NAT Gateways, etc.)")
-        print(
-            f"[yellow]   • Data stack (2 RDS instances, S3 bucket, DB subnet group, security groups, etc.)"
+        console.print(
+            "[yellow]⚠️  Production mode: The following resources will be RETAINED:"
         )
-        print(
-            f"[yellow]   • Database credentials and OpenAI API key in Secrets Manager"
+        console.print("[yellow]   • Network stack (VPC, Subnets, NAT Gateways, etc.)")
+        console.print(
+            "[yellow]   • Data stack (2 RDS instances, S3 bucket, DB subnet group, security groups, etc.)"
+        )
+        console.print(
+            "[yellow]   • Database credentials and OpenAI API key in Secrets Manager"
         )
         print()
-        print(
-            f"[yellow]   These resources will continue to incur costs. "
+        console.print(
+            "[yellow]   These resources will continue to incur costs. "
             "To fully clean up, see instructions in cdk/README.md."
         )
         print()
     else:
-        print(
-            f"[yellow]⚠️  Development mode: All resources will be destroyed, including secrets."
+        console.print(
+            "[yellow]⚠️  Development mode: All resources will be destroyed, including secrets."
         )
         print()
 
-    confirm = Confirm.ask(f"[#00BCF7]Are you sure?")
+    confirm = Confirm.ask("[#00BCF7]Are you sure?")
     print()
 
     options = {
@@ -452,7 +445,7 @@ def destroy(
     options_json = json.dumps(options)
 
     if not confirm:
-        print(f"[red]❌ Stack destruction cancelled.")
+        console.print("[red]❌ Stack destruction cancelled.")
         return
 
     ensure_cdk_dependencies()
@@ -473,8 +466,8 @@ def destroy(
             "destroy", "ChunkwiseBatchStack", "--force", "-c", f"options={options_json}"
         )
 
-        print(
-            f"[green]✅ ECS, Load Balancer, and Batch stacks destroyed. "
+        console.print(
+            "[green]✅ ECS, Load Balancer, and Batch stacks destroyed. "
             "Network and Database stacks and secrets retained."
         )
     else:
@@ -491,7 +484,123 @@ def destroy(
         )
         delete_secret("chunkwise/openai-api-key", region)
 
-        print(f"[green]✅ All stacks destroyed and secrets deleted.")
+        console.print("[green]✅ All stacks destroyed and secrets deleted.")
+
+
+@app.command()
+def destroy_data(
+    region: Annotated[
+        str, typer.Option(help="AWS region of the deployed stacks")
+    ] = None,
+):
+    """
+    Permanently destroy all data-layer resources and the supporting network stack in PRODUCTION.
+
+    This will:
+    - Disable deletion protection on the evaluation and production RDS instances
+    - Destroy the ChunkwiseDataStack (including 2 RDS instances + S3 bucket)
+    - Destroy the ChunkwiseNetworkStack (VPC, subnets, NAT, etc.)
+    - Delete database credentials and OpenAI API key from Secrets Manager
+
+    WARNING: This is irreversible. Use only when you truly want to wipe data.
+    """
+
+    if env != "production":
+        console.print("[yellow]⚠️  You're in development mode.")
+        console.print(
+            "[yellow]   Use the regular 'destroy' command instead - it will destroy everything."
+        )
+        return
+
+    console.print("[red]🔥 FULL DATA RESOURCES TEARDOWN (PRODUCTION) 🔥[/red]")
+    console.print("[yellow]This will attempt to permanently delete:[/yellow]")
+    print("  • Evaluation RDS instance")
+    print("  • Production RDS instance")
+    print("  • S3 documents bucket")
+    print("  • Database credentials and OpenAI API key in Secrets Manager")
+    print("  • Network stack (VPC, subnets, NAT gateways, etc.)")
+    print()
+    console.print(
+        "[yellow]This action is IRREVERSIBLE and may result in permanent data loss.[/yellow]"
+    )
+    print()
+
+    # Extra safety: require exact phrase
+    confirm_phrase = Prompt.ask(
+        "[#00BCF7]Type 'DELETE DATA' to confirm (or anything else to cancel)"
+    ).strip()
+
+    if confirm_phrase != "DELETE DATA":
+        console.print("[red]❌ Data destruction cancelled.")
+        return
+
+    region = None if region == "my default" else region
+
+    options = {"region": region}
+    options_json = json.dumps(options)
+
+    ensure_cdk_dependencies()
+
+    # 1) First: deploy DataStack with allow_rds_delete=true to turn off deletion protection
+    console.print(
+        "[yellow]👉 Step 1/4: Updating ChunkwiseDataStack to disable RDS deletion protection..."
+    )
+    run_cdk_command(
+        "deploy",
+        "ChunkwiseDataStack",
+        "--require-approval",
+        "never",
+        "-c",
+        f"options={options_json}",
+        "-c",
+        "allow_rds_delete=true",
+    )
+
+    # 2) Then: destroy DataStack with the same context flag
+    console.print("[yellow]👉 Step 2/4: Destroying ChunkwiseDataStack (RDS + S3)...")
+    run_cdk_command(
+        "destroy",
+        "ChunkwiseDataStack",
+        "--force",
+        "-c",
+        f"options={options_json}",
+        "-c",
+        "allow_rds_delete=true",
+    )
+
+    # 3) Destroy the Network stack (now that nothing depends on it anymore)
+    console.print(
+        "[yellow]👉 Step 3/4: Destroying ChunkwiseNetworkStack (VPC, subnets, NAT)..."
+    )
+    run_cdk_command(
+        "destroy",
+        "ChunkwiseNetworkStack",
+        "--force",
+        "-c",
+        f"options={options_json}",
+    )
+
+    # 4) Delete all remaining secrets (RDS credentials + OpenAI API key)
+    console.print("[yellow]👉 Step 4/4: Deleting Secrets Manager entries...")
+
+    secret_names = [
+        "chunkwise/openai-api-key",
+        "chunkwise/db-credentials",
+        "chunkwise/production-db-credentials",
+    ]
+
+    for name in secret_names:
+        try:
+            delete_secret(name, region)
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ResourceNotFoundException":
+                console.print(f"[yellow]ℹ️ Secret '{name}' already deleted.")
+            else:
+                raise
+
+    console.print(
+        "[green]✅ All data, secrets, and network resources have been removed."
+    )
 
 
 @app.command()
@@ -511,7 +620,7 @@ def client_build(
     write_env_file("../client", {"ALB_URI": alb_dns})
     ensure_npm_dependencies()
     run_client_command("build")
-    print(f"[green]✅ Client built!")
+    console.print("[green]✅ Client built!")
 
 
 @app.command()
@@ -524,7 +633,7 @@ def client_start():
 
 
 @app.command()
-def client(
+def client_cmd(
     region: Annotated[
         str, typer.Option(help="AWS region of the deployed stacks")
     ] = None,

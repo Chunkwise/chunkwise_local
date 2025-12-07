@@ -29,6 +29,10 @@ class DataStack(Stack):
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+        # Read context flag for allowing destructive data deletion
+        allow_rds_delete = self.node.try_get_context("allow_rds_delete")
+        self._allow_rds_delete = str(allow_rds_delete).lower() == "true"
+
         # Create S3 bucket for document storage
         self.documents_bucket = s3.Bucket(
             self,
@@ -37,8 +41,14 @@ class DataStack(Stack):
             encryption=s3.BucketEncryption.S3_MANAGED,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             versioned=False,
-            removal_policy=config.get_removal_policy(),      # RETAIN in prod, DESTROY in dev
-            auto_delete_objects=not config.is_production(),  # Only auto-delete in dev
+            removal_policy=(
+                RemovalPolicy.DESTROY
+                if self._allow_rds_delete
+                else config.get_removal_policy()
+            ),
+            auto_delete_objects=(
+                True if self._allow_rds_delete else not config.is_production()
+            ),
         )
 
         # Create Evaluation Database (for experimentation workflows)
@@ -66,7 +76,6 @@ class DataStack(Stack):
             username="postgres",
             secret_name="chunkwise/db-credentials",
         )
-        self.db_credentials.apply_removal_policy(config.get_removal_policy())
 
         # Create RDS PostgreSQL instance for evaluation
         self.database = rds.DatabaseInstance(
@@ -100,9 +109,17 @@ class DataStack(Stack):
             # Public accessibility
             publicly_accessible=config.RDS_CONFIG["publicly_accessible"],
             # Deletion protection
-            deletion_protection=config.RDS_CONFIG["deletion_protection"],
-            # For development - allow deletion
-            removal_policy=config.get_removal_policy(),
+            deletion_protection=(
+                False
+                if self._allow_rds_delete
+                else config.RDS_CONFIG["deletion_protection"]
+            ),
+            # Allow deletion in development or when running `destroy-data` in protection
+            removal_policy=(
+                RemovalPolicy.DESTROY
+                if self._allow_rds_delete
+                else config.get_removal_policy()
+            ),
             # CloudWatch monitoring
             cloudwatch_logs_exports=["postgresql"],
             enable_performance_insights=True,
@@ -154,7 +171,6 @@ class DataStack(Stack):
             username="postgres",
             secret_name="chunkwise/production-db-credentials",
         )
-        self.production_db_credentials.apply_removal_policy(config.get_removal_policy())
 
         # Create RDS PostgreSQL instance for production
         self.production_database = rds.DatabaseInstance(
@@ -188,9 +204,17 @@ class DataStack(Stack):
             # Public accessibility - ENABLED for user export
             publicly_accessible=config.VECTOR_RDS_CONFIG["publicly_accessible"],
             # Deletion protection
-            deletion_protection=config.VECTOR_RDS_CONFIG["deletion_protection"],
-            # For development - allow deletion
-            removal_policy=config.get_removal_policy(),
+            deletion_protection=(
+                False
+                if self._allow_rds_delete
+                else config.VECTOR_RDS_CONFIG["deletion_protection"]
+            ),
+            # Allow deletion in development or when running `destroy-data` in protection
+            removal_policy=(
+                RemovalPolicy.DESTROY
+                if self._allow_rds_delete
+                else config.get_removal_policy()
+            ),
             # CloudWatch monitoring
             cloudwatch_logs_exports=["postgresql"],
             enable_performance_insights=True,
