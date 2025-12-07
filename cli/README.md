@@ -17,7 +17,7 @@ Initiates a user interface that gathers the necessary information
 to deploy the stacks. It then installs necessary dependencies,
 creates a secret, and bootstraps and deploys the AWS stacks.
 
-`typer cli.py run client (--region=<NON_DEFAULT_REGION_HERE>)`
+`typer cli.py run client-run (--region=<NON_DEFAULT_REGION_HERE>)`
 
 Runs both the `client-build` and `client-start` commands.
 
