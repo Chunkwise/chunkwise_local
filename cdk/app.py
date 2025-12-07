@@ -2,18 +2,17 @@
 import os
 import warnings
 import json
-
-warnings.filterwarnings(
-    "ignore", message="Typeguard cannot check the", category=UserWarning
-)
-os.environ["PYTHON_TYPE_CHECKING_DISABLE"] = "1"
-
 import aws_cdk as cdk
 from stacks.network_stack import NetworkStack
 from stacks.data_stack import DataStack
 from stacks.ecs_stack import EcsStack
 from stacks.load_balancer_stack import LoadBalancerStack
 from stacks.batch_stack import BatchStack
+
+warnings.filterwarnings(
+    "ignore", message="Typeguard cannot check the", category=UserWarning
+)
+os.environ["PYTHON_TYPE_CHECKING_DISABLE"] = "1"
 
 
 app = cdk.App()
@@ -60,7 +59,7 @@ ecs_stack = EcsStack(
     vpc=network_stack.vpc,
     database=data_stack.database,
     vector_database=data_stack.production_database,
-    documents_bucket=data_stack.documents_bucket, 
+    documents_bucket=data_stack.documents_bucket,
     env=env,
     description="Chunkwise ECS Cluster and Services",
 )
