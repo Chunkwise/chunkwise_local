@@ -52,6 +52,7 @@ class DatabaseStack(Stack):
             username="postgres",
             secret_name="chunkwise/db-credentials",
         )
+        self.db_credentials.apply_removal_policy(config.get_removal_policy())
 
         # Create RDS PostgreSQL instance for evaluation
         self.database = rds.DatabaseInstance(
@@ -139,6 +140,7 @@ class DatabaseStack(Stack):
             username="postgres",
             secret_name="chunkwise/production-db-credentials",
         )
+        self.production_db_credentials.apply_removal_policy(config.get_removal_policy())
 
         # Create RDS PostgreSQL instance for production
         self.production_database = rds.DatabaseInstance(
