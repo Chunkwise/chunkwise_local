@@ -5,7 +5,7 @@ This CDK application automates the production deployment of Chunkwise, a documen
 ⚠️ **Important - Production Configuration** ⚠️:
 
 - The application is configured for **PRODUCTION** by default, where databases and S3 bucket have `RemovalPolicy.RETAIN` to prevent accidental data loss. On stack deletion, these resources will be **RETAINED** and continue to incur costs. Manual cleanup is required for full decommission.
-- For **DEVELOPMENT/TESTING**, change `ENVIRONMENT = "development"` in `config.py` to enable automatic cleanup.
+- For **DEVELOPMENT/TESTING**, set `ENVIRONMENT = "development"` in `config.py` to enable automatic cleanup.
 
 ## Environment Modes
 
@@ -266,49 +266,77 @@ This updates existing resources without destroying data.
 
 ### Current Configuration: Production Mode
 
-When you destroy the stack in production mode:
+When you destroy stacks in production mode, resources are separated into two categories:
 
-❌ **These resources will be RETAINED** (continue to incur costs):
+#### ✅ **Application Stacks** (Safe to Destroy - Automatically Removed)
 
-- RDS PostgreSQL databases (evaluation + production)
-- S3 bucket with documents and queries
-- Database credentials in Secrets Manager
+- **ECS Stack**: ECS services, tasks, and cluster
+- **Load Balancer Stack**: Application Load Balancer and target groups
+- **Batch Stack**: AWS Batch compute environment, job queues, and job definitions
+- CloudWatch log groups (depending on retention settings)
 
-### Destruction Steps
+These stacks can be destroyed and redeployed as needed without data loss.
 
-1. Destroy stacks in the following order:
+#### ❌ **Foundation Stacks** (RETAINED - Manual Cleanup Required)
+
+- **Network Stack**: VPC, subnets, NAT gateways, internet gateway, route tables
+- **Database Stack**: RDS instances (evaluation + production), DB subnet groups, DB security groups
+- S3 Bucket: Documents and queries storage (chunkwise-\*)
+- Secrets: Database credentials, OpenAI API key
+
+**These resources will continue to incur costs after stack destruction.**
+
+### Destruction Steps (Production Mode)
+
+#### For routine teardowns or redeployments:
+
+1. Destroy the application stacks
 
 ```bash
-# 1. Destroy ECS stack first
+# Destroy ECS stack first
 cdk destroy ChunkwiseEcsStack
 
-# 2. Destroy other stacks
+# Destroy Load Balancer and Batch stacks
+cdk destroy ChunkwiseLoadBalancerStack
+cdk destroy ChunkwiseBatchStack
+```
+
+To redeploy, run `cdk deploy --all`
+
+#### For complete cleanup, continue with the following steps
+
+2. Before destroying fundation stacks, export or back up data
+
+3. Manually delete retained data resources via AWS Console
+
+- Disable "deletion protection" for RDS instances
+- Delete RDS instances
+- Delete the S3 bucket (chunkwise-\*)
+
+4. Delete database credentials and OpenAI API key in Secrets Manager
+
+5. Destroy foundation stacks
+
+```bash
+# Now destroy the database stack (resources already manually deleted)
+cdk destroy ChunkwiseDatabaseStack
+
+# Finally destroy the network stack
+cdk destroy ChunkwiseNetworkStack
+```
+
+### Destruction Steps (Development Mode)
+
+If you're running in development mode (`ENVIRONMENT = "development"` in `config.py`):
+
+1. Destroy the stacks in the following order
+
+```bash
+# Destroy ECS stack first
+cdk destroy ChunkwiseEcsStack
+
+# Destroy all other stacks
 cdk destroy --all
 ```
 
-In development mode, cleanup is complete after this step.
-
-In production mode, continue with the following steps.
-
-2. List retained resources
-
-After destruction, verify what was retained:
-
-```bash
-# List RDS instances
-aws rds describe-db-instances \
-  --query 'DBInstances[?contains(DBInstanceIdentifier, `chunkwise`)].{Name:DBInstanceIdentifier,Status:DBInstanceStatus,Size:AllocatedStorage}' \
-  --output table
-
-# List S3 buckets
-aws s3 ls | grep chunkwise
-
-# List secrets
-aws secretsmanager list-secrets \
-  --query 'SecretList[?contains(Name, `chunkwise`)].Name' \
-  --output table
-```
-
-3. Export/backup all data to avoid data loss
-
-4. Manually clean up retained resources via AWS Console
+2. Manually destroy the OpenAI API key in Secrets Manager as it's not managed by the CDK app
