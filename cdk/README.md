@@ -274,8 +274,6 @@ When you destroy the stack in production mode:
 - S3 bucket with documents and queries
 - Database credentials in Secrets Manager
 
-Manually delete them when fully decommissioning.
-
 ### Destruction Steps
 
 1. Destroy stacks in the following order:
@@ -287,6 +285,10 @@ cdk destroy ChunkwiseEcsStack
 # 2. Destroy other stacks
 cdk destroy --all
 ```
+
+In development mode, cleanup is complete after this step.
+
+In production mode, continue with the following steps.
 
 2. List retained resources
 
@@ -307,4 +309,6 @@ aws secretsmanager list-secrets \
   --output table
 ```
 
-3. Manually clean up retained resources
+3. Export/backup all data to avoid data loss
+
+4. Manually clean up retained resources via AWS Console
