@@ -21,7 +21,7 @@ class DataStack(Stack):
     - 2 RDS Security Groups (one for each database)
     - 2 RDS PostgreSQL Instances (evaluation and production)
     - 2 Secrets (for database credentials)
-    - 1 S3 Bucket (for data storage)
+    - 1 S3 Bucket (for document storage)
     """
 
     def __init__(

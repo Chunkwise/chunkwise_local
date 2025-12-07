@@ -4,14 +4,14 @@ This CDK application automates the production deployment of Chunkwise, a documen
 
 ⚠️ **Important - Production Configuration** ⚠️:
 
-- The application is configured for **PRODUCTION** by default, where databases and S3 bucket have `RemovalPolicy.RETAIN` to prevent accidental data loss. On stack deletion, these resources will be **RETAINED** and continue to incur costs. Manual cleanup is required for full decommission.
+- The application is configured for **PRODUCTION** by default, where databases and S3 bucket have `RemovalPolicy.RETAIN` to prevent accidental data loss. On data stack deletion, these resources will be **RETAINED** and continue to incur costs. Manual cleanup is required for full decommission.
 - For **DEVELOPMENT/TESTING**, set `ENVIRONMENT = "development"` in `config.py` to enable automatic cleanup.
 
 ## Environment Modes
 
 ### Production Mode (Default - Current Configuration)
 
-- ✅ Databases and S3 are **RETAINED** on deletion of the Database and ECS stacks for data protection
+- ✅ Databases and S3 are **RETAINED** on deletion of the Data stack for data protection
 - ✅ Deletion protection enabled on databases
 - ⚠️ Retained resources continue to incur costs
 - ⚠️ Manual cleanup required when fully decommissioning
@@ -31,8 +31,8 @@ The deployment creates:
 - **VPC**: Custom VPC with public and private subnets across 2 availability zones
 - **ECS Fargate**: Three containerized microservices (server, chunking, evaluation)
 - **RDS PostgreSQL**: Relational database that stores chunking visualization and evaluation results
-- **Application Load Balancer**: Routes external traffic to the server service
 - **S3**: Stores documents to evaluate and LLM-generated queries
+- **Application Load Balancer**: Routes external traffic to the server service
 - **AWS Cloud Map**: Service discovery for inter-service communication
 
 **RAG Data Ingestion Pipeline**
@@ -172,8 +172,8 @@ This will deploy all four stacks:
 
 1. `ChunkwiseNetworkStack` - VPC with public/private subnets across 2 availability zones, NAT gateways, Internet gateway
 2. `ChunkwiseLoadBalancerStack` - Application Load Balancer, target group, and security group
-3. `ChunkwiseDatabaseStack` - Two RDS PostgreSQL instances (evaluation + production with pgvector), subnet group, security groups, Secrets Manager secrets for credentials
-4. `ChunkwiseEcsStack` - ECS cluster, 3 services (server, chunking, evaluation), Cloud Map, S3 bucket, IAM roles, CloudWatch log groups, security groups, Secrets Manager secrets for API key
+3. `ChunkwiseDataStack` - 2 RDS PostgreSQL instances (evaluation + production with pgvector), subnet group, security groups, Secrets Manager secrets for database credentials, 1 S3 bucket
+4. `ChunkwiseEcsStack` - ECS cluster, 3 services (server, chunking, evaluation), Cloud Map, IAM roles, CloudWatch log groups, security groups, Secrets Manager secrets for API key
 5. `ChunkwiseBatchStack` - AWS Batch compute environment, job queue, job definition, IAM roles
 
 ### Option 2: Deploy Stacks Individually
@@ -181,7 +181,7 @@ This will deploy all four stacks:
 ```bash
 cdk deploy ChunkwiseNetworkStack
 cdk deploy ChunkwiseLoadBalancerStack
-cdk deploy ChunkwiseDatabaseStack
+cdk deploy ChunkwiseDataStack
 cdk deploy ChunkwiseEcsStack
 cdk deploy ChunkwiseBatchStack
 ```
@@ -280,8 +280,7 @@ These stacks can be destroyed and redeployed as needed without data loss.
 #### ❌ **Foundation Stacks** (RETAINED - Manual Cleanup Required)
 
 - **Network Stack**: VPC, subnets, NAT gateways, internet gateway, route tables
-- **Database Stack**: RDS instances (evaluation + production), DB subnet groups, DB security groups
-- S3 Bucket: Documents and queries storage (chunkwise-\*)
+- **Data Stack**: RDS instances (evaluation + production), DB subnet groups, DB security groups, S3 bucket
 - Secrets: Database credentials, OpenAI API key
 
 **These resources will continue to incur costs after stack destruction.**
@@ -319,7 +318,7 @@ To redeploy, run `cdk deploy --all`
 
 ```bash
 # Now destroy the database stack (resources already manually deleted)
-cdk destroy ChunkwiseDatabaseStack
+cdk destroy ChunkwiseDataStack
 
 # Finally destroy the network stack
 cdk destroy ChunkwiseNetworkStack
