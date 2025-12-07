@@ -130,6 +130,6 @@ aws s3api delete-bucket --bucket chunkwise-<ACCOUNT_ID>
 Delete remaining stacks:
 
 ```bash
-cdk destroy ChunkwiseNetworkStack
 cdk destroy ChunkwiseDataStack
+cdk destroy ChunkwiseNetworkStack
 ```
