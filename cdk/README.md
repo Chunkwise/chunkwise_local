@@ -5,7 +5,22 @@ This CDK application automates the production deployment of Chunkwise, a documen
 ⚠️ **Important - Production Configuration** ⚠️:
 
 - The application is configured for **PRODUCTION** by default, where databases and S3 bucket have `RemovalPolicy.RETAIN` to prevent accidental data loss. On stack deletion, these resources will be **RETAINED** and continue to incur costs. Manual cleanup is required for full decommission.
-- For **DEVELOPMENT/TESTING**, update the two RDS instances in `database_stack.py` and the S3 bucket in `ecs_stack.py` to have `RemovalPolicy.DESTROY` for automatic cleanup on stack deletion.
+- For **DEVELOPMENT/TESTING**, change `ENVIRONMENT = "development"` in `config.py` to enable automatic cleanup.
+
+## Environment Modes
+
+### Production Mode (Default - Current Configuration)
+
+- ✅ Databases and S3 are **RETAINED** on stack deletion (data protection)
+- ✅ Deletion protection enabled on databases
+- ⚠️ Retained resources continue to incur costs
+- ⚠️ Manual cleanup required when fully decommissioning
+
+### Development Mode
+
+- ✅ Resources are **DESTROYED** on stack deletion (clean teardown)
+- ✅ Lower costs, easy iteration, no orphaned resources
+- 🔧 Set `ENVIRONMENT = "development"` in `config.py` before deployment
 
 ## Architecture Overview
 
@@ -61,20 +76,33 @@ git clone https://github.com/Chunkwise/chunkwise_local.git
 cd chunkwise_local/cdk
 ```
 
-### 2. Create Python Virtual Environment
+### 2. Configure Environment Mode
+
+**For production deployment (default):**
+
+- No changes needed - already configured for production
+
+**For development/testing:**
+
+```python
+# Edit config.py
+ENVIRONMENT = "development"  # Change from "production"
+```
+
+### 3. Create Python Virtual Environment
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate.bat
 ```
 
-### 3. Install Dependencies
+### 4. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Bootstrap CDK (First Time Only)
+### 5. Bootstrap CDK (First Time Only)
 
 If this is your first time using CDK in your AWS account/region:
 
@@ -88,7 +116,7 @@ Example:
 cdk bootstrap aws://123456789012/us-west-2
 ```
 
-### 5. Store OpenAI API Key in Secrets Manager
+### 6. Store OpenAI API Key in Secrets Manager
 
 **This is the only manual setup required!**
 
@@ -106,7 +134,14 @@ aws secretsmanager describe-secret \
     --secret-id chunkwise/openai-api-key \
 ```
 
-### 6. Review and Adjust Configuration in `config.py`
+### 7. Review `config.py` and Adjust Configuration
+
+**Environment setting:**
+
+```python
+ENVIRONMENT = "production"  # Default - retains data on deletion
+# ENVIRONMENT = "development"  # Destroys all resources on deletion
+```
 
 **Resource sizes:**
 
@@ -212,7 +247,7 @@ cdk deploy --all --dry-run
 
 ## Updating the Deployment
 
-**Recommended for production: Update in place**
+**Recommended for Production Environment: Update in place**
 
 ```bash
 cdk deploy --all
@@ -227,7 +262,7 @@ This updates existing resources without destroying data.
 
 ## Destroying the Deployment
 
-**⚠️ Warning: Destruction behavior depends on your deployment environment**
+**⚠️ Warning: Destruction behavior depends on your environment configuration**
 
 ### Current Configuration: Production Mode
 
@@ -239,7 +274,11 @@ When you destroy the stack in production mode:
 - S3 bucket with documents and queries
 - Database credentials in Secrets Manager
 
-### Destroy Stacks in the Following Order
+Manually delete them when fully decommissioning.
+
+### Destruction Steps
+
+1. Destroy stacks in the following order:
 
 ```bash
 # 1. Destroy ECS stack first
@@ -248,4 +287,24 @@ cdk destroy ChunkwiseEcsStack
 # 2. Destroy other stacks
 cdk destroy --all
 ```
-### Manual
+
+2. List retained resources
+
+After destruction, verify what was retained:
+
+```bash
+# List RDS instances
+aws rds describe-db-instances \
+  --query 'DBInstances[?contains(DBInstanceIdentifier, `chunkwise`)].{Name:DBInstanceIdentifier,Status:DBInstanceStatus,Size:AllocatedStorage}' \
+  --output table
+
+# List S3 buckets
+aws s3 ls | grep chunkwise
+
+# List secrets
+aws secretsmanager list-secrets \
+  --query 'SecretList[?contains(Name, `chunkwise`)].Name' \
+  --output table
+```
+
+3. Manually clean up retained resources
