@@ -633,7 +633,7 @@ def client_start():
 
 
 @app.command()
-def client_cmd(
+def client_run(
     region: Annotated[
         str, typer.Option(help="AWS region of the deployed stacks")
     ] = None,
