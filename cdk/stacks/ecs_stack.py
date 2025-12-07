@@ -54,8 +54,8 @@ class EcsStack(Stack):
             encryption=s3.BucketEncryption.S3_MANAGED,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             versioned=False,
-            removal_policy=RemovalPolicy.DESTROY,  # Change to RETAIN for production
-            auto_delete_objects=True,  # Only for development
+            removal_policy=config.get_removal_policy(),
+            auto_delete_objects=not config.is_production(),  # Only auto-delete in dev
         )
 
         # Create security group for ECS tasks

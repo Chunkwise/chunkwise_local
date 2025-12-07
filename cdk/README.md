@@ -1,13 +1,18 @@
-
 # Chunkwise CDK Deployment
 
-This CDK application automates the deployment of Chunkwise, a document chunking evaluation platform and a RAG data ingestion pipeline, to AWS.
+This CDK application automates the production deployment of Chunkwise, a document chunking evaluation platform and a RAG data ingestion pipeline, to AWS.
+
+⚠️ **Important - Production Configuration** ⚠️:
+
+- The application is configured for **PRODUCTION** by default, where databases and S3 bucket have `RemovalPolicy.RETAIN` to prevent accidental data loss. On stack deletion, these resources will be **RETAINED** and continue to incur costs. Manual cleanup is required for full decommission.
+- For **DEVELOPMENT/TESTING**, update the two RDS instances in `database_stack.py` and the S3 bucket in `ecs_stack.py` to have `RemovalPolicy.DESTROY` for automatic cleanup on stack deletion.
 
 ## Architecture Overview
 
 The deployment creates:
 
 **Chunking evaluation platform**
+
 - **VPC**: Custom VPC with public and private subnets across 2 availability zones
 - **ECS Fargate**: Three containerized microservices (server, chunking, evaluation)
 - **RDS PostgreSQL**: Relational database that stores chunking visualization and evaluation results
@@ -16,9 +21,10 @@ The deployment creates:
 - **AWS Cloud Map**: Service discovery for inter-service communication
 
 **RAG Data Ingestion Pipeline**
+
 - **AWS Batch**: On-demand document processing for production deployments, which uses
 - **Fargate compute environment** to process documents in parallel:
-    Normalizes, chunks, and embeds documents into vector database
+  Normalizes, chunks, and embeds documents into vector database
 - **RDS PostgreSQL with pgvector**: Vector database that stores chunked documents and embeddings for deployed workflows using a specific chunking strategy
 
 - **CloudWatch**: Centralized logging for monitoring all services
@@ -27,6 +33,7 @@ The deployment creates:
 Before deploying, make sure you have:
 
 1. **AWS CLI** configured with appropriate credentials
+
 ```bash
    aws configure
 ```
@@ -36,6 +43,7 @@ Before deploying, make sure you have:
 4. **Node.js 22.x+ and npm** installed
 
 5. **AWS CDK** installed globally
+
 ```bash
    npm install -g aws-cdk
 ```
@@ -47,18 +55,21 @@ Before deploying, make sure you have:
 ## Initial Setup
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/Chunkwise/chunkwise_local.git
 cd chunkwise_local/cdk
 ```
 
 ### 2. Create Python Virtual Environment
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate.bat
 ```
 
 ### 3. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -66,11 +77,13 @@ pip install -r requirements.txt
 ### 4. Bootstrap CDK (First Time Only)
 
 If this is your first time using CDK in your AWS account/region:
+
 ```bash
 cdk bootstrap aws://ACCOUNT-ID/REGION
 ```
 
 Example:
+
 ```bash
 cdk bootstrap aws://123456789012/us-west-2
 ```
@@ -78,6 +91,7 @@ cdk bootstrap aws://123456789012/us-west-2
 ### 5. Store OpenAI API Key in Secrets Manager
 
 **This is the only manual setup required!**
+
 ```bash
 aws secretsmanager create-secret \
     --name chunkwise/openai-api-key \
@@ -86,14 +100,22 @@ aws secretsmanager create-secret \
 ```
 
 Verify the secret was created:
+
 ```bash
 aws secretsmanager describe-secret \
     --secret-id chunkwise/openai-api-key \
 ```
 
-### 6. (Optional) Adjust configurations and resource sizes if needed in `config.py`
+### 6. Review and Adjust Configuration in `config.py`
 
-If you want to use your own images, update the URIs (from ECR):
+**Resource sizes:**
+
+- Default configuration uses AWS Free Tier eligible resources
+- For production workloads, consider upgrading instance types
+
+**Docker images:**
+If you want to use your own images, update the image URIs (from ECR):
+
 ```python
 DOCKER_IMAGES = {
     "server": "123456789012.dkr.ecr.us-east-1.amazonaws.com/chunkwise-server:latest",
@@ -106,11 +128,13 @@ DOCKER_IMAGES = {
 ## Deployment
 
 ### Option 1: Deploy All Stacks at Once (Recommended)
+
 ```bash
 cdk deploy --all
 ```
 
 This will deploy all four stacks:
+
 1. `ChunkwiseNetworkStack` - VPC with public/private subnets across 2 availability zones, NAT gateways, Internet gateway
 2. `ChunkwiseLoadBalancerStack` - Application Load Balancer, target group, and security group
 3. `ChunkwiseDatabaseStack` - Two RDS PostgreSQL instances (evaluation + production with pgvector), subnet group, security groups, Secrets Manager secrets for credentials
@@ -118,6 +142,7 @@ This will deploy all four stacks:
 5. `ChunkwiseBatchStack` - AWS Batch compute environment, job queue, job definition, IAM roles
 
 ### Option 2: Deploy Stacks Individually
+
 ```bash
 cdk deploy ChunkwiseNetworkStack
 cdk deploy ChunkwiseLoadBalancerStack
@@ -129,6 +154,7 @@ cdk deploy ChunkwiseBatchStack
 ## Accessing the Application
 
 After the load balancer stack deploys, the ALB DNS name will be output:
+
 ```bash
 # Get the load balancer URL
 aws cloudformation describe-stacks \
@@ -149,17 +175,18 @@ The following environment variables are configured automatically by CDK:
 - `DB_HOST` - Evaluation RDS endpoint
 - `DB_NAME` - Evaluation Database name
 - `DB_USER` - Evaluation Database username
--  Evaluation Database credentials stored in Secrets Manager
+- Evaluation Database credentials stored in Secrets Manager
 - `VECTOR_DB_HOST` - Production RDS endpoint
 - `VECTOR_DB_NAME` - Production Database name
 - `VECTOR_DB_PORT` - Production Database port
--  Production Database credentials stored in Secrets Manager
+- Production Database credentials stored in Secrets Manager
 - `CHUNKING_SERVICE_HOST` and `CHUNKING_SERVICE_PORT` - Cloud Map service discovery
 - `EVALUATION_SERVICE_HOST` and `EVALUATION_SERVICE_PORT`- Cloud Map service discovery
 - `S3_BUCKET_NAME` - S3 bucket for storing test documents and LLM-generated queries
 - `OPENAI_API_KEY` - Retrieved from Secrets Manager
 
 Batch Processing Jobs
+
 - `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` - AWS credentials for accessing the user's S3 bucket
 - `DOCUMENT_KEY` - S3 key of document to process (set per job)
 - `BUCKET_NAME` - User's S3 bucket (set per job)
@@ -168,6 +195,7 @@ Batch Processing Jobs
 - `CHUNKER_CONFIG` - Chunking configuration JSON (set per job)
 
 ## Useful CDK Commands
+
 ```bash
 # List all stacks
 cdk ls
@@ -182,14 +210,42 @@ cdk synth ChunkwiseNetworkStack
 cdk deploy --all --dry-run
 ```
 
+## Updating the Deployment
+
+**Recommended for production: Update in place**
+
+```bash
+cdk deploy --all
+```
+
+This updates existing resources without destroying data.
+
+**Complete teardown** (⚠️ rarely needed - see "Destroying the Deployment" section):
+
+- Requires manual cleanup of retained resources
+- Not recommended unless fully decommissioning
+
 ## Destroying the Deployment
 
-**⚠️ Warning: This will delete all resources and data. This action cannot be undone.**
+**⚠️ Warning: Destruction behavior depends on your deployment environment**
+
+### Current Configuration: Production Mode
+
+When you destroy the stack in production mode:
+
+❌ **These resources will be RETAINED** (continue to incur costs):
+
+- RDS PostgreSQL databases (evaluation + production)
+- S3 bucket with documents and queries
+- Database credentials in Secrets Manager
 
 ### Destroy Stacks in the Following Order
+
 ```bash
 # 1. Destroy ECS stack first
 cdk destroy ChunkwiseEcsStack
 
 # 2. Destroy other stacks
 cdk destroy --all
+```
+### Manual

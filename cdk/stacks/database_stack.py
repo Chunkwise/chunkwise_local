@@ -87,7 +87,7 @@ class DatabaseStack(Stack):
             # Deletion protection
             deletion_protection=config.RDS_CONFIG["deletion_protection"],
             # For development - allow deletion
-            removal_policy=RemovalPolicy.DESTROY,  # Change to RETAIN for production
+            removal_policy=config.get_removal_policy(),
             # CloudWatch monitoring
             cloudwatch_logs_exports=["postgresql"],
             enable_performance_insights=True,
@@ -174,7 +174,7 @@ class DatabaseStack(Stack):
             # Deletion protection
             deletion_protection=config.VECTOR_RDS_CONFIG["deletion_protection"],
             # For development - allow deletion
-            removal_policy=RemovalPolicy.DESTROY,  # Change to RETAIN for production
+            removal_policy=config.get_removal_policy(),
             # CloudWatch monitoring
             cloudwatch_logs_exports=["postgresql"],
             enable_performance_insights=True,
