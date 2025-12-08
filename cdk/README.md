@@ -26,7 +26,7 @@ This CDK application automates the deployment of Chunkwise, a document chunking 
 
 The deployment creates:
 
-**Chunking evaluation platform**
+**Chunking Experimentation Platform**
 
 - **VPC**: Custom VPC with public and private subnets across 2 availability zones
 - **ECS Fargate**: Three containerized microservices (server, chunking, evaluation)
