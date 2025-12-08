@@ -331,7 +331,7 @@ aws secretsmanager delete-secret \
 5. Destroy foundation stacks
 
 ```bash
-# Now destroy the database stack (resources already manually deleted)
+# Now destroy the data stack (resources already manually deleted)
 cdk destroy ChunkwiseDataStack
 
 # Finally destroy the network stack
