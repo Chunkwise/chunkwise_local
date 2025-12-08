@@ -95,9 +95,9 @@ You will be required to type `DELETE DATA` to confirm.
 
 ## Fully removing production resources manually
 
-If you want to completely remove all retained production resources without using the CLI, here are the commands:
+If you want to completely remove all retained production resources without using the CLI, use the following commands and make sure to pass `--region` if not using the default one:
 
-Delete the OpenAI API key (optionally add `region` if not using the default one):
+Delete the OpenAI API key:
 
 ```bash
 aws secretsmanager delete-secret \
@@ -106,7 +106,7 @@ aws secretsmanager delete-secret \
  --region <YOUR_REGION>
 ```
 
-Delete database credentials (optionally add `region` if not using the default one):
+Delete database credentials:
 
 ```bash
 aws secretsmanager delete-secret \
@@ -123,13 +123,13 @@ aws secretsmanager delete-secret \
 Delete the S3 bucket:
 
 ```bash
-aws s3 rm s3://chunkwise-<ACCOUNT_ID> --recursive
-aws s3api delete-bucket --bucket chunkwise-<ACCOUNT_ID>
+aws s3 rm s3://chunkwise-<ACCOUNT_ID> --recursive --region <YOUR_REGION>
+aws s3api delete-bucket --bucket chunkwise-<ACCOUNT_ID> --region <YOUR_REGION>
 ```
 
 Delete remaining stacks:
 
 ```bash
-cdk destroy ChunkwiseDataStack
-cdk destroy ChunkwiseNetworkStack
+cdk destroy ChunkwiseDataStack --force --region <YOUR_REGION>
+cdk destroy ChunkwiseNetworkStack --force --region <YOUR_REGION>
 ```
