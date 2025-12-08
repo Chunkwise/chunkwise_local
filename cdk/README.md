@@ -304,7 +304,7 @@ To redeploy, run `cdk deploy --all`
 
 #### For complete cleanup, continue with the following steps
 
-2. Before destroying fundation stacks, export or back up data
+2. Before destroying foundation stacks, export or back up data
 
 3. Manually delete retained data resources via AWS Console
 

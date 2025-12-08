@@ -275,7 +275,7 @@ def write_env_file(client_dir: str, values: dict):
         for key, val in existing.items():
             f.write(f"{key}={val}\n")
 
-    print(f"[green]✅ Successfully wrote {len(values)} values to {env_path}.")
+    console.print("[green]✅ Successfully wrote {len(values)} values to {env_path}.")
 
 
 def get_alb_dns(load_balancer_name, region=None):

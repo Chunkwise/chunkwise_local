@@ -130,6 +130,6 @@ aws s3api delete-bucket --bucket chunkwise-<ACCOUNT_ID> --region <YOUR_REGION>
 Delete remaining stacks:
 
 ```bash
-cdk destroy ChunkwiseDataStack --force --region <YOUR_REGION>
-cdk destroy ChunkwiseNetworkStack --force --region <YOUR_REGION>
+cdk destroy ChunkwiseDataStack --force -c options='{"region":"<YOUR_REGION>"}'
+cdk destroy ChunkwiseNetworkStack --force -c options='{"region":"<YOUR_REGION>"}'
 ```
