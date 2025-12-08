@@ -1,6 +1,6 @@
 # Chunkwise CDK Deployment
 
-This CDK application automates the production deployment of Chunkwise, a document chunking evaluation platform and a RAG data ingestion pipeline, to AWS.
+This CDK application automates the deployment of Chunkwise, a document chunking evaluation platform and a RAG data ingestion pipeline, to AWS.
 
 ⚠️ **Important - Production Configuration** ⚠️:
 
