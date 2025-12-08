@@ -114,7 +114,7 @@ class DataStack(Stack):
                 if self._allow_rds_delete
                 else config.RDS_CONFIG["deletion_protection"]
             ),
-            # Allow deletion in development or when running `destroy-data` in protection
+            # Allow deletion in development or when running `destroy-data` in production
             removal_policy=(
                 RemovalPolicy.DESTROY
                 if self._allow_rds_delete
@@ -209,7 +209,7 @@ class DataStack(Stack):
                 if self._allow_rds_delete
                 else config.VECTOR_RDS_CONFIG["deletion_protection"]
             ),
-            # Allow deletion in development or when running `destroy-data` in protection
+            # Allow deletion in development or when running `destroy-data` in production
             removal_policy=(
                 RemovalPolicy.DESTROY
                 if self._allow_rds_delete
