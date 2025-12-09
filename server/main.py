@@ -51,6 +51,7 @@ from config import (
     VECTOR_DB_NAME,
     VECTOR_DB_SECRET_NAME,
     EMBEDDING_DIM,
+    MAX_BATCH_JOBS,
 )
 from fastapi import FastAPI, APIRouter, Body, HTTPException
 from fastapi.responses import StreamingResponse
@@ -435,10 +436,9 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             return
 
         # Fetch documents in S3 bucket and submit Batch jobs
-        job_batches = []
-        current_batch_keys = []
-        current_batch_size = 0
-        MAX_BATCH_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+        all_documents = []
+        max_jobs = MAX_BATCH_JOBS or 4
+
         try:
             paginator = s3_client.get_paginator("list_objects_v2")
 
@@ -448,19 +448,9 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                     key = obj["Key"]
                     size = obj["Size"]
                     if key.endswith(".txt") or key.endswith(".md"):
-                        if (
-                            current_batch_size + size > MAX_BATCH_SIZE_BYTES
-                        ) and current_batch_keys:
-                            # Save current batch and start a new one
-                            job_batches.append(current_batch_keys)
-                            current_batch_keys = []
-                            current_batch_size = 0
+                        all_documents.append({"key": key, "size": size})
 
-                        current_batch_keys.append(key)
-                        current_batch_size += size
-            if current_batch_keys:
-                job_batches.append(current_batch_keys)
-            if not job_batches:
+            if not all_documents:
                 yield sse_event(
                     {
                         "ok": True,
@@ -471,6 +461,21 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 )
                 yield sse_event({"ok": True, "stage": "done"}, event="done")
                 return
+
+            # Distribute documents to jobs
+            job_bins = [{"keys": [], "total_size": 0} for _ in range(max_jobs)]
+
+            # Sort files by size descending (largest first).
+            all_documents.sort(key=lambda x: x["size"], reverse=True)
+
+            for doc in all_documents:
+                # Find the worker with the lowest current total size
+                lightest_bin = min(job_bins, key=lambda b: b["total_size"])
+                lightest_bin["keys"].append(doc["key"])
+                lightest_bin["total_size"] += doc["size"]
+
+            # Filter out empty bins (in case there are fewer than 4 files)
+            job_batches = [b["keys"] for b in job_bins if b["keys"]]
 
             # Submit AWS Batch jobs for each document
             batch_client = boto3.client("batch")
@@ -546,7 +551,6 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                     },
                     event="jobs-updated",
                 )
-                await asyncio.sleep(10)
 
             # Poll AWS Batch for job statuses every 10 seconds until all jobs are completed
             jobs_status = {"succeeded": 0, "failed": 0, "total": len(job_ids)}
