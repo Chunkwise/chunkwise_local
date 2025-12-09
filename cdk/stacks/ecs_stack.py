@@ -379,6 +379,8 @@ class EcsStack(Stack):
                 "CHUNKING_SERVICE_PORT": "80",
                 "EVALUATION_SERVICE_HOST": f"{config.CLOUD_MAP_CONFIG['services']['evaluation']}.{config.CLOUD_MAP_CONFIG['namespace_name']}",
                 "EVALUATION_SERVICE_PORT": "80",
+                # Batch jobs
+                "MAX_BATCH_JOBS": config.BATCH_CONFIG["max_vcpus"] / config.BATCH_CONFIG["job_cpu"],
             },
             health_check=ecs.HealthCheck(
                 command=[
