@@ -104,7 +104,12 @@ const ChooseFile = ({
           />
         </div>
 
-        {error && <ErrorMessage message={error} />}
+        {error && (
+          <ErrorMessage 
+            message={error} 
+            onDismiss={() => setError(null)} 
+          />
+        )}
 
         {isLoadingFiles && (
           <div className="text-muted flex items-center gap-2 mt-2">

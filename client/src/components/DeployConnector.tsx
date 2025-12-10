@@ -222,7 +222,12 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
           />
         )}
 
-        {error && <ErrorMessage message={error} />}
+        {error && (
+          <ErrorMessage 
+            message={error} 
+            onDismiss={() => setError(null)}
+          />
+        )}
 
         {s3Details && (
           <div className="deploy-summary">

@@ -138,7 +138,12 @@ const WorkflowList = ({
             <span className="icon icon-sm">close</span>
             Cancel
           </button>
-          {validationError && <ErrorMessage message={validationError} />}
+          {validationError && (
+            <ErrorMessage 
+              message={validationError} 
+              onDismiss={() => setValidationError(null)}
+            />
+          )}
         </div>
       )}
 
