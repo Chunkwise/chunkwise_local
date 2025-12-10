@@ -85,6 +85,28 @@ async def startup_event():
         logging.exception("Failed to initialize evaluation database: %s", e)
         raise
 
+    # # Creds to provision/verify instance
+    # master_password = sec_val["password"]
+    # master_user = sec_val["username"]
+
+    # # Create RDS instance if missing and wait for it to be available
+    # try:
+    #     info = create_preprovisioned_instance_if_missing(
+    #         db_identifier=PREPROV_DB_IDENTIFIER,
+    #         master_username=master_user,
+    #         master_password=master_password,
+    #         db_name=SHARED_DB_NAME,
+    #         engine_version=RDS_ENGINE_VERSION,
+    #         db_instance_class=RDS_INSTANCE_CLASS,
+    #         allocated_storage=RDS_ALLOCATED_STORAGE,
+    #         vpc_security_group_ids=RDS_SG_LIST,
+    #         db_subnet_group_name=RDS_SUBNET_GROUP,
+    #         publicly_accessible=RDS_PUBLIC,
+    #         wait_timeout=RDS_WAIT_TIMEOUT,
+    #     )
+    # except Exception as e:
+    #     logging.exception("Failed to create/wait for RDS instance at startup: %s", e)
+    #     raise
     # Verify production database connection (for deployment workflows)
     logging.info("Verifying production database connection...")
     try:
@@ -99,6 +121,27 @@ async def startup_event():
         logging.exception("Failed to connect to production vector database: %s", e)
         raise
 
+    # # Quick check to see if we can connect to the DB
+    # try:
+    #     connection = connect_db(
+    #         host=info["address"],
+    #         port=info["port"],
+    #         user=master_user,
+    #         password=master_password,
+    #         dbname=SHARED_DB_NAME,
+    #     )
+    #     connection.close()
+    # except Exception as e:
+    #     logging.exception("Failed DB connection: %s", e)
+    #     raise
+
+    # logging.info(
+    #     "Startup: RDS instance %s available at %s:%s; secret ARN: %s",
+    #     PREPROV_DB_IDENTIFIER,
+    #     info["address"],
+    #     info["port"],
+    #     sec_arn,
+    # )
     logging.info("✅ Startup complete! Server ready.")
 
 
