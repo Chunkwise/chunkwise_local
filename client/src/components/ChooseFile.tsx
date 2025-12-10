@@ -11,7 +11,7 @@ interface ChooseFileProps {
 }
 
 const UPLOAD_OPTION_VALUE = "__upload__";
-const MAX_FILE_SIZE_KB = 50;
+const MAX_FILE_SIZE_KB = 100;
 
 const ChooseFile = ({
   workflow,
@@ -105,10 +105,7 @@ const ChooseFile = ({
         </div>
 
         {error && (
-          <ErrorMessage 
-            message={error} 
-            onDismiss={() => setError(null)} 
-          />
+          <ErrorMessage message={error} onDismiss={() => setError(null)} />
         )}
 
         {isLoadingFiles && (
