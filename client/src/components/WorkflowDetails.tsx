@@ -94,7 +94,9 @@ const WorkflowDetails = ({
   // Handler for file change
   async function handleFileChange(fileTitle: string | undefined) {
     setError(null);
-
+    if (fileTitle && workflow?.chunking_strategy) {
+      setIsLoadingViz(true);
+    }
     const previousDocumentTitle = workflow?.document_title;
     await onPatchWorkflow({ document_title: fileTitle || null });
 
@@ -111,6 +113,7 @@ const WorkflowDetails = ({
         }
       }
     } catch (error) {
+      setIsLoadingViz(false);
       await onPatchWorkflow({ document_title: previousDocumentTitle });
       console.error("Failed to update file:", error);
       setError("Failed to update document selection");
@@ -148,6 +151,7 @@ const WorkflowDetails = ({
   // Handler for chunker change
   async function handleChunkerChange(name: string) {
     setError(null);
+    setIsLoadingViz(true);
 
     const previousChunkingStrategy = workflow?.chunking_strategy;
     const config = chunkers.find((chunker) => chunker.name === name);
@@ -174,6 +178,7 @@ const WorkflowDetails = ({
       await onUpdateWorkflow(update as Partial<Workflow>);
       await loadVisualization();
     } catch (error) {
+      setIsLoadingViz(false);
       await onPatchWorkflow({ chunking_strategy: previousChunkingStrategy });
       console.error("Failed to update chunker:", error);
       setError("Failed to update chunker");
@@ -183,7 +188,9 @@ const WorkflowDetails = ({
   // Handler for config change
   async function handleConfigChange(key: string, value: number) {
     if (!workflow?.chunking_strategy) return;
+
     setError(null);
+    setIsLoadingViz(true);
 
     const updated = {
       ...workflow.chunking_strategy,
@@ -208,6 +215,7 @@ const WorkflowDetails = ({
       }, 800) as unknown as number;
       setConfigChangeTimer(timer);
     } catch (error) {
+      setIsLoadingViz(false);
       console.error("Failed to update config:", error);
       setError("Failed to update configuration");
     }
@@ -216,6 +224,7 @@ const WorkflowDetails = ({
   // Handler for running evaluation
   async function handleRunEvaluation() {
     if (!workflow?.chunking_strategy) return;
+
     setIsEvaluating(true);
     setEvaluationEnabled(false);
     setError(null);
