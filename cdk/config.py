@@ -72,7 +72,7 @@ VECTOR_RDS_CONFIG = {
 BATCH_CONFIG = {
     "max_vcpus": 4,  # Maximum vCPUs for compute environment
     "job_cpu": 1,  # 1 vCPU per job
-    "job_memory": 2048,  # 2 GB per job
+    "job_memory": 8192,  # 8 GB per job
     "assign_public_ip": True,  # Use public IP to save NAT Gateway costs
 }
 
