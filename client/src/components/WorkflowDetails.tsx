@@ -37,7 +37,7 @@ const WorkflowDetails = ({
   const [isLoadingViz, setIsLoadingViz] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [switchToEvaluation, setSwitchToEvaluation] = useState(false);
-  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [evaluationInfoMessage, setEvaluationInfoMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Cleanup timer on unmount
@@ -228,7 +228,7 @@ const WorkflowDetails = ({
     setIsEvaluating(true);
     setEvaluationEnabled(false);
     setError(null);
-    setInfoMessage(null);
+    setEvaluationInfoMessage(null);
 
     try {
       const evaluationResponse = await getEvaluation(workflow.id);
@@ -241,7 +241,7 @@ const WorkflowDetails = ({
             evaluationResponse.num_queries ?? 0
           } queries)`
         : "Evaluation complete! Existing queries were used";
-      setInfoMessage(queriesInfoMessage);
+      setEvaluationInfoMessage(queriesInfoMessage);
       setSwitchToEvaluation(true);
     } catch (error: unknown) {
       console.error("Failed to run evaluation:", error);
@@ -263,22 +263,6 @@ const WorkflowDetails = ({
           onDismiss={() => setError(null)}
           variant="banner"
         />
-      )}
-
-      {infoMessage && (
-        <div className="info-banner">
-          <div className="info-content">
-            <span className="icon">check_circle</span>
-            <span>{infoMessage}</span>
-          </div>
-          <button
-            className="btn btn-icon btn-sm"
-            onClick={() => setInfoMessage(null)}
-            aria-label="Dismiss info"
-          >
-            <span className="icon">close</span>
-          </button>
-        </div>
       )}
 
       <ChooseFile
@@ -350,7 +334,11 @@ const WorkflowDetails = ({
                 </div>
               ),
               evaluation: workflow.evaluation_metrics ? (
-                <Evaluation evaluationMetrics={workflow.evaluation_metrics} />
+                <Evaluation 
+                  infoMessage={evaluationInfoMessage}
+                  onDismissInfo={() => setEvaluationInfoMessage(null)}
+                  evaluationMetrics={workflow.evaluation_metrics}
+                />
               ) : (
                 <div className="tab-panel">
                   <p className="text-muted">

@@ -1,6 +1,8 @@
 import type { EvaluationMetrics } from "../types";
 
 interface EvaluationProps {
+  infoMessage?: string | null;
+  onDismissInfo?: () => void;
   evaluationMetrics: EvaluationMetrics;
 }
 
@@ -13,7 +15,7 @@ const METRIC_CONFIG: { key: keyof EvaluationMetrics; name: string; description: 
   { key: "iou_mean", name: "IoU", description: "Intersection over Union score", icon: "join_inner" },
 ];
 
-const Evaluation = ({ evaluationMetrics }: EvaluationProps) => {
+const Evaluation = ({ infoMessage, onDismissInfo, evaluationMetrics }: EvaluationProps) => {
   const metrics = evaluationMetrics;
 
   if (!metrics) {
@@ -29,6 +31,24 @@ const Evaluation = ({ evaluationMetrics }: EvaluationProps) => {
 
   return (
     <div className="evaluation">
+      {infoMessage && (
+        <div className="evaluation-info-banner">
+          <div className="evaluation-info-content">
+            <span className="icon">check_circle</span>
+            <span>{infoMessage}</span>
+          </div>
+          {onDismissInfo && (
+            <button
+              className="btn btn-icon btn-sm"
+              onClick={onDismissInfo}
+              aria-label="Dismiss info"
+            >
+              <span className="icon">close</span>
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="evaluation-header">
         <div>
           <h3 className="evaluation-title">

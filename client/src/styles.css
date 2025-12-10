@@ -724,6 +724,29 @@ html,
   border: 1px solid var(--color-border);
 }
 
+.evaluation-info-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius-md);
+  color: #065f46;
+}
+
+.evaluation-info-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.evaluation-info-content .icon {
+  color: #10b981;
+}
+
 .evaluation-header {
   display: flex;
   justify-content: space-between;
