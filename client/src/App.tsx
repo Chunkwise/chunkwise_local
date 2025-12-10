@@ -42,12 +42,14 @@ export default function App() {
     selectedWorkflowIds: [],
   });
   const [chunkers, setChunkers] = useState<Chunker[]>([]);
+  const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(true);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Load workflows on mount
   useEffect(() => {
+    setIsLoadingWorkflows(true);
     getWorkflows()
       .then((workflows) => {
         const workflowsWithStage = workflows.map((workflow) => ({
@@ -63,6 +65,9 @@ export default function App() {
         } else {
           setError("Failed to load workflows from the server");
         }
+      })
+      .finally(() => {
+        setIsLoadingWorkflows(false);
       });
   }, []);
 
@@ -112,14 +117,25 @@ export default function App() {
 
   // Handlers for workflow actions
   const handleCreateWorkflow = async (name: string) => {
+    const tempId = `temp-${Date.now()}`;
+    const optimisticWorkflow: Workflow = {
+      id: tempId,
+      title: name,
+      created_at: new Date().toISOString(),
+      stage: "Draft",
+    };
+    workflowDispatch(createWorkflowAction(optimisticWorkflow));
+    
     try {
       const newWorkflow = await createWorkflowAPI(name);
       const workflowWithStage = {
         ...newWorkflow,
         stage: computeWorkflowStage(newWorkflow),
       };
+      workflowDispatch(deleteWorkflowAction(tempId));
       workflowDispatch(createWorkflowAction(workflowWithStage));
     } catch (error: unknown) {
+      workflowDispatch(deleteWorkflowAction(tempId));
       console.error("Failed to create workflow:", error);
       if (error instanceof ZodError) {
         setError(
@@ -197,6 +213,7 @@ export default function App() {
       <div className="layout">
         <aside className="sidebar">
           <WorkflowList
+            isLoadingWorkflows={isLoadingWorkflows}
             workflows={workflowState.workflows}
             selectedId={workflowState.selectedWorkflowId}
             isComparing={comparisonState.isComparing}

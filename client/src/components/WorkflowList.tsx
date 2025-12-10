@@ -3,6 +3,7 @@ import type { Workflow } from "../types";
 import ErrorMessage from "./ErrorMessage";
 
 type Props = {
+  isLoadingWorkflows?: boolean;
   workflows: Workflow[];
   selectedId?: string;
   isComparing: boolean;
@@ -16,6 +17,7 @@ type Props = {
 };
 
 const WorkflowList = ({
+  isLoadingWorkflows,
   workflows,
   selectedId,
   isComparing,
@@ -141,13 +143,18 @@ const WorkflowList = ({
       )}
 
       <div className="workflow-items">
-        {workflows.length === 0 && (
+        {isLoadingWorkflows ? (
+          <div className="placeholder">
+            <span className="icon icon-lg spinner">sync</span>
+            <span>Loading workflows...</span>
+          </div>
+        ) : workflows.length === 0 ? (
           <div className="placeholder">
             <span className="icon icon-lg">inbox</span>
             <span>No workflows yet. Create one to start.</span>
           </div>
-        )}
-        {workflows.map((workflow) => (
+        ) : null}
+        {!isLoadingWorkflows && workflows.map((workflow) => (
           <div
             key={workflow.id}
             className={`workflow-item ${
