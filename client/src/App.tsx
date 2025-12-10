@@ -56,6 +56,11 @@ export default function App() {
           ...workflow,
           stage: computeWorkflowStage(workflow),
         }));
+        workflowsWithStage.sort(
+          (first, second) =>
+            new Date(second.created_at).getTime() -
+            new Date(first.created_at).getTime()
+        );
         workflowDispatch(setWorkflowsAction(workflowsWithStage));
       })
       .catch((error: unknown) => {
@@ -125,7 +130,7 @@ export default function App() {
       stage: "Draft",
     };
     workflowDispatch(createWorkflowAction(optimisticWorkflow));
-    
+
     try {
       const newWorkflow = await createWorkflowAPI(name);
       const workflowWithStage = {
