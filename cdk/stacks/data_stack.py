@@ -3,6 +3,7 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_rds as rds,
     aws_secretsmanager as secretsmanager,
+    aws_s3 as s3,
     RemovalPolicy,
     Duration,
     CfnOutput,
@@ -11,21 +12,44 @@ from constructs import Construct
 import config
 
 
-class DatabaseStack(Stack):
+class DataStack(Stack):
     """
-    Database Stack - Creates RDS PostgreSQL instance
+    Data Stack - Creates RDS instances for evaluation and production databases and S3 bucket
 
     Resources created:
     - 1 RDS Subnet Group (shared)
     - 2 RDS Security Groups (one for each database)
     - 2 RDS PostgreSQL Instances (evaluation and production)
     - 2 Secrets (for database credentials)
+    - 1 S3 Bucket (for document storage)
     """
 
     def __init__(
         self, scope: Construct, construct_id: str, vpc: ec2.Vpc, **kwargs
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
+
+        # Read context flag for allowing destructive data deletion
+        allow_rds_delete = self.node.try_get_context("allow_rds_delete")
+        self._allow_rds_delete = str(allow_rds_delete).lower() == "true"
+
+        # Create S3 bucket for document storage
+        self.documents_bucket = s3.Bucket(
+            self,
+            "ChunkwiseDocumentsBucket",
+            bucket_name=f"{config.S3_CONFIG['bucket_name_prefix']}-{self.account}",
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            versioned=False,
+            removal_policy=(
+                RemovalPolicy.DESTROY
+                if self._allow_rds_delete
+                else config.get_removal_policy()
+            ),
+            auto_delete_objects=(
+                True if self._allow_rds_delete else not config.is_production()
+            ),
+        )
 
         # Create Evaluation Database (for experimentation workflows)
         self._create_evaluation_database(vpc)
@@ -85,9 +109,17 @@ class DatabaseStack(Stack):
             # Public accessibility
             publicly_accessible=config.RDS_CONFIG["publicly_accessible"],
             # Deletion protection
-            deletion_protection=config.RDS_CONFIG["deletion_protection"],
-            # For development - allow deletion
-            removal_policy=RemovalPolicy.DESTROY,  # Change to RETAIN for production
+            deletion_protection=(
+                False
+                if self._allow_rds_delete
+                else config.RDS_CONFIG["deletion_protection"]
+            ),
+            # Allow deletion in development or when running `destroy-data` in production
+            removal_policy=(
+                RemovalPolicy.DESTROY
+                if self._allow_rds_delete
+                else config.get_removal_policy()
+            ),
             # CloudWatch monitoring
             cloudwatch_logs_exports=["postgresql"],
             enable_performance_insights=True,
@@ -172,9 +204,17 @@ class DatabaseStack(Stack):
             # Public accessibility - ENABLED for user export
             publicly_accessible=config.VECTOR_RDS_CONFIG["publicly_accessible"],
             # Deletion protection
-            deletion_protection=config.VECTOR_RDS_CONFIG["deletion_protection"],
-            # For development - allow deletion
-            removal_policy=RemovalPolicy.DESTROY,  # Change to RETAIN for production
+            deletion_protection=(
+                False
+                if self._allow_rds_delete
+                else config.VECTOR_RDS_CONFIG["deletion_protection"]
+            ),
+            # Allow deletion in development or when running `destroy-data` in production
+            removal_policy=(
+                RemovalPolicy.DESTROY
+                if self._allow_rds_delete
+                else config.get_removal_policy()
+            ),
             # CloudWatch monitoring
             cloudwatch_logs_exports=["postgresql"],
             enable_performance_insights=True,

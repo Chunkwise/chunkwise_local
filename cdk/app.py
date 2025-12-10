@@ -1,18 +1,38 @@
 #!/usr/bin/env python3
 import os
+import warnings
+import json
 import aws_cdk as cdk
 from stacks.network_stack import NetworkStack
-from stacks.database_stack import DatabaseStack
+from stacks.data_stack import DataStack
 from stacks.ecs_stack import EcsStack
 from stacks.load_balancer_stack import LoadBalancerStack
 from stacks.batch_stack import BatchStack
 
+warnings.filterwarnings(
+    "ignore", message="Typeguard cannot check the", category=UserWarning
+)
+os.environ["PYTHON_TYPE_CHECKING_DISABLE"] = "1"
+
+
 app = cdk.App()
 
-# Get environment variables or use defaults
+# CDK now expects a json string as context
+options = app.node.try_get_context("options")
+if options:
+    OPTIONS_JSON = json.loads(options)
+
+    if not isinstance(OPTIONS_JSON, dict):
+        raise AttributeError("Must provide an options in JSON format")
+else:
+    OPTIONS_JSON = None
+
+
+# Get environment variables or use defaults, for the reason use the one passed in as context
 env = cdk.Environment(
     account=os.getenv("CDK_DEFAULT_ACCOUNT"),
-    region=os.getenv("CDK_DEFAULT_REGION", "us-east-1"),
+    region=(OPTIONS_JSON and OPTIONS_JSON.get("region"))
+    or os.getenv("CDK_DEFAULT_REGION", "us-east-1"),
 )
 
 # Stack 1: Network Infrastructure (VPC, Subnets, NAT Gateways, etc.)
@@ -23,13 +43,13 @@ network_stack = NetworkStack(
     description="Chunkwise Network Infrastructure - VPC, Subnets, NAT Gateways",
 )
 
-# Stack 2: Database (RDS PostgreSQL - Evaluation and Production)
-database_stack = DatabaseStack(
+# Stack 2: Data Layer (RDS Instances (Evaluation and Production), S3 Bucket)
+data_stack = DataStack(
     app,
-    "ChunkwiseDatabaseStack",
+    "ChunkwiseDataStack",
     vpc=network_stack.vpc,
     env=env,
-    description="Chunkwise Databases - RDS PostgreSQL Instances",
+    description="Chunkwise Data Layer - RDS PostgreSQL Instances and S3 Bucket",
 )
 
 # Stack 3: ECS Cluster and Services
@@ -37,8 +57,9 @@ ecs_stack = EcsStack(
     app,
     "ChunkwiseEcsStack",
     vpc=network_stack.vpc,
-    database=database_stack.database,
-    vector_database=database_stack.production_database,
+    database=data_stack.database,
+    vector_database=data_stack.production_database,
+    documents_bucket=data_stack.documents_bucket,
     env=env,
     description="Chunkwise ECS Cluster and Services",
 )
@@ -58,7 +79,7 @@ batch_stack = BatchStack(
     app,
     "ChunkwiseBatchStack",
     vpc=network_stack.vpc,
-    production_database=database_stack.production_database,
+    production_database=data_stack.production_database,
     server_task_role=ecs_stack.task_role,
     env=env,
     description="Chunkwise AWS Batch - Data Ingestion Processing Workflows",
