@@ -94,6 +94,10 @@ const WorkflowDetails = ({
   // Handler for file change
   async function handleFileChange(fileTitle: string | undefined) {
     setError(null);
+
+    const previousDocumentTitle = workflow?.document_title;
+    await onPatchWorkflow({ document_title: fileTitle || null });
+
     try {
       if (!fileTitle) {
         const update: Record<string, string> = {
@@ -107,6 +111,7 @@ const WorkflowDetails = ({
         }
       }
     } catch (error) {
+      await onPatchWorkflow({ document_title: previousDocumentTitle });
       console.error("Failed to update file:", error);
       setError("Failed to update document selection");
     }
@@ -143,28 +148,33 @@ const WorkflowDetails = ({
   // Handler for chunker change
   async function handleChunkerChange(name: string) {
     setError(null);
-    try {
-      const config = chunkers.find((chunker) => chunker.name === name);
-      const { provider, type } = splitAndFormatChunkerName(name);
 
-      const initial: Record<string, number> = {};
-      for (const [key, value] of Object.entries(config!)) {
-        if (typeof value !== "string") {
-          initial[key] = value.default;
-        }
+    const previousChunkingStrategy = workflow?.chunking_strategy;
+    const config = chunkers.find((chunker) => chunker.name === name);
+    const { provider, type } = splitAndFormatChunkerName(name);
+
+    const initial: Record<string, number> = {};
+    for (const [key, value] of Object.entries(config!)) {
+      if (typeof value !== "string") {
+        initial[key] = value.default;
       }
+    }
+    const newChunkingStrategy = {
+      chunker_type: type,
+      provider: provider,
+      ...initial,
+    };
+    await onPatchWorkflow({ chunking_strategy: newChunkingStrategy });
 
+    try {
       const update: Record<string, unknown> = {
-        chunking_strategy: {
-          chunker_type: type,
-          provider: provider,
-          ...initial,
-        },
+        chunking_strategy: newChunkingStrategy,
       };
 
       await onUpdateWorkflow(update as Partial<Workflow>);
       await loadVisualization();
     } catch (error) {
+      await onPatchWorkflow({ chunking_strategy: previousChunkingStrategy });
       console.error("Failed to update chunker:", error);
       setError("Failed to update chunker");
     }
