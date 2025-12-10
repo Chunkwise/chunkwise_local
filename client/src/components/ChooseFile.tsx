@@ -11,6 +11,7 @@ interface ChooseFileProps {
 }
 
 const UPLOAD_OPTION_VALUE = "__upload__";
+const MAX_FILE_SIZE_KB = 50;
 
 const ChooseFile = ({
   workflow,
@@ -35,6 +36,12 @@ const ChooseFile = ({
   const handleFileUpload = async (file: File | null) => {
     if (!file) return;
     setError(null);
+
+    if (file.size > MAX_FILE_SIZE_KB * 1024) {
+      setError(`File size exceeds ${MAX_FILE_SIZE_KB}KB limit`);
+      return;
+    }
+
     setIsUploadingFile(true);
 
     try {
