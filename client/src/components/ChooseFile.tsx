@@ -33,6 +33,7 @@ const ChooseFile = ({
     return filename.endsWith(".txt") ? filename.slice(0, -4) : filename;
   };
 
+  // Handler for file upload
   const handleFileUpload = async (file: File | null) => {
     if (!file) return;
     setError(null);
@@ -58,6 +59,7 @@ const ChooseFile = ({
     }
   };
 
+  // Handler for file change
   const handleSelectChange = (value: string) => {
     if (value === "") {
       onFileChange(undefined);
