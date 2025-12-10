@@ -260,8 +260,8 @@ const WorkflowDetails = ({
       {error && (
         <ErrorMessage
           message={error}
-          onDismiss={() => setError(null)}
           variant="banner"
+          onDismiss={() => setError(null)}
         />
       )}
 

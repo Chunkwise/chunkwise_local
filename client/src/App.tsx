@@ -210,8 +210,8 @@ export default function App() {
       {error && (
         <ErrorMessage
           message={error}
-          onDismiss={() => setError(null)}
           variant="banner"
+          onDismiss={() => setError(null)}
         />
       )}
 
