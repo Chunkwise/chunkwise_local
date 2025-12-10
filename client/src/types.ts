@@ -94,6 +94,7 @@ export const WorkflowResponseSchema = z.object({
   evaluation_metrics: z
     .union([EvaluationMetricsSchema, z.string(), z.null()])
     .optional(),
+  deploy_table_name: z.string().optional().nullable(),
 });
 
 export interface Workflow {
@@ -106,4 +107,5 @@ export interface Workflow {
   chunks_stats?: ChunkStatistics;
   visualization_html?: string | null;
   evaluation_metrics?: EvaluationMetrics;
+  deploy_table_name?: string | null;
 }

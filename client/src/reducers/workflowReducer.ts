@@ -20,7 +20,7 @@ export type Action =
   | { type: "DELETE_WORKFLOW"; payload: string };
 
 export const computeWorkflowStage = (workflow: Workflow): Stage => {
-  if (workflow.evaluation_response) {
+  if (workflow.evaluation_metrics) {
     return "Evaluated";
   }
   if (workflow.chunking_strategy) {

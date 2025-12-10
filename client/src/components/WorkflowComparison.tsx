@@ -172,10 +172,9 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                       <span className="icon icon-sm">analytics</span>
                       Evaluation Results
                     </h4>
-                    {workflow.evaluation_response?.results?.[0] ? (
+                    {workflow.evaluation_metrics ? (
                       (() => {
-                        const metrics =
-                          workflow.evaluation_response.results[0] as EvaluationMetrics;
+                        const metrics = workflow.evaluation_metrics;
                         return (
                           <div className="comparison-eval">
                             {(

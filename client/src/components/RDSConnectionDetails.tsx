@@ -24,16 +24,9 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
   };
 
   return (
-<<<<<<< HEAD
     <div className="deployment-summary" aria-live="polite">
       <div className="muted">
         RDS instance is online.
-=======
-    <div className="deploy-summary" aria-live="polite">
-      <div className="text-muted flex items-center gap-1">
-        <span className="icon icon-sm">dns</span>
-        RDS instance <strong>{details.db_instance_identifier}</strong> is online.
->>>>>>> ea46dae (Add CSS change)
       </div>
       <div className="text-muted mt-2">
         Use the connection string below for psql-compatible clients:

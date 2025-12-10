@@ -12,7 +12,7 @@ const parseWorkflowFields = (workflow: Record<string, unknown>): Workflow => {
   const jsonFields = [
     "chunking_strategy",
     "chunks_stats",
-    "evaluation_response",
+    "evaluation_metrics",
   ] as const;
 
   for (const key of jsonFields) {

@@ -1,7 +1,7 @@
-import type { EvaluationResponse, EvaluationMetrics } from "../types";
+import type { EvaluationMetrics } from "../types";
 
 interface EvaluationProps {
-  evaluationResponse: EvaluationResponse;
+  evaluationMetrics: EvaluationMetrics;
 }
 
 const PROGRESS_BAR_COLOR = "#2563eb";
@@ -13,8 +13,8 @@ const METRIC_CONFIG: { key: keyof EvaluationMetrics; name: string; description: 
   { key: "iou_mean", name: "IoU", description: "Intersection over Union score", icon: "join_inner" },
 ];
 
-const Evaluation = ({ evaluationResponse }: EvaluationProps) => {
-  const metrics = evaluationResponse.results[0];
+const Evaluation = ({ evaluationMetrics }: EvaluationProps) => {
+  const metrics = evaluationMetrics;
 
   if (!metrics) {
     return (
@@ -39,19 +39,6 @@ const Evaluation = ({ evaluationResponse }: EvaluationProps) => {
             Performance metrics for your chunking strategy
           </p>
         </div>
-      </div>
-
-      <div className="queries-info">
-        <p className="queries-status">
-          <span className="icon icon-sm">check_circle</span>
-          {evaluationResponse.queries_generated
-            ? `New queries were generated (${evaluationResponse.num_queries ?? 0} queries)`
-            : "Existing queries were used"}
-        </p>
-        <p>
-          <strong>Queries Path:</strong>{" "}
-          <code>{evaluationResponse.queries_s3_key}</code>
-        </p>
       </div>
 
       <div className="metrics-list">
