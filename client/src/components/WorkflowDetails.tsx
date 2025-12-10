@@ -29,6 +29,7 @@ const WorkflowDetails = ({
   onUpdateWorkflow,
   onPatchWorkflow,
 }: Props) => {
+  const LLM_CHUNKERS = ["chonkie slumber", "chonkie semantic"];
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
   const [localConfig, setLocalConfig] = useState(workflow?.chunking_strategy);
   const [configChangeTimer, setConfigChangeTimer] = useState<number | null>(
@@ -37,8 +38,41 @@ const WorkflowDetails = ({
   const [isLoadingViz, setIsLoadingViz] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [switchToEvaluation, setSwitchToEvaluation] = useState(false);
-  const [evaluationInfoMessage, setEvaluationInfoMessage] = useState<string | null>(null);
+  const [evaluationInfoMessage, setEvaluationInfoMessage] = useState<
+    string | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper to get current chunker name
+  const getCurrentChunkerName = (): string | undefined => {
+    if (!workflow?.chunking_strategy) return undefined;
+    return `${workflow.chunking_strategy.provider} ${workflow.chunking_strategy.chunker_type}`;
+  };
+
+  // Helper to check if chunker is an LLM chunker
+  const isLLMChunker = (chunkerName?: string): boolean => {
+    if (!chunkerName) return false;
+    return LLM_CHUNKERS.includes(chunkerName.toLowerCase());
+  };
+
+  // Helper to confirm LLM chunker usage
+  const confirmLLMChunkerUsage = (chunkerName?: string): boolean => {
+    if (!isLLMChunker(chunkerName)) return true;
+    return window.confirm(
+      "This chunker uses the OpenAI API to create chunks. Do you want to proceed?"
+    );
+  };
+
+  // Helper function to split and format chunker name
+  const splitAndFormatChunkerName = (
+    name: string
+  ): { provider: string; type: string } => {
+    const parts = name.split(" ");
+    return {
+      provider: parts[0].toLowerCase(),
+      type: parts[1].toLowerCase(),
+    };
+  };
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -75,25 +109,20 @@ const WorkflowDetails = ({
 
   // Determine selected chunker config
   const selectedChunkerConfig = chunkers.find((chunker) => {
-    if (!workflow.chunking_strategy) return false;
-    const fullName = `${workflow.chunking_strategy.provider} ${workflow.chunking_strategy.chunker_type}`;
-    return chunker.name.toLowerCase() === fullName;
+    const currentName = getCurrentChunkerName();
+    if (!currentName) return false;
+    return chunker.name.toLowerCase() === currentName;
   });
-
-  // Helper function to split and format chunker name
-  const splitAndFormatChunkerName = (
-    name: string
-  ): { provider: string; type: string } => {
-    const parts = name.split(" ");
-    return {
-      provider: parts[0].toLowerCase(),
-      type: parts[1].toLowerCase(),
-    };
-  };
 
   // Handler for file change
   async function handleFileChange(fileTitle: string | undefined) {
     setError(null);
+    if (fileTitle && workflow?.chunking_strategy) {
+      if (!confirmLLMChunkerUsage(getCurrentChunkerName())) {
+        return;
+      }
+    }
+
     if (fileTitle && workflow?.chunking_strategy) {
       setIsLoadingViz(true);
     }
@@ -150,6 +179,10 @@ const WorkflowDetails = ({
 
   // Handler for chunker change
   async function handleChunkerChange(name: string) {
+    if (!confirmLLMChunkerUsage(name)) {
+      return;
+    }
+
     setError(null);
     setIsLoadingViz(true);
 
@@ -188,6 +221,9 @@ const WorkflowDetails = ({
   // Handler for config change
   async function handleConfigChange(key: string, value: number) {
     if (!workflow?.chunking_strategy) return;
+    if (!confirmLLMChunkerUsage(getCurrentChunkerName())) {
+      return;
+    }
 
     setError(null);
     setIsLoadingViz(true);
@@ -334,7 +370,7 @@ const WorkflowDetails = ({
                 </div>
               ),
               evaluation: workflow.evaluation_metrics ? (
-                <Evaluation 
+                <Evaluation
                   infoMessage={evaluationInfoMessage}
                   onDismissInfo={() => setEvaluationInfoMessage(null)}
                   evaluationMetrics={workflow.evaluation_metrics}
