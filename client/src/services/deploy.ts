@@ -38,9 +38,9 @@ export interface JobsUpdatedPayload {
   ok: true;
   stage: "jobs-updated";
   statuses: {
-    "succeeded": number,
-    "failed": number,
-    "total": number,
+    succeeded: number;
+    failed: number;
+    total: number;
   };
 }
 
