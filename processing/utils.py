@@ -13,7 +13,7 @@ from chunkwise_core.utils import create_chunker
 from config import openai_api_key, chunker_config_json
 
 
-def retry_with_backoff(func, retries=12, initial_delay=2, backoff_factor=1.5):
+def retry_with_backoff(func, retries=12, initial_delay=2, backoff_factor=2):
     """
     Retries a function if it hits a RateLimitError.
     Waits exponentially longer between retries.
@@ -25,7 +25,7 @@ def retry_with_backoff(func, retries=12, initial_delay=2, backoff_factor=1.5):
             try:
                 return func(*args, **kwargs)
             except RateLimitError:
-                if i == retries:
+                if i == retries - 1:
                     print("Max retries reached. Failing.")
                     raise
 
@@ -76,7 +76,6 @@ def get_mapped_embeddings(
     OPENAI_BATCH_LIMIT = 2048
     OPENAI_EMBEDDING_TOKEN_LIMIT = 8192
 
-    # Wrap the API call with our retry logic
     @retry_with_backoff
     def call_openai_api(batch_input):
         return client.embeddings.create(model=model, input=batch_input)
@@ -92,11 +91,11 @@ def get_mapped_embeddings(
             continue
 
         if tokens > OPENAI_EMBEDDING_TOKEN_LIMIT:
-            chunk = enc.decode(enc.encode(chunk)[:OPENAI_EMBEDDING_TOKEN_LIMIT])
-            tokens = OPENAI_EMBEDDING_TOKEN_LIMIT
             print(
                 f"Chunk too large: {tokens} tokens > {OPENAI_EMBEDDING_TOKEN_LIMIT}. Truncated chunk."
             )
+            chunk = enc.decode(enc.encode(chunk)[:OPENAI_EMBEDDING_TOKEN_LIMIT])
+            tokens = OPENAI_EMBEDDING_TOKEN_LIMIT
 
         if current_tokens + tokens > max_tokens or len(current) >= OPENAI_BATCH_LIMIT:
             batches.append(current)
