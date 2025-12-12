@@ -78,13 +78,11 @@ export const EvaluationResponseSchema = z.object({
 
 export type EvaluationResponse = z.infer<typeof EvaluationResponseSchema>;
 
-export const S3CredentialsSchema = z.object({
-  access_key: z.string().min(1),
-  secret_key: z.string().min(1),
-  bucket_name: z.string().min(1),
-});
-
-export type S3Credentials = z.infer<typeof S3CredentialsSchema>;
+export interface S3Credentials {
+  access_key: string;
+  secret_key: string;
+  bucket_name: string;
+}
 
 export const JobsStatusSchema = z.object({
   succeeded: z.number(),
