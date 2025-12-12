@@ -7,7 +7,8 @@ import json
 import boto3
 import psycopg2
 from psycopg2 import OperationalError
-from config import host, database, user, password, table, manifest_key, bucket
+from config import host, database, user, password, table, document_key, bucket
+from chunkwise_core.utils import normalize_document
 
 
 def get_db_connection() -> None:
@@ -51,32 +52,19 @@ def add_vectors(chunk_embedding_pairs, document_key: str) -> None:
         raise e
 
 
-def normalize_document(content: str) -> str:
-    """Normalize smart quotes and dashes in the document to standard ASCII characters."""
-    content = content.replace("\u2018", "'")  #  → '
-    content = content.replace("\u2019", "'")  # ’ → '
-    content = content.replace("\u201c", '"')  # ” → "
-    content = content.replace("\u201d", '"')  # " → "
-    content = content.replace("\u2013", "-")  # – → -
-    content = content.replace("\u2014", "-")  # — → -
-    return content
-
-
-def get_s3_documents():
+def get_s3_document_text(local: bool = False) -> str:
     """
     Reads documents from a S3 bucket
     Returns a list of dicts containing the S3 document key and normalized text
     """
-    s3 = boto3.client("s3")
-
-    # Download the manifest file and get document keys
-    response = s3.get_object(Bucket=bucket, Key=manifest_key)
-    file_content = response["Body"].read().decode("utf-8")
-    doc_keys = json.loads(file_content)
-
-    documents = []
-    for key in doc_keys:
-        obj = s3.get_object(Bucket=bucket, Key=key)
+    if local:
+        if document_key is None:
+            raise ValueError("document_key cannot be None for local file reading")
+        with open(document_key, "r", encoding="utf-8") as f:
+            text = f.read()
+    else:
+        s3 = boto3.client("s3")
+        obj = s3.get_object(Bucket=bucket, Key=document_key)
         text = obj["Body"].read().decode("utf-8")
         normalized_text = normalize_document(text)
         documents.append(
