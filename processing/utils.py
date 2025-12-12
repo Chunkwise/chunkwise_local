@@ -10,28 +10,10 @@ from pydantic import TypeAdapter
 from openai import OpenAI, RateLimitError
 from chunkwise_core import ChunkerConfig
 from chunkwise_core.utils import create_chunker
-from config import openai_api_key, chunker_config
+from config import openai_api_key, chunker_config_json
 
 
-def get_chunks(text: str) -> list[str]:
-    """
-    Takes a text to be chunked
-    Creates a chunker based on the chunking config (env variable)
-    Cleans chunks because the OpenAI embedding API does not accept empty/whitespace only chunks
-    Return chunks as a list of strings
-    """
-    adapted_chunker_config = TypeAdapter(ChunkerConfig).validate_json(chunker_config)
-    chunker = create_chunker(adapted_chunker_config)
-    chunks = (
-        chunker.split_text(text)
-        if hasattr(chunker, "split_text")
-        else [chunk.text for chunk in chunker(text)]
-    )
-    valid_chunks = [c for c in chunks if c and c.strip()]
-    return valid_chunks
-
-
-def retry_with_backoff(func, retries=9, initial_delay=2, backoff_factor=1.5):
+def retry_with_backoff(func, retries=12, initial_delay=2, backoff_factor=2):
     """
     Retries a function if it hits a RateLimitError.
     Waits exponentially longer between retries.
@@ -58,8 +40,30 @@ def retry_with_backoff(func, retries=9, initial_delay=2, backoff_factor=1.5):
     return wrapper
 
 
+def get_chunks(text: str) -> list[str]:
+    """
+    Takes a text to be chunked
+    Creates a chunker based on the chunking config (env variable)
+    Cleans chunks because the OpenAI embedding API does not accept chunks of whitespace
+    Return chunks as a list of strings
+    """
+    adapted_chunker_config = TypeAdapter(ChunkerConfig).validate_json(
+        chunker_config_json
+    )
+    chunker = create_chunker(adapted_chunker_config)
+
+    chunks = (
+        chunker.split_text(text)
+        if hasattr(chunker, "split_text")
+        else [chunk.text for chunk in chunker(text)]
+    )
+
+    valid_chunks = [c for c in chunks if c and c.strip()]
+    return valid_chunks
+
+
 def get_mapped_embeddings(
-    chunks: list[str], model="text-embedding-3-small", max_tokens=280000
+    chunks: list[str], model="text-embedding-3-small", max_tokens=250000
 ):
     """
     Takes in chunks as a list of strings
@@ -69,8 +73,9 @@ def get_mapped_embeddings(
     """
     client = OpenAI(api_key=openai_api_key)
     enc = tiktoken.get_encoding("cl100k_base")
+    OPENAI_BATCH_LIMIT = 2048
+    OPENAI_EMBEDDING_TOKEN_LIMIT = 8192
 
-    # Wrap the API call with our retry logic
     @retry_with_backoff
     def call_openai_api(batch_input):
         return client.embeddings.create(model=model, input=batch_input)
@@ -85,12 +90,14 @@ def get_mapped_embeddings(
             print(f"Skipping chunk with 0 tokens: {repr(chunk)}")
             continue
 
-        if tokens > 8191:
-            chunk = enc.decode(enc.encode(chunk)[:8191])
-            tokens = 8191
-            print(f"Chunk too large: {tokens} tokens > 8191. Truncated chunk.")
+        if tokens > OPENAI_EMBEDDING_TOKEN_LIMIT:
+            print(
+                f"Chunk too large: {tokens} tokens > {OPENAI_EMBEDDING_TOKEN_LIMIT}. Truncated chunk."
+            )
+            chunk = enc.decode(enc.encode(chunk)[:OPENAI_EMBEDDING_TOKEN_LIMIT])
+            tokens = OPENAI_EMBEDDING_TOKEN_LIMIT
 
-        if current_tokens + tokens > max_tokens or len(current) >= 2048:
+        if current_tokens + tokens > max_tokens or len(current) >= OPENAI_BATCH_LIMIT:
             batches.append(current)
             current = []
             current_tokens = 0
@@ -113,7 +120,7 @@ def get_mapped_embeddings(
 
         except Exception as e:
             print(f"Failed to embed batch {i}. Skipping these chunks. Error: {e}")
-            print(f"Chunk: {batches[i]}")
+            print(f"Chunk: {batch_chunks}")
             raise e
 
     return results

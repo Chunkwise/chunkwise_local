@@ -13,6 +13,7 @@ from .config import (
     EVALUATION_SERVICE_PORT,
     BUCKET_NAME,
     EMBEDDING_DIM,
+    MAX_BATCH_JOBS,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "EVALUATION_SERVICE_PORT",
     "BUCKET_NAME",
     "EMBEDDING_DIM",
+    "MAX_BATCH_JOBS",
 ]

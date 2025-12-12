@@ -77,9 +77,9 @@ VECTOR_RDS_CONFIG = {
 
 # AWS Batch Configuration
 BATCH_CONFIG = {
-    "max_vcpus": 32,  # Maximum vCPUs for compute environment
+    "max_vcpus": 4,  # Maximum vCPUs for compute environment
     "job_cpu": 1,  # 1 vCPU per job
-    "job_memory": 2048,  # 2 GB per job
+    "job_memory": 8192,  # 8 GB per job
     "assign_public_ip": True,  # Use public IP to save NAT Gateway costs
 }
 
@@ -124,6 +124,9 @@ ENVIRONMENT_VARIABLES = {
     
     # Secrets from Secrets Manager
     "OPENAI_API_KEY": from chunkwise/openai-api-key
+
+    # AWS Batch max number of jobs
+    "MAX_BATCH_JOBS": BATCH_CONFIG["max_vcpus"] / BATCH_CONFIG["job_cpu"]
 }
 """
 

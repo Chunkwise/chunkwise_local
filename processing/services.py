@@ -3,6 +3,7 @@ Services for the processing service
 get_db_connection, add_vectors, get_s3_document_text
 """
 
+import json
 import boto3
 import psycopg2
 from psycopg2 import OperationalError
@@ -27,7 +28,7 @@ def get_db_connection() -> None:
         raise e
 
 
-def add_vectors(chunk_embedding_pairs) -> None:
+def add_vectors(chunk_embedding_pairs, document_key: str) -> None:
     """
     Add chunks, embedding vectors, and data into PostgreSQL vector database
     """
@@ -53,8 +54,8 @@ def add_vectors(chunk_embedding_pairs) -> None:
 
 def get_s3_document_text(local: bool = False) -> str:
     """
-    Local testing: reads a local file and returns normalized text
-    AWS deployment: reads a document from a S3 bucket and returns normalized text
+    Reads documents from a S3 bucket
+    Returns a list of dicts containing the S3 document key and normalized text
     """
     if local:
         if document_key is None:
@@ -65,5 +66,11 @@ def get_s3_document_text(local: bool = False) -> str:
         s3 = boto3.client("s3")
         obj = s3.get_object(Bucket=bucket, Key=document_key)
         text = obj["Body"].read().decode("utf-8")
-    normalized_text = normalize_document(text)
-    return normalized_text
+        normalized_text = normalize_document(text)
+        documents.append(
+            {
+                "key": key,
+                "text": normalized_text,
+            }
+        )
+    return documents
