@@ -78,7 +78,6 @@ export const EvaluationResponseSchema = z.object({
 
 export type EvaluationResponse = z.infer<typeof EvaluationResponseSchema>;
 
-// S3 Credentials for deployment
 export const S3CredentialsSchema = z.object({
   access_key: z.string().min(1),
   secret_key: z.string().min(1),
@@ -87,7 +86,6 @@ export const S3CredentialsSchema = z.object({
 
 export type S3Credentials = z.infer<typeof S3CredentialsSchema>;
 
-// Job status tracking
 export const JobsStatusSchema = z.object({
   succeeded: z.number(),
   failed: z.number(),
@@ -96,7 +94,6 @@ export const JobsStatusSchema = z.object({
 
 export type JobsStatus = z.infer<typeof JobsStatusSchema>;
 
-// Deploy summary on completion
 export const DeploySummarySchema = z.object({
   database: z.string(),
   table: z.string(),
@@ -106,7 +103,6 @@ export const DeploySummarySchema = z.object({
 
 export type DeploySummary = z.infer<typeof DeploySummarySchema>;
 
-// SSE Event Payloads
 export const RDSReadyPayloadSchema = z.object({
   ok: z.literal(true),
   stage: z.literal("rds-ready"),
@@ -161,7 +157,6 @@ export const DeployErrorPayloadSchema = z.object({
 
 export type DeployErrorPayload = z.infer<typeof DeployErrorPayloadSchema>;
 
-// Union type for all deploy events
 export type DeployEventType =
   | "rds-ready"
   | "s3-connected"
