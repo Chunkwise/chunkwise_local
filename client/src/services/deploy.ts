@@ -3,8 +3,6 @@ import type {
   DeployWorkflowEvent,
 } from "../types";
 
-export type { S3Credentials, DeployWorkflowEvent };
-
 interface DeployWorkflowOptions {
   workflowId: string;
   credentials: S3Credentials;
