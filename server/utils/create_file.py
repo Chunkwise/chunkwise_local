@@ -3,7 +3,7 @@ Creates a file based on some passed in text.
 """
 
 import os
-from chunkwise_core.utils import normalize_document
+from chunkwise_core import normalize_document
 
 
 def create_file(file_name: str, file_contents: str):

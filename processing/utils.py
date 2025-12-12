@@ -9,7 +9,7 @@ import tiktoken
 from pydantic import TypeAdapter
 from openai import OpenAI, RateLimitError
 from chunkwise_core import ChunkerConfig
-from chunkwise_core.utils import create_chunker
+from chunkwise_core.chunkers import create_chunker
 from config import openai_api_key, chunker_config_json
 
 

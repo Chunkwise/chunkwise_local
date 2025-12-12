@@ -1,6 +1,6 @@
 """
 Services for the processing service
-get_db_connection, add_vectors, get_s3_document_text
+get_db_connection, add_vectors, get_s3_documents
 """
 
 import json
@@ -8,7 +8,7 @@ import boto3
 import psycopg2
 from psycopg2 import OperationalError
 from config import host, database, user, password, table, manifest_key, bucket
-from chunkwise_core.utils import normalize_document
+from chunkwise_core import normalize_document
 
 
 def get_db_connection() -> None:
@@ -52,7 +52,7 @@ def add_vectors(chunk_embedding_pairs, document_key: str) -> None:
         raise e
 
 
-def get_s3_document_text():
+def get_s3_documents():
     """
     Reads documents from a S3 bucket
     Returns a list of dicts containing the S3 document key and normalized text
