@@ -78,6 +78,112 @@ export const EvaluationResponseSchema = z.object({
 
 export type EvaluationResponse = z.infer<typeof EvaluationResponseSchema>;
 
+// S3 Credentials for deployment
+export const S3CredentialsSchema = z.object({
+  access_key: z.string().min(1),
+  secret_key: z.string().min(1),
+  bucket_name: z.string().min(1),
+});
+
+export type S3Credentials = z.infer<typeof S3CredentialsSchema>;
+
+// Job status tracking
+export const JobsStatusSchema = z.object({
+  succeeded: z.number(),
+  failed: z.number(),
+  total: z.number(),
+});
+
+export type JobsStatus = z.infer<typeof JobsStatusSchema>;
+
+// Deploy summary on completion
+export const DeploySummarySchema = z.object({
+  database: z.string(),
+  table: z.string(),
+  documents_processed: z.number(),
+  message: z.string(),
+});
+
+export type DeploySummary = z.infer<typeof DeploySummarySchema>;
+
+// SSE Event Payloads
+export const RDSReadyPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("rds-ready"),
+  endpoint: z.string(),
+  port: z.number(),
+  database: z.string(),
+  table_name: z.string(),
+  secret_arn: z.string(),
+  db_instance_identifier: z.string(),
+});
+
+export type RDSReadyPayload = z.infer<typeof RDSReadyPayloadSchema>;
+
+export const S3ConnectedPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("s3-connected"),
+  bucket: z.string(),
+});
+
+export type S3ConnectedPayload = z.infer<typeof S3ConnectedPayloadSchema>;
+
+export const NoDocumentsPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("no-documents"),
+  message: z.string(),
+});
+
+export type NoDocumentsPayload = z.infer<typeof NoDocumentsPayloadSchema>;
+
+export const JobsUpdatedPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("jobs-updated"),
+  statuses: JobsStatusSchema,
+});
+
+export type JobsUpdatedPayload = z.infer<typeof JobsUpdatedPayloadSchema>;
+
+export const DeployDonePayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("done"),
+  summary: DeploySummarySchema.optional(),
+});
+
+export type DeployDonePayload = z.infer<typeof DeployDonePayloadSchema>;
+
+export const DeployErrorPayloadSchema = z.object({
+  ok: z.literal(false),
+  stage: z.string(),
+  error: z.string(),
+  trace: z.string().optional(),
+});
+
+export type DeployErrorPayload = z.infer<typeof DeployErrorPayloadSchema>;
+
+// Union type for all deploy events
+export type DeployEventType =
+  | "rds-ready"
+  | "s3-connected"
+  | "s3-error"
+  | "no-documents"
+  | "batch-error"
+  | "jobs-updated"
+  | "error"
+  | "done"
+  | "message";
+
+export type DeployWorkflowEvent =
+  | { type: "rds-ready"; data: RDSReadyPayload }
+  | { type: "s3-connected"; data: S3ConnectedPayload }
+  | { type: "no-documents"; data: NoDocumentsPayload }
+  | { type: "jobs-updated"; data: JobsUpdatedPayload }
+  | { type: "done"; data: DeployDonePayload }
+  | { type: "s3-error"; data: DeployErrorPayload }
+  | { type: "batch-error"; data: DeployErrorPayload }
+  | { type: "error"; data: DeployErrorPayload }
+  | { type: "message"; data: unknown };
+
 export const WorkflowResponseSchema = z.object({
   id: z.union([z.string(), z.number()]).transform((value) => String(value)),
   title: z.string(),

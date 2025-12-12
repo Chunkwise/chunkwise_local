@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ChangeEvent } from "react";
-import { type S3Credentials } from "../services/deploy";
+import type { S3Credentials } from "../types";
 
 interface S3CredentialsFormProps {
   onSubmit: (credentials: S3Credentials) => void;
@@ -20,21 +20,15 @@ const S3CredentialsForm = ({
 }: S3CredentialsFormProps) => {
   const [formState, setFormState] = useState<S3Credentials>(initialCredentials);
 
-  const handleChange = (
-    key: keyof S3Credentials,
+  const handleChange = (key: keyof S3Credentials) => (
     event: ChangeEvent<HTMLInputElement>
   ) => {
-    const { value } = event.target;
-    setFormState((previous) => ({
-      ...previous,
-      [key]: value,
-    }));
+    setFormState((prev) => ({ ...prev, [key]: event.target.value }));
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onSubmit(formState);
-    setFormState(initialCredentials);
   };
 
   const handleCancel = () => {
@@ -56,7 +50,7 @@ const S3CredentialsForm = ({
           required
           autoComplete="new-password"
           value={formState.access_key}
-          onChange={(event) => handleChange("access_key", event)}
+          onChange={handleChange("access_key")}
           disabled={isSubmitting}
         />
       </div>
@@ -73,7 +67,7 @@ const S3CredentialsForm = ({
           required
           autoComplete="new-password"
           value={formState.secret_key}
-          onChange={(event) => handleChange("secret_key", event)}
+          onChange={handleChange("secret_key")}
           disabled={isSubmitting}
         />
       </div>
@@ -90,7 +84,7 @@ const S3CredentialsForm = ({
           required
           autoComplete="off"
           value={formState.bucket_name}
-          onChange={(event) => handleChange("bucket_name", event)}
+          onChange={handleChange("bucket_name")}
           disabled={isSubmitting}
         />
       </div>
@@ -102,7 +96,6 @@ const S3CredentialsForm = ({
           onClick={handleCancel}
           disabled={isSubmitting}
         >
-          <span className="icon icon-sm">close</span>
           Cancel
         </button>
         <button

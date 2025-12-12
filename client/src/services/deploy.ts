@@ -1,58 +1,9 @@
-export interface S3Credentials {
-  access_key: string;
-  secret_key: string;
-  bucket_name: string;
-}
+import type {
+  S3Credentials,
+  DeployWorkflowEvent,
+} from "../types";
 
-export interface RDSReadyPayload {
-  ok: boolean;
-  stage: "rds-ready";
-  endpoint: string;
-  port: number;
-  database: string;
-  table_name: string;
-  secret_arn: string;
-  db_instance_identifier: string;
-  notes?: string;
-}
-
-export interface S3ConnectedPayload {
-  ok: boolean;
-  stage: "s3-connected";
-  bucket: string;
-}
-
-export interface DeployErrorPayload {
-  ok: false;
-  stage: string;
-  error: string;
-  trace?: string;
-}
-
-export interface DeployDonePayload {
-  ok: true;
-  stage: "done";
-}
-
-export interface JobsUpdatedPayload {
-  ok: true;
-  stage: "jobs-updated";
-  statuses: {
-    succeeded: number;
-    failed: number;
-    total: number;
-  };
-}
-
-export type DeployWorkflowEvent =
-  | { type: "rds-ready"; data: RDSReadyPayload }
-  | { type: "s3-connected"; data: S3ConnectedPayload }
-  | { type: "s3-error"; data: DeployErrorPayload }
-  | { type: "batch-error"; data: DeployErrorPayload }
-  | { type: "error"; data: DeployErrorPayload }
-  | { type: "done"; data: DeployDonePayload }
-  | { type: "jobs-updated"; data: JobsUpdatedPayload }
-  | { type: "message"; data: unknown };
+export type { S3Credentials, DeployWorkflowEvent };
 
 interface DeployWorkflowOptions {
   workflowId: string;
@@ -91,19 +42,14 @@ const parseSseChunk = (
 const mapEvent = (eventName: string): DeployWorkflowEvent["type"] => {
   switch (eventName) {
     case "rds-ready":
-      return "rds-ready";
     case "s3-connected":
-      return "s3-connected";
     case "s3-error":
-      return "s3-error";
+    case "no-documents":
     case "batch-error":
-      return "batch-error";
     case "jobs-updated":
-      return "jobs-updated";
     case "error":
-      return "error";
     case "done":
-      return "done";
+      return eventName;
     default:
       return "message";
   }

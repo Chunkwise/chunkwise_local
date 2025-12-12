@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { RDSReadyPayload } from "../services/deploy";
+import { useState, useCallback } from "react";
+import type { RDSReadyPayload } from "../types";
 
 interface RDSConnectionDetailsProps {
   details: RDSReadyPayload;
@@ -8,103 +8,74 @@ interface RDSConnectionDetailsProps {
 type CopyTarget = "connection" | "secret";
 
 const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
-  const [copyState, setCopyState] = useState<CopyTarget | "error" | null>(null);
+  const [copyState, setCopyState] = useState<CopyTarget | null>(null);
   const connectionString = `postgres://${details.endpoint}:${details.port}/${details.database}`;
 
-  const copyValue = async (value: string, target: CopyTarget) => {
+  const copyValue = useCallback(async (value: string, target: CopyTarget) => {
     try {
       await navigator.clipboard.writeText(value);
       setCopyState(target);
       setTimeout(() => setCopyState(null), 2000);
-    } catch (error) {
-      console.error("Failed to copy deployment detail", error);
-      setCopyState("error");
-      setTimeout(() => setCopyState(null), 2000);
+    } catch {
+      // Silent fail - user can manually copy
     }
-  };
+  }, []);
 
   return (
-    <div className="deployment-summary" aria-live="polite">
-      <div className="muted">
-        RDS instance is online.
-      </div>
-      <div className="text-muted mt-2">
-        Use the connection string below for psql-compatible clients:
-      </div>
+    <div className="deploy-details-card mt-4">
+      <h3 className="deploy-details-title">
+        <span className="icon icon-sm">database</span>
+        Connection Details
+      </h3>
+
       <div className="deploy-connection">
-        <div className="deploy-connection-string">
-          {connectionString}
-        </div>
+        <code className="deploy-connection-string">{connectionString}</code>
         <button
           className="btn btn-sm"
           type="button"
           onClick={() => copyValue(connectionString, "connection")}
+          title="Copy connection string"
         >
-          <span className="icon icon-sm">content_copy</span>
-          Copy
+          <span className="icon icon-sm">
+            {copyState === "connection" ? "check" : "content_copy"}
+          </span>
         </button>
       </div>
 
       <dl className="deploy-details">
-        <dt className="text-muted">
-          <span className="icon icon-sm">language</span> Endpoint
-        </dt>
-        <dd>{details.endpoint}</dd>
-
-        <dt className="text-muted">
-          <span className="icon icon-sm">tag</span> Port
-        </dt>
-        <dd>{details.port}</dd>
-
-        <dt className="text-muted">
-          <span className="icon icon-sm">storage</span> Database
-        </dt>
-        <dd>{details.database}</dd>
-
-        <dt className="text-muted">
-          <span className="icon icon-sm">table_chart</span> Table
-        </dt>
-        <dd>{details.table_name}</dd>
-
-        <dt className="text-muted">
-          <span className="icon icon-sm">vpn_key</span> Secret ARN
-        </dt>
-        <dd>
-          <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
-            <span style={{ wordBreak: "break-all" }}>
-              {details.secret_arn}
-            </span>
+        <div className="deploy-detail-row">
+          <dt>Endpoint</dt>
+          <dd>{details.endpoint}</dd>
+        </div>
+        <div className="deploy-detail-row">
+          <dt>Port</dt>
+          <dd>{details.port}</dd>
+        </div>
+        <div className="deploy-detail-row">
+          <dt>Database</dt>
+          <dd>{details.database}</dd>
+        </div>
+        <div className="deploy-detail-row">
+          <dt>Table</dt>
+          <dd>{details.table_name}</dd>
+        </div>
+        <div className="deploy-detail-row">
+          <dt>Secret ARN</dt>
+          <dd className="deploy-detail-arn">
+            <span>{details.secret_arn}</span>
             <button
-              className="btn btn-sm"
+              className="btn btn-sm btn-icon"
               type="button"
               onClick={() => copyValue(details.secret_arn, "secret")}
+              title="Copy secret ARN"
             >
-              <span className="icon icon-sm">content_copy</span>
-              Copy
+              <span className="icon icon-sm">
+                {copyState === "secret" ? "check" : "content_copy"}
+              </span>
             </button>
-          </div>
-        </dd>
+          </dd>
+        </div>
       </dl>
-
-      {details.notes && (
-        <div className="text-muted mt-3">
-          <span className="icon icon-sm">info</span>
-          {details.notes}
-        </div>
-      )}
-
-      {copyState === "error" && (
-        <div className="error-text mt-3">
-          <span className="icon icon-sm">error</span>
-          Could not copy automatically. Please copy the value manually.
-        </div>
-      )}
-      {copyState && copyState !== "error" && (
-        <div className="text-muted mt-2" style={{ color: "var(--color-success)" }}>
-          <span className="icon icon-sm">check_circle</span>
-          Copied {copyState === "connection" ? "connection string" : "secret ARN"}
-        </div>
-      )}
     </div>
   );
 };
