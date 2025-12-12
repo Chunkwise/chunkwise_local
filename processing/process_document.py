@@ -1,31 +1,27 @@
 """
 Contains the orchestration logic for our AWS Batch ECS service for document processing
-Takes an S3 bucket, document key, chunker config, and destination database information
-Chunks the document, creates embeddings, and writes to the destination database
+Takes an S3 bucket, document keys, chunker config, and destination database information
+Chunks the documents, creates embeddings, and writes to the destination database
 """
 
-import time
 from utils import get_chunks, get_mapped_embeddings
-from services import get_s3_document_text, add_vectors
-from config import document_key, table
-
-start_time = time.perf_counter()
+from services import get_s3_documents, add_vectors
+from config import table
 
 
 def main():
-    print(f"Processing document {document_key} of workflow {table}")
+    print(f"Processing documents of workflow {table}")
 
-    text = get_s3_document_text()
+    documents = get_s3_documents()
 
-    chunks = get_chunks(text)
+    for document in documents:
+        print(f"Processing document {document['key']}")
 
-    chunk_embedding_pairs = get_mapped_embeddings(chunks)
+        chunks = get_chunks(document["text"])
 
-    add_vectors(chunk_embedding_pairs)
+        chunk_embedding_pairs = get_mapped_embeddings(chunks)
 
-    end_time = time.perf_counter()
-    elapsed_time = end_time - start_time
-    print(f"Code execution took {elapsed_time:.4f} seconds.")
+        add_vectors(chunk_embedding_pairs, document["key"])
 
 
 if __name__ == "__main__":
