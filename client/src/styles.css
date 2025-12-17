@@ -1291,6 +1291,21 @@ html,
   font-size: var(--text-sm);
 }
 
+.deploy-status-badge {
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--color-success);
+  margin-bottom: var(--space-4);
+}
+
+.deploy-status-badge .icon {
+  color: var(--color-success);
+}
+
 /* Deploy Connection Details Card */
 .deploy-details-card {
   padding: var(--space-4);
@@ -1299,13 +1314,24 @@ html,
   border-radius: var(--radius-md);
 }
 
-.deploy-details-title {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  margin-bottom: var(--space-3);
+.deploy-details-card .section-header {
+  margin-bottom: var(--space-4);
+}
+
+.deploy-detail-section {
+  margin-bottom: var(--space-4);
+}
+
+.deploy-detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.deploy-detail-label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
 }
 
 .deploy-connection {

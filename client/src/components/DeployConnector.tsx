@@ -77,8 +77,10 @@ interface DeployStatusBadgeProps {
 
 const DeployStatusBadge = ({ icon, text }: DeployStatusBadgeProps) => (
   <div className="deploy-status-badge">
-    <span className="icon icon-sm">{icon}</span>
-    <span>{text}</span>
+    <div className="section-header">
+      <span className="icon">{icon}</span>
+      <span className="title-sm">{text}</span>
+    </div>
   </div>
 );
 
@@ -259,7 +261,7 @@ const DeployConnector = ({
             onClick={handleRedeploy}
             disabled={!canDeploy}
             icon="refresh"
-            label="Redeploy Workflow"
+            label="Redeploy workflow"
           />
 
           {isAnyDeploying && (
@@ -283,7 +285,7 @@ const DeployConnector = ({
   // Render state for deployed workflow
   const renderDeployedState = () => (
     <>
-      <DeployStatusBadge icon="check_circle" text="Workflow Deployed" />
+      <DeployStatusBadge icon="check_circle" text="Workflow deployed" />
 
       {rdsDetails && <RDSConnectionDetails details={rdsDetails} />}
 
@@ -291,7 +293,7 @@ const DeployConnector = ({
         onClick={handleRedeploy}
         disabled={!canDeploy}
         icon="refresh"
-        label="Redeploy Workflow"
+        label="Redeploy workflow"
       />
 
       {isAnyDeploying && (

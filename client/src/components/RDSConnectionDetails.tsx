@@ -28,7 +28,7 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
     value: string;
     copyId: string;
   }) => (
-    <div className="deploy-detail-section mt-3">
+    <div className="deploy-detail-section">
       <label className="deploy-detail-label">{label}</label>
       <div className="deploy-connection">
         <code
@@ -54,15 +54,15 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
 
   return (
     <div className="deploy-details-card mt-4">
-      <h3 className="deploy-details-title">
-        <span className="icon icon-sm">database</span>
-        Database Connection
+      <h3 className="section-header">
+        <span className="icon">storage</span>
+        <span className="title-sm">Database details</span>
       </h3>
 
-      <DetailRow label="Table Name" value={details.table_name} copyId="table" />
+      <DetailRow label="Table name" value={details.table_name} copyId="table" />
       <DetailRow label="Secret ARN" value={details.secret_arn} copyId="arn" />
       <DetailRow
-        label="Get Database Credentials"
+        label="Get database credentials"
         value={awsCommand}
         copyId="aws"
       />
