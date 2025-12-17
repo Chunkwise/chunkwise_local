@@ -49,7 +49,8 @@ const WorkflowDetails = ({
   const [evaluationInfoMessage, setEvaluationInfoMessage] = useState<
     string | null
   >(null);
-  const isSlumberChunker = workflow?.chunking_strategy?.chunker_type === "slumber";
+  const isSlumberChunker =
+    workflow?.chunking_strategy?.chunker_type === "slumber";
   const [error, setError] = useState<string | null>(null);
 
   // Helper to get current chunker name
@@ -126,7 +127,6 @@ const WorkflowDetails = ({
   // Handler for file change
   async function handleFileChange(fileTitle: string | undefined) {
     setError(null);
-    setSwitchToVisualization(true);
     if (fileTitle && workflow?.chunking_strategy) {
       if (!confirmLLMChunkerUsage(getCurrentChunkerName())) {
         return;
@@ -135,6 +135,7 @@ const WorkflowDetails = ({
 
     if (fileTitle && workflow?.chunking_strategy) {
       setIsLoadingViz(true);
+      setSwitchToVisualization(true);
     }
     const previousDocumentTitle = workflow?.document_title;
     await onPatchWorkflow({ document_title: fileTitle || null });
@@ -149,10 +150,12 @@ const WorkflowDetails = ({
         await onUpdateWorkflow({ document_title: fileTitle });
         if (workflow?.chunking_strategy) {
           await loadVisualization();
+          setSwitchToVisualization(false);
         }
       }
     } catch (error) {
       setIsLoadingViz(false);
+      setSwitchToVisualization(false);
       await onPatchWorkflow({ document_title: previousDocumentTitle });
       console.error("Failed to update file:", error);
       setError("Failed to update document selection");
@@ -184,6 +187,7 @@ const WorkflowDetails = ({
       }
     } finally {
       setIsLoadingViz(false);
+      setSwitchToVisualization(false);
     }
   }
 
@@ -367,37 +371,25 @@ const WorkflowDetails = ({
                     </div>
                   )}
                   {workflow.chunks_stats &&
-                  workflow.visualization_html &&
-                  !isLoadingViz ? (
-                    <>
-                      <ChunkStats stats={workflow.chunks_stats} />
-                      <VisualizationDisplay
-                        html={workflow.visualization_html}
-                      />
-                    </>
-                  ) : !isLoadingViz ? (
-                    <p className="text-muted">
-                      <span className="icon icon-sm">info</span>
-                      Select a chunker to see visualization
-                    </p>
-                  ) : null}
+                    workflow.visualization_html &&
+                    !isLoadingViz && (
+                      <>
+                        <ChunkStats stats={workflow.chunks_stats} />
+                        <VisualizationDisplay
+                          html={workflow.visualization_html}
+                        />
+                      </>
+                    )}
                 </div>
               ),
-              evaluation: workflow.evaluation_metrics ? (
+              evaluation: (
                 <Evaluation
                   infoMessage={evaluationInfoMessage}
                   onDismissInfo={() => setEvaluationInfoMessage(null)}
-                  evaluationMetrics={workflow.evaluation_metrics}
+                  evaluationMetrics={workflow.evaluation_metrics!}
                 />
-              ) : (
-                <div className="tab-panel">
-                  <p className="text-muted">
-                    <span className="icon icon-sm">info</span>
-                    Run evaluation to see performance metrics
-                  </p>
-                </div>
               ),
-              deploy: workflow.chunking_strategy ? (
+              deploy: (
                 <div className="tab-panel">
                   <DeployConnector
                     workflow={workflow}
@@ -406,13 +398,6 @@ const WorkflowDetails = ({
                     deploymentDispatch={deploymentDispatch}
                     isAnyDeploying={isAnyDeploying}
                   />
-                </div>
-              ) : (
-                <div className="tab-panel">
-                  <p className="text-muted">
-                    <span className="icon icon-sm">info</span>
-                    Configure a chunker to enable deployment
-                  </p>
                 </div>
               ),
             }}
