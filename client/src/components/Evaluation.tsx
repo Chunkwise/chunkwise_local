@@ -62,11 +62,12 @@ const Evaluation = ({
         </div>
       )}
 
-      <div className="evaluation-header">
-        <h3 className="title-md">Results</h3>
-      </div>
+      <div className="section">
+        <h2 className="section-header">
+          <span className="title-md">Results</span>
+        </h2>
 
-      <div className="metrics-list">
+        <div className="metrics-list">
         {METRIC_CONFIG.map(({ key, name, description }) => (
           <div key={key} className="metric-item">
             <div className="metric-header">
@@ -89,6 +90,7 @@ const Evaluation = ({
             </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
