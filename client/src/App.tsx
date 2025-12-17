@@ -45,6 +45,7 @@ export default function App() {
   const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(true);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
+  const [isDeploymentActive, setIsDeploymentActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Load workflows on mount
@@ -250,6 +251,8 @@ export default function App() {
               onPatchWorkflow={(patch) =>
                 handlePatchWorkflow(selectedWorkflow!.id, patch)
               }
+              isAnyDeploying={isDeploymentActive}
+              onDeploymentChange={setIsDeploymentActive}
             />
           )}
         </main>

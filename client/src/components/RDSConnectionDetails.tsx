@@ -7,7 +7,6 @@ interface RDSConnectionDetailsProps {
 
 const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
   const [copied, setCopied] = useState<string | null>(null);
-  const connectionString = `postgres://${details.endpoint}:${details.port}/${details.database}`;
 
   const copyToClipboard = async (text: string, label: string) => {
     await navigator.clipboard.writeText(text);
@@ -15,61 +14,97 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const awsCommand = `aws secretsmanager get-secret-value \\
+  --secret-id ${details.secret_arn} \\
+  --query SecretString \\
+  --output text`;
+
+  const psqlCommand = `PGPASSWORD=$(aws secretsmanager get-secret-value \\
+  --secret-id ${details.secret_arn} \\
+  --query SecretString \\
+  --output text | jq -r .password) \\
+psql -h ${details.endpoint} \\
+  -p ${details.port} \\
+  -U $(aws secretsmanager get-secret-value \\
+  --secret-id ${details.secret_arn} \\
+  --query SecretString \\
+  --output text | jq -r .username) \\
+  -d ${details.database}`;
+
   return (
     <div className="deploy-details-card mt-4">
       <h3 className="deploy-details-title">
         <span className="icon icon-sm">database</span>
-        Connection Details
+        Database Connection
       </h3>
 
-      <div className="deploy-connection">
-        <code className="deploy-connection-string">{connectionString}</code>
-        <button
-          className="btn btn-sm"
-          type="button"
-          onClick={() => copyToClipboard(connectionString, "connection")}
-          title="Copy connection string"
-        >
-          <span className="icon icon-sm">
-            {copied === "connection" ? "check" : "content_copy"}
-          </span>
-        </button>
+      <div className="deploy-detail-section">
+        <label className="deploy-detail-label">Table Name</label>
+        <div className="deploy-connection">
+          <code className="deploy-connection-string">{details.table_name}</code>
+          <button
+            className="btn btn-sm"
+            type="button"
+            onClick={() => copyToClipboard(details.table_name, "table")}
+            title="Copy table name"
+          >
+            <span className="icon icon-sm">
+              {copied === "table" ? "check" : "content_copy"}
+            </span>
+          </button>
+        </div>
       </div>
 
-      <dl className="deploy-details">
-        <div className="deploy-detail-row">
-          <dt>Endpoint</dt>
-          <dd>{details.endpoint}</dd>
+      <div className="deploy-detail-section mt-3">
+        <label className="deploy-detail-label">Secret ARN</label>
+        <div className="deploy-connection">
+          <code className="deploy-connection-string">{details.secret_arn}</code>
+          <button
+            className="btn btn-sm"
+            type="button"
+            onClick={() => copyToClipboard(details.secret_arn, "arn")}
+            title="Copy secret ARN"
+          >
+            <span className="icon icon-sm">
+              {copied === "arn" ? "check" : "content_copy"}
+            </span>
+          </button>
         </div>
-        <div className="deploy-detail-row">
-          <dt>Port</dt>
-          <dd>{details.port}</dd>
+      </div>
+
+      <div className="deploy-detail-section mt-3">
+        <label className="deploy-detail-label">Get Database Credentials</label>
+        <div className="deploy-connection">
+          <code className="deploy-connection-string deploy-command">{awsCommand}</code>
+          <button
+            className="btn btn-sm"
+            type="button"
+            onClick={() => copyToClipboard(awsCommand, "aws")}
+            title="Copy AWS command"
+          >
+            <span className="icon icon-sm">
+              {copied === "aws" ? "check" : "content_copy"}
+            </span>
+          </button>
         </div>
-        <div className="deploy-detail-row">
-          <dt>Database</dt>
-          <dd>{details.database}</dd>
+      </div>
+
+      <div className="deploy-detail-section mt-3">
+        <label className="deploy-detail-label">Connect with psql</label>
+        <div className="deploy-connection">
+          <code className="deploy-connection-string deploy-command">{psqlCommand}</code>
+          <button
+            className="btn btn-sm"
+            type="button"
+            onClick={() => copyToClipboard(psqlCommand, "psql")}
+            title="Copy psql command"
+          >
+            <span className="icon icon-sm">
+              {copied === "psql" ? "check" : "content_copy"}
+            </span>
+          </button>
         </div>
-        <div className="deploy-detail-row">
-          <dt>Table</dt>
-          <dd>{details.table_name}</dd>
-        </div>
-        <div className="deploy-detail-row">
-          <dt>Secret ARN</dt>
-          <dd className="deploy-detail-arn">
-            <span>{details.secret_arn}</span>
-            <button
-              className="btn btn-sm btn-icon"
-              type="button"
-              onClick={() => copyToClipboard(details.secret_arn, "secret")}
-              title="Copy secret ARN"
-            >
-              <span className="icon icon-sm">
-                {copied === "secret" ? "check" : "content_copy"}
-              </span>
-            </button>
-          </dd>
-        </div>
-      </dl>
+      </div>
     </div>
   );
 };

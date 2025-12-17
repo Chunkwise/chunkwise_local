@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import type { 
   Workflow, 
   DeployWorkflowEvent, 
@@ -8,15 +8,24 @@ import type {
   DeploySummary 
 } from "../types";
 import { deployWorkflow } from "../services/deploy";
+import { getRdsSecretArn, setRdsSecretArn } from "../utils/storage";
 import S3CredentialsForm from "./S3CredentialsForm";
 import RDSConnectionDetails from "./RDSConnectionDetails";
 import DeployProgress from "./DeployProgress";
 
 interface DeployConnectorProps {
   workflow: Workflow;
+  onWorkflowUpdate: (updates: Partial<Workflow>) => void;
+  isAnyDeploying: boolean;
+  onDeploymentChange: (isDeploying: boolean) => void;
 }
 
-const DeployConnector = ({ workflow }: DeployConnectorProps) => {
+const DeployConnector = ({ 
+  workflow, 
+  onWorkflowUpdate,
+  isAnyDeploying,
+  onDeploymentChange 
+}: DeployConnectorProps) => {
   const [showForm, setShowForm] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,13 +36,31 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
   const [noDocuments, setNoDocuments] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
-
   const hasChunkingStrategy = Boolean(workflow.chunking_strategy);
+  const isDeployed = Boolean(workflow.deploy_table_name);
+  const storedArn = getRdsSecretArn();
+
+  // Load existing RDS details if workflow is already deployed
+  useEffect(() => {
+    if (isDeployed && storedArn) {
+      setRdsDetails({
+        ok: true,
+        stage: "rds-ready",
+        endpoint: "",
+        port: 5432,
+        database: "",
+        table_name: workflow.deploy_table_name!,
+        secret_arn: storedArn,
+        db_instance_identifier: "",
+      });
+    }
+  }, [isDeployed, storedArn, workflow.deploy_table_name]);
 
   const handleEvent = (event: DeployWorkflowEvent) => {
     switch (event.type) {
       case "rds-ready":
         setRdsDetails(event.data);
+        setRdsSecretArn(event.data.secret_arn);
         break;
       case "s3-connected":
         setS3Bucket(event.data.bucket);
@@ -47,6 +74,12 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
       case "done":
         setSummary(event.data.summary ?? null);
         setIsComplete(true);
+        if (event.data.summary?.table) {
+          onWorkflowUpdate({
+            deploy_table_name: event.data.summary.table,
+            stage: "Deployed",
+          });
+        }
         break;
       case "s3-error":
       case "batch-error":
@@ -63,6 +96,7 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
 
     setShowForm(false);
     setIsDeploying(true);
+    onDeploymentChange(true);
     setError(null);
     setRdsDetails(null);
     setS3Bucket(null);
@@ -84,11 +118,13 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
       }
     } finally {
       setIsDeploying(false);
+      onDeploymentChange(false);
       controllerRef.current = null;
     }
   };
 
   const isActive = isDeploying || isComplete;
+  const canDeploy = hasChunkingStrategy && !isAnyDeploying;
 
   return (
     <div className="section">
@@ -98,7 +134,7 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
       </h2>
 
       <div className="card">
-        {!isActive && (
+        {!isActive && !isDeployed && (
           <>
             <p className="text-muted">
               <span className="icon icon-sm">storage</span>
@@ -108,7 +144,7 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
             <button
               className="btn btn-primary mt-3"
               onClick={() => setShowForm(!showForm)}
-              disabled={!hasChunkingStrategy}
+              disabled={!canDeploy}
             >
               <span className="icon icon-sm">link</span>
               Connect to Amazon S3
@@ -118,6 +154,13 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
               <p className="text-muted mt-2">
                 <span className="icon icon-sm">warning</span>
                 Configure a chunker before setting up deployment.
+              </p>
+            )}
+
+            {isAnyDeploying && hasChunkingStrategy && (
+              <p className="text-muted mt-2">
+                <span className="icon icon-sm">info</span>
+                Another workflow is currently being deployed.
               </p>
             )}
 
@@ -152,6 +195,16 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
             {rdsDetails && (
               <RDSConnectionDetails details={rdsDetails} />
             )}
+          </>
+        )}
+
+        {isDeployed && !isActive && rdsDetails && (
+          <>
+            <div className="deploy-status-badge">
+              <span className="icon icon-sm">check_circle</span>
+              <span>Workflow Deployed</span>
+            </div>
+            <RDSConnectionDetails details={rdsDetails} />
           </>
         )}
       </div>

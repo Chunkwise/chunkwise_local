@@ -19,6 +19,8 @@ type Props = {
   workflow?: Workflow;
   onUpdateWorkflow: (patch: Partial<Workflow>) => Promise<void>;
   onPatchWorkflow: (patch: Partial<Workflow>) => Promise<void>;
+  isAnyDeploying: boolean;
+  onDeploymentChange: (isDeploying: boolean) => void;
 };
 
 const WorkflowDetails = ({
@@ -28,6 +30,8 @@ const WorkflowDetails = ({
   workflow,
   onUpdateWorkflow,
   onPatchWorkflow,
+  isAnyDeploying,
+  onDeploymentChange,
 }: Props) => {
   const LLM_CHUNKERS = ["chonkie slumber", "chonkie semantic"];
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
@@ -385,7 +389,12 @@ const WorkflowDetails = ({
               ),
               deploy: workflow.chunking_strategy ? (
                 <div className="tab-panel">
-                  <DeployConnector workflow={workflow} />
+                  <DeployConnector
+                    workflow={workflow}
+                    onWorkflowUpdate={onPatchWorkflow}
+                    isAnyDeploying={isAnyDeploying}
+                    onDeploymentChange={onDeploymentChange}
+                  />
                 </div>
               ) : (
                 <div className="tab-panel">

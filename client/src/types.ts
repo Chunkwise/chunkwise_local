@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export type Stage = "Draft" | "Configured" | "Evaluated";
+export type Stage = "Draft" | "Configured" | "Evaluated" | "Deployed";
 
 export type Tab = "visualization" | "evaluation" | "deploy";
 
