@@ -384,11 +384,15 @@ const WorkflowDetails = ({
                 </div>
               ),
               evaluation: (
-                <Evaluation
-                  infoMessage={evaluationInfoMessage}
-                  onDismissInfo={() => setEvaluationInfoMessage(null)}
-                  evaluationMetrics={workflow.evaluation_metrics!}
-                />
+                <>
+                  {workflow.evaluation_metrics && (
+                    <Evaluation
+                      infoMessage={evaluationInfoMessage}
+                      onDismissInfo={() => setEvaluationInfoMessage(null)}
+                      evaluationMetrics={workflow.evaluation_metrics}
+                    />
+                  )}
+                </>
               ),
               deploy: (
                 <div className="tab-panel">
