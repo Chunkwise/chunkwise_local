@@ -41,10 +41,12 @@ const DeployMessage = ({
   message,
   type = "info",
 }: DeployMessageProps) => (
-  <p className={`text-muted mt-2 ${type === "error" ? "deploy-error" : ""}`}>
-    <span className="icon icon-sm">{icon}</span>
-    <span>{message}</span>
-  </p>
+  <div className={`deploy-message deploy-message-${type}`}>
+    <div className="section-header">
+      <span className="icon">{icon}</span>
+      <span className="title-sm">{message}</span>
+    </div>
+  </div>
 );
 
 interface DeployButtonProps {
@@ -196,18 +198,6 @@ const DeployConnector = ({
   // Render state for initial deployment
   const renderInitialState = () => (
     <>
-      <p className="text-muted">
-        Connect your Amazon S3 bucket to deploy chunked documents to your vector
-        database.
-      </p>
-
-      <DeployButton
-        onClick={() => setShowForm(!showForm)}
-        disabled={!canDeploy}
-        icon="link"
-        label="Connect to Amazon S3"
-      />
-
       {!hasChunkingStrategy && (
         <DeployMessage
           icon="warning"
@@ -222,14 +212,26 @@ const DeployConnector = ({
         />
       )}
 
+      {error && <DeployMessage icon="error" message={error} type="error" />}
+
+      <p className="text-muted">
+        Connect your Amazon S3 bucket to deploy chunked documents to your vector
+        database.
+      </p>
+
+      <DeployButton
+        onClick={() => setShowForm(!showForm)}
+        disabled={!canDeploy}
+        icon="link"
+        label="Connect to Amazon S3"
+      />
+
       {showForm && (
         <S3CredentialsForm
           onSubmit={handleConnect}
           onCancel={() => setShowForm(false)}
         />
       )}
-
-      {error && <DeployMessage icon="error" message={error} type="error" />}
     </>
   );
 
@@ -237,11 +239,12 @@ const DeployConnector = ({
   const renderDeployingState = () => (
     <>
       <div className="deploy-warning mb-3">
-        <span className="icon icon-sm">warning</span>
-        <span>
-          <strong>Deployment in progress.</strong> Please do not close or reload
-          this page until deployment is complete.
-        </span>
+        <div className="section-header">
+          <span className="icon">warning</span>
+          <span className="title-sm">
+            Deployment in progress - Please do not close or reload this page.
+          </span>
+        </div>
       </div>
 
       <DeployProgress
@@ -257,19 +260,19 @@ const DeployConnector = ({
 
       {isComplete && (
         <>
-          <DeployButton
-            onClick={handleRedeploy}
-            disabled={!canDeploy}
-            icon="refresh"
-            label="Redeploy workflow"
-          />
-
           {isAnyDeploying && (
             <DeployMessage
               icon="info"
               message="Another workflow is currently being deployed."
             />
           )}
+
+          <DeployButton
+            onClick={handleRedeploy}
+            disabled={!canDeploy}
+            icon="refresh"
+            label="Redeploy workflow"
+          />
 
           {showForm && (
             <S3CredentialsForm
@@ -287,6 +290,13 @@ const DeployConnector = ({
     <>
       <DeployStatusBadge icon="check_circle" text="Workflow deployed" />
 
+      {isAnyDeploying && (
+        <DeployMessage
+          icon="info"
+          message="Another workflow is currently being deployed."
+        />
+      )}
+
       {rdsDetails && <RDSConnectionDetails details={rdsDetails} />}
 
       <DeployButton
@@ -295,13 +305,6 @@ const DeployConnector = ({
         icon="refresh"
         label="Redeploy workflow"
       />
-
-      {isAnyDeploying && (
-        <DeployMessage
-          icon="info"
-          message="Another workflow is currently being deployed."
-        />
-      )}
 
       {showForm && (
         <S3CredentialsForm
