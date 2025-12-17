@@ -17,37 +17,71 @@ const DeployProgress = ({
   isComplete,
   error,
 }: DeployProgressProps) => {
+  const getStepClass = (isSuccess: boolean, isRunning: boolean) =>
+    isSuccess ? "success" : isRunning ? "running" : "pending";
+
+  const getIconClass = (isSuccess: boolean, isRunning: boolean) =>
+    `icon icon-sm deploy-step-icon ${getStepClass(isSuccess, isRunning)}${
+      isRunning ? " spinner" : ""
+    }`;
+
+  const getIcon = (isSuccess: boolean, isRunning: boolean) =>
+    isSuccess ? "check_circle" : isRunning ? "sync" : "radio_button_unchecked";
+
   return (
     <div className="deploy-progress">
       <div className="deploy-steps">
-        <div className={`deploy-step ${rdsDetails ? "success" : "running"}`}>
-          <span className={`icon icon-sm deploy-step-icon ${rdsDetails ? "success" : "running spinner"}`}>
-            {rdsDetails ? "check_circle" : "sync"}
+        {/* Database Step */}
+        <div
+          className={`deploy-step ${getStepClass(!!rdsDetails, !rdsDetails)}`}
+        >
+          <span className={getIconClass(!!rdsDetails, !rdsDetails)}>
+            {getIcon(!!rdsDetails, !rdsDetails)}
           </span>
           <span className="deploy-step-label">Database ready</span>
           {rdsDetails && (
-            <span className="deploy-step-detail">{rdsDetails.db_instance_identifier}</span>
+            <span className="deploy-step-detail">
+              {rdsDetails.db_instance_identifier}
+            </span>
           )}
         </div>
 
-        <div className={`deploy-step ${s3Bucket ? "success" : rdsDetails ? "running" : "pending"}`}>
-          <span className={`icon icon-sm deploy-step-icon ${s3Bucket ? "success" : rdsDetails ? "running spinner" : "pending"}`}>
-            {s3Bucket ? "check_circle" : rdsDetails ? "sync" : "radio_button_unchecked"}
+        {/* S3 Step */}
+        <div
+          className={`deploy-step ${getStepClass(
+            !!s3Bucket,
+            !!rdsDetails && !s3Bucket
+          )}`}
+        >
+          <span className={getIconClass(!!s3Bucket, !!rdsDetails && !s3Bucket)}>
+            {getIcon(!!s3Bucket, !!rdsDetails && !s3Bucket)}
           </span>
           <span className="deploy-step-label">S3 bucket verified</span>
           {s3Bucket && <span className="deploy-step-detail">{s3Bucket}</span>}
         </div>
 
+        {/* Processing Step */}
         {noDocuments ? (
           <div className="deploy-step success">
-            <span className="icon icon-sm deploy-step-icon success">check_circle</span>
+            <span className="icon icon-sm deploy-step-icon success">
+              check_circle
+            </span>
             <span className="deploy-step-label">No documents found</span>
-            <span className="deploy-step-detail">No .txt or .md files in bucket</span>
+            <span className="deploy-step-detail">
+              No .txt or .md files in bucket
+            </span>
           </div>
         ) : (
-          <div className={`deploy-step ${isComplete ? "success" : s3Bucket ? "running" : "pending"}`}>
-            <span className={`icon icon-sm deploy-step-icon ${isComplete ? "success" : s3Bucket ? "running spinner" : "pending"}`}>
-              {isComplete ? "check_circle" : s3Bucket ? "sync" : "radio_button_unchecked"}
+          <div
+            className={`deploy-step ${getStepClass(
+              isComplete,
+              !!s3Bucket && !isComplete
+            )}`}
+          >
+            <span
+              className={getIconClass(isComplete, !!s3Bucket && !isComplete)}
+            >
+              {getIcon(isComplete, !!s3Bucket && !isComplete)}
             </span>
             <span className="deploy-step-label">Processing documents</span>
             {jobsStatus && (
@@ -67,19 +101,15 @@ const DeployProgress = ({
         </div>
       )}
 
-      {isComplete && !noDocuments && (
+      {isComplete && (
         <div className="deploy-complete mt-3">
-          <span className="icon icon-sm">check_circle</span>
-          <span>Deployment complete!</span>
-        </div>
-      )}
-
-      {isComplete && noDocuments && (
-        <div className="deploy-complete mt-3">
-          <span className="icon icon-sm">info</span>
+          <span className="icon icon-sm">
+            {noDocuments ? "info" : "check_circle"}
+          </span>
           <span>
-            Deployment complete. Add documents to your S3 bucket to process
-            them.
+            {noDocuments
+              ? "Deployment complete. Add documents to your S3 bucket to process them."
+              : "Deployment complete!"}
           </span>
         </div>
       )}

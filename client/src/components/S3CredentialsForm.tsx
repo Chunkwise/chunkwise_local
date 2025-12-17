@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ChangeEvent } from "react";
+import { useState, type FormEvent } from "react";
 import type { S3Credentials } from "../types";
 
 interface S3CredentialsFormProps {
@@ -13,61 +13,37 @@ const S3CredentialsForm = ({ onSubmit, onCancel }: S3CredentialsFormProps) => {
     bucket_name: "",
   });
 
-  const handleChange = (field: keyof S3Credentials) => (e: ChangeEvent<HTMLInputElement>) => {
-    setCredentials((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onSubmit(credentials);
   };
 
+  const fields = [
+    { key: "access_key", label: "Access Key", icon: "key", type: "password" },
+    { key: "secret_key", label: "Secret Key", icon: "lock", type: "password" },
+    { key: "bucket_name", label: "Bucket Name", icon: "folder", type: "text" },
+  ] as const;
+
   return (
     <form className="deploy-form" onSubmit={handleSubmit}>
-      <div className="field">
-        <label className="label" htmlFor="access-key">
-          <span className="icon icon-sm">key</span>
-          Access Key
-        </label>
-        <input
-          className="input"
-          id="access-key"
-          type="password"
-          required
-          value={credentials.access_key}
-          onChange={handleChange("access_key")}
-        />
-      </div>
-
-      <div className="field">
-        <label className="label" htmlFor="secret-key">
-          <span className="icon icon-sm">lock</span>
-          Secret Key
-        </label>
-        <input
-          className="input"
-          id="secret-key"
-          type="password"
-          required
-          value={credentials.secret_key}
-          onChange={handleChange("secret_key")}
-        />
-      </div>
-
-      <div className="field">
-        <label className="label" htmlFor="bucket-name">
-          <span className="icon icon-sm">folder</span>
-          Bucket Name
-        </label>
-        <input
-          className="input"
-          id="bucket-name"
-          type="text"
-          required
-          value={credentials.bucket_name}
-          onChange={handleChange("bucket_name")}
-        />
-      </div>
+      {fields.map(({ key, label, icon, type }) => (
+        <div className="field" key={key}>
+          <label className="label" htmlFor={key}>
+            <span className="icon icon-sm">{icon}</span>
+            {label}
+          </label>
+          <input
+            className="input"
+            id={key}
+            type={type}
+            required
+            value={credentials[key]}
+            onChange={(e) =>
+              setCredentials((prev) => ({ ...prev, [key]: e.target.value }))
+            }
+          />
+        </div>
+      ))}
 
       <div className="section-footer">
         <button className="btn" type="button" onClick={onCancel}>

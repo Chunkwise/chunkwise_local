@@ -42,14 +42,15 @@ const DeployConnector = ({
   const isDeployed = Boolean(workflow.deploy_table_name);
   const storedArn = getRdsSecretArn();
 
-  // Use persistent deployment state or defaults
-  const isDeploying = deploymentState?.isDeploying ?? false;
-  const rdsDetails = deploymentState?.rdsDetails ?? null;
-  const s3Bucket = deploymentState?.s3Bucket ?? null;
-  const jobsStatus = deploymentState?.jobsStatus ?? null;
-  const noDocuments = deploymentState?.noDocuments ?? false;
-  const isComplete = deploymentState?.isComplete ?? false;
-  const error = deploymentState?.error ?? null;
+  const {
+    isDeploying = false,
+    rdsDetails = null,
+    s3Bucket = null,
+    jobsStatus = null,
+    noDocuments = false,
+    isComplete = false,
+    error = null,
+  } = deploymentState || {};
 
   // Load existing RDS details if workflow is already deployed
   useEffect(() => {
