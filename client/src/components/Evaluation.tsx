@@ -8,26 +8,39 @@ interface EvaluationProps {
 
 const PROGRESS_BAR_COLOR = "#2563eb";
 
-const METRIC_CONFIG: { key: keyof EvaluationMetrics; name: string; description: string }[] = [
-  { key: "precision_mean", name: "Precision", description: "Accuracy of retrieved chunks" },
-  { key: "precision_omega_mean", name: "Precision Omega", description: "Weighted precision metric" },
-  { key: "recall_mean", name: "Recall", description: "Coverage of relevant information" },
-  { key: "iou_mean", name: "IoU", description: "Intersection over Union score" },
+const METRIC_CONFIG: {
+  key: keyof EvaluationMetrics;
+  name: string;
+  description: string;
+}[] = [
+  {
+    key: "precision_mean",
+    name: "Precision",
+    description: "Accuracy of retrieved chunks",
+  },
+  {
+    key: "precision_omega_mean",
+    name: "Precision Omega",
+    description: "Weighted precision metric",
+  },
+  {
+    key: "recall_mean",
+    name: "Recall",
+    description: "Coverage of relevant information",
+  },
+  {
+    key: "iou_mean",
+    name: "IoU",
+    description: "Intersection over Union score",
+  },
 ];
 
-const Evaluation = ({ infoMessage, onDismissInfo, evaluationMetrics }: EvaluationProps) => {
+const Evaluation = ({
+  infoMessage,
+  onDismissInfo,
+  evaluationMetrics,
+}: EvaluationProps) => {
   const metrics = evaluationMetrics;
-
-  if (!metrics) {
-    return (
-      <div className="evaluation">
-        <p className="text-muted">
-          <span className="icon icon-sm">info</span>
-          No evaluation results available
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="evaluation">
@@ -51,9 +64,7 @@ const Evaluation = ({ infoMessage, onDismissInfo, evaluationMetrics }: Evaluatio
 
       <div className="evaluation-header">
         <div>
-          <h3 className="evaluation-title">
-            Evaluation Results
-          </h3>
+          <h3 className="evaluation-title">Evaluation Results</h3>
           <p className="evaluation-subtitle">
             Performance metrics for your chunking strategy
           </p>
@@ -64,9 +75,7 @@ const Evaluation = ({ infoMessage, onDismissInfo, evaluationMetrics }: Evaluatio
         {METRIC_CONFIG.map(({ key, name, description }) => (
           <div key={key} className="metric-item">
             <div className="metric-header">
-              <span className="metric-name">
-                {name}
-              </span>
+              <span className="metric-name">{name}</span>
               <span className="metric-value">{metrics[key].toFixed(3)}</span>
             </div>
             <p className="metric-desc">{description}</p>
