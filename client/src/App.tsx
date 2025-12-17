@@ -190,10 +190,13 @@ export default function App() {
   };
 
   const handleDeleteWorkflow = async (id: string) => {
+    const previousState = workflowState.workflows;
+    workflowDispatch(deleteWorkflowAction(id));
+
     try {
       await deleteWorkflowAPI(id);
-      workflowDispatch(deleteWorkflowAction(id));
     } catch (error: unknown) {
+      workflowDispatch(setWorkflowsAction(previousState));
       console.error("Failed to delete workflow:", error);
       setError("Failed to delete workflow");
     }
