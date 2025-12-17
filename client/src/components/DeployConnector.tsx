@@ -14,7 +14,6 @@ import {
   setJobsStatusAction,
   setCompleteAction,
   setErrorAction,
-  resetDeploymentAction,
 } from "../reducers/deploymentReducer";
 import { deployWorkflow } from "../services/deploy";
 import { getRdsSecretArn, setRdsSecretArn } from "../utils/storage";
@@ -76,7 +75,6 @@ const DeployConnector = ({
     rdsDetails,
     deploymentDispatch,
   ]);
-  
 
   const handleEvent = (event: DeployWorkflowEvent) => {
     switch (event.type) {
@@ -133,7 +131,6 @@ const DeployConnector = ({
   };
 
   const handleRedeploy = () => {
-    deploymentDispatch(resetDeploymentAction(workflow.id));
     setShowForm(true);
   };
 

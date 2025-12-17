@@ -15,8 +15,7 @@ export type DeploymentAction =
       payload: { workflowId: string; jobsStatus: JobsStatus };
     }
   | { type: "SET_COMPLETE"; payload: { workflowId: string } }
-  | { type: "SET_ERROR"; payload: { workflowId: string; error: string } }
-  | { type: "RESET_DEPLOYMENT"; payload: { workflowId: string } };
+  | { type: "SET_ERROR"; payload: { workflowId: string; error: string } };
 
 const getInitialDeploymentState = (): DeploymentState => ({
   isDeploying: false,
@@ -44,7 +43,6 @@ export const deploymentReducer = (
           isDeploying: true,
         },
       };
-
     case "SET_RDS_DETAILS":
       return {
         ...state,
@@ -53,7 +51,6 @@ export const deploymentReducer = (
           rdsDetails: action.payload.rdsDetails,
         },
       };
-
     case "SET_S3_BUCKET":
       return {
         ...state,
@@ -62,7 +59,6 @@ export const deploymentReducer = (
           s3Bucket: action.payload.s3Bucket,
         },
       };
-
     case "SET_NO_DOCUMENTS":
       return {
         ...state,
@@ -71,7 +67,6 @@ export const deploymentReducer = (
           noDocuments: true,
         },
       };
-
     case "SET_JOBS_STATUS":
       return {
         ...state,
@@ -80,7 +75,6 @@ export const deploymentReducer = (
           jobsStatus: action.payload.jobsStatus,
         },
       };
-
     case "SET_COMPLETE":
       return {
         ...state,
@@ -90,7 +84,6 @@ export const deploymentReducer = (
           isComplete: true,
         },
       };
-
     case "SET_ERROR":
       return {
         ...state,
@@ -100,19 +93,11 @@ export const deploymentReducer = (
           error: action.payload.error,
         },
       };
-
-    case "RESET_DEPLOYMENT":
-      return {
-        ...state,
-        [workflowId]: getInitialDeploymentState(),
-      };
-
     default:
       return state;
   }
 };
 
-// Action creators
 export const startDeploymentAction = (
   workflowId: string
 ): DeploymentAction => ({
@@ -160,11 +145,4 @@ export const setErrorAction = (
 ): DeploymentAction => ({
   type: "SET_ERROR",
   payload: { workflowId, error },
-});
-
-export const resetDeploymentAction = (
-  workflowId: string
-): DeploymentAction => ({
-  type: "RESET_DEPLOYMENT",
-  payload: { workflowId },
 });
