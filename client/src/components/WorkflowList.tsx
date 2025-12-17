@@ -74,12 +74,11 @@ const WorkflowList = ({
       <div className="workflow-header">
         <div className="workflow-header-left">
           <h3 className="title-md">
-            <span className="icon">folder</span>
             Workflows
           </h3>
           {isComparing && (
             <p className="text-muted">
-              Select up to 3 ({comparedWorkflowIds.length}/3)
+              Select up to 4 ({comparedWorkflowIds.length}/4)
             </p>
           )}
         </div>
@@ -180,12 +179,10 @@ const WorkflowList = ({
             <div className="workflow-item-left">
               <div className="workflow-item-name">{workflow.title}</div>
               <div className="workflow-item-meta">
-                <span>
-                  <span className="icon icon-sm">calendar_today</span>
+                <span className="workflow-date">
                   {formatDate(workflow.created_at)}
                 </span>
-                <span>
-                  <span className="icon icon-sm">flag</span>
+                <span className={`workflow-stage stage-${workflow.stage?.toLowerCase()}`}>
                   {workflow.stage}
                 </span>
               </div>

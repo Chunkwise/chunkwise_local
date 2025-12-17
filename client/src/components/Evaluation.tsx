@@ -8,11 +8,11 @@ interface EvaluationProps {
 
 const PROGRESS_BAR_COLOR = "#2563eb";
 
-const METRIC_CONFIG: { key: keyof EvaluationMetrics; name: string; description: string; icon: string }[] = [
-  { key: "precision_mean", name: "Precision", description: "Accuracy of retrieved chunks", icon: "target" },
-  { key: "precision_omega_mean", name: "Precision Omega", description: "Weighted precision metric", icon: "speed" },
-  { key: "recall_mean", name: "Recall", description: "Coverage of relevant information", icon: "search" },
-  { key: "iou_mean", name: "IoU", description: "Intersection over Union score", icon: "join_inner" },
+const METRIC_CONFIG: { key: keyof EvaluationMetrics; name: string; description: string }[] = [
+  { key: "precision_mean", name: "Precision", description: "Accuracy of retrieved chunks" },
+  { key: "precision_omega_mean", name: "Precision Omega", description: "Weighted precision metric" },
+  { key: "recall_mean", name: "Recall", description: "Coverage of relevant information" },
+  { key: "iou_mean", name: "IoU", description: "Intersection over Union score" },
 ];
 
 const Evaluation = ({ infoMessage, onDismissInfo, evaluationMetrics }: EvaluationProps) => {
@@ -52,7 +52,6 @@ const Evaluation = ({ infoMessage, onDismissInfo, evaluationMetrics }: Evaluatio
       <div className="evaluation-header">
         <div>
           <h3 className="evaluation-title">
-            <span className="icon">analytics</span>
             Evaluation Results
           </h3>
           <p className="evaluation-subtitle">
@@ -62,11 +61,10 @@ const Evaluation = ({ infoMessage, onDismissInfo, evaluationMetrics }: Evaluatio
       </div>
 
       <div className="metrics-list">
-        {METRIC_CONFIG.map(({ key, name, description, icon }) => (
+        {METRIC_CONFIG.map(({ key, name, description }) => (
           <div key={key} className="metric-item">
             <div className="metric-header">
               <span className="metric-name">
-                <span className="icon icon-sm">{icon}</span>
                 {name}
               </span>
               <span className="metric-value">{metrics[key].toFixed(3)}</span>

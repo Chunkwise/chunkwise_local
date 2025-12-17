@@ -1,4 +1,9 @@
 import { useState, useEffect } from "react";
+import S3CredentialsForm from "./S3CredentialsForm";
+import RDSConnectionDetails from "./RDSConnectionDetails";
+import DeployProgress from "./DeployProgress";
+import { deployWorkflow } from "../services/deploy";
+import { getRdsSecretArn, setRdsSecretArn } from "../utils/storage";
 import type {
   Workflow,
   DeployWorkflowEvent,
@@ -15,11 +20,6 @@ import {
   setCompleteAction,
   setErrorAction,
 } from "../reducers/deploymentReducer";
-import { deployWorkflow } from "../services/deploy";
-import { getRdsSecretArn, setRdsSecretArn } from "../utils/storage";
-import S3CredentialsForm from "./S3CredentialsForm";
-import RDSConnectionDetails from "./RDSConnectionDetails";
-import DeployProgress from "./DeployProgress";
 
 interface DeployConnectorProps {
   workflow: Workflow;
@@ -324,7 +324,6 @@ const DeployConnector = ({
   return (
     <div className="section">
       <h2 className="section-header">
-        <span className="icon">cloud_upload</span>
         <span className="title-md">Deploy</span>
       </h2>
 

@@ -70,7 +70,6 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
       <div className="comparison-header">
         <div>
           <h2 className="comparison-title">
-            <span className="icon">compare_arrows</span>
             Workflow Comparison
           </h2>
           <p className="comparison-subtitle">
@@ -98,11 +97,9 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                     <h3 className="comparison-card-title">{workflow.title}</h3>
                     <div className="comparison-card-meta">
                       <span className="badge">
-                        <span className="icon icon-sm">memory</span>
                         {getChunkerName(workflow.chunking_strategy)}
                       </span>
-                      <span className="badge badge-success">
-                        <span className="icon icon-sm">flag</span>
+                      <span className={`workflow-stage stage-${workflow.stage?.toLowerCase()}`}>
                         {workflow.stage}
                       </span>
                     </div>
@@ -112,7 +109,6 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                 <div className="comparison-card-body">
                   <div className="comparison-section">
                     <h4 className="comparison-section-title">
-                      <span className="icon icon-sm">settings</span>
                       Configuration
                     </h4>
                     {workflow.chunking_strategy ? (
@@ -128,7 +124,6 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
 
                   <div className="comparison-section">
                     <h4 className="comparison-section-title">
-                      <span className="icon icon-sm">insights</span>
                       Chunking Metrics
                     </h4>
                     {workflow.chunks_stats ? (
@@ -169,7 +164,6 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
 
                   <div className="comparison-section">
                     <h4 className="comparison-section-title">
-                      <span className="icon icon-sm">analytics</span>
                       Evaluation Results
                     </h4>
                     {workflow.evaluation_metrics ? (

@@ -157,7 +157,7 @@ html,
 .header {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-5) var(--space-5);
 }
 
 .header-inner {
@@ -166,18 +166,18 @@ html,
 }
 
 .header-title {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-semibold);
+  font-size: 28px;
+  font-weight: var(--font-bold);
   margin: 0;
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
-.header-subtitle {
-  margin: var(--space-1) 0 0;
-  font-size: var(--text-sm);
-  color: var(--color-muted);
+.logo {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
 }
 
 /* ========================================
@@ -221,6 +221,7 @@ html,
 
 .error-banner .icon {
   font-size: var(--text-xl);
+  margin-right: 0;
 }
 
 .error-content {
@@ -309,6 +310,11 @@ html,
 
 .btn-icon .icon {
   font-size: var(--text-lg);
+  margin-right: 0;
+}
+
+.btn .icon {
+  margin-right: 0;
 }
 
 /* ========================================
@@ -501,6 +507,7 @@ html,
 
 .section-header .icon {
   color: var(--color-muted);
+  margin-right: 0;
 }
 
 .section-footer {
@@ -527,6 +534,7 @@ html,
 .placeholder .icon {
   font-size: var(--text-3xl);
   color: var(--color-border);
+  margin-right: 0;
 }
 
 /* ========================================
@@ -551,6 +559,7 @@ html,
 
 .file-preview .icon {
   color: var(--color-primary);
+  margin-right: 0;
 }
 
 .file-name {
@@ -752,6 +761,7 @@ html,
 
 .evaluation-info-content .icon {
   color: #10b981;
+  margin-right: 0;
 }
 
 .evaluation-header {
@@ -974,6 +984,49 @@ html,
 .badge-success {
   background: var(--color-success-bg);
   color: var(--color-success);
+}
+
+/* ========================================
+   Workflow Stage Tags
+   ======================================== */
+.workflow-stage {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  text-transform: capitalize;
+  border: 1px solid;
+}
+
+.workflow-stage.stage-draft {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+.workflow-stage.stage-configured {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+
+.workflow-stage.stage-evaluated {
+  background-color: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.workflow-stage.stage-deployed {
+  background-color: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+.workflow-date {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
 }
 
 .comparison-card-body {
@@ -1377,12 +1430,15 @@ html,
   font-feature-settings: "liga";
   -webkit-font-smoothing: antialiased;
   vertical-align: middle;
+  margin-right: var(--space-2);
 }
 
 .icon-sm {
   font-size: 16px;
+  margin-right: var(--space-1);
 }
 
 .icon-lg {
   font-size: 24px;
+  margin-right: var(--space-2);
 }

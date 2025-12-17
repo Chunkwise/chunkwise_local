@@ -126,7 +126,6 @@ const ChooseFile = ({
 
         {workflow.document_title ? (
           <div className="file-preview">
-            <span className="icon">insert_drive_file</span>
             <span className="file-name">{workflow.document_title}</span>
             <button
               className="btn btn-icon btn-sm"
@@ -138,7 +137,6 @@ const ChooseFile = ({
           </div>
         ) : (
           <div className="text-muted mt-2">
-            <span className="icon icon-sm">info</span>
             No document selected
           </div>
         )}
