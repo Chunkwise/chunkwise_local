@@ -315,7 +315,7 @@ const DeployConnector = ({
     if (isDeploying) {
       return renderDeployingState();
     }
-    if (isDeployed && rdsDetails) {
+    if (isDeployed) {
       return renderDeployedState();
     }
     return renderInitialState();
