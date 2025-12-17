@@ -1,10 +1,9 @@
-import type { RDSReadyPayload, JobsStatus, DeploySummary } from "../types";
+import type { RDSReadyPayload, JobsStatus } from "../types";
 
 interface DeployProgressProps {
   rdsDetails: RDSReadyPayload | null;
   s3Bucket: string | null;
   jobsStatus: JobsStatus | null;
-  summary: DeploySummary | null;
   noDocuments: boolean;
   isComplete: boolean;
   error: string | null;
@@ -14,7 +13,6 @@ const DeployProgress = ({
   rdsDetails,
   s3Bucket,
   jobsStatus,
-  summary,
   noDocuments,
   isComplete,
   error,
@@ -69,19 +67,20 @@ const DeployProgress = ({
         </div>
       )}
 
-      {isComplete && summary && (
+      {isComplete && !noDocuments && (
         <div className="deploy-complete mt-3">
           <span className="icon icon-sm">check_circle</span>
-          <span>
-            Deployed {summary.documents_processed} document{summary.documents_processed !== 1 ? "s" : ""} to <strong>{summary.table}</strong>
-          </span>
+          <span>Deployment complete!</span>
         </div>
       )}
 
       {isComplete && noDocuments && (
         <div className="deploy-complete mt-3">
           <span className="icon icon-sm">info</span>
-          <span>Deployment complete. Add documents to your S3 bucket to process them.</span>
+          <span>
+            Deployment complete. Add documents to your S3 bucket to process
+            them.
+          </span>
         </div>
       )}
     </div>

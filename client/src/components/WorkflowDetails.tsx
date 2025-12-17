@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ZodError } from "zod";
-import type { Workflow, Chunker } from "../types";
+import type { Workflow, Chunker, DeploymentState } from "../types";
+import type { DeploymentAction } from "../reducers/deploymentReducer";
 import ChooseFile from "./ChooseFile";
 import ChunkerForm from "./ChunkerForm";
 import TabView from "./TabView";
@@ -19,8 +20,9 @@ type Props = {
   workflow?: Workflow;
   onUpdateWorkflow: (patch: Partial<Workflow>) => Promise<void>;
   onPatchWorkflow: (patch: Partial<Workflow>) => Promise<void>;
+  deploymentState?: DeploymentState;
+  deploymentDispatch: React.Dispatch<DeploymentAction>;
   isAnyDeploying: boolean;
-  onDeploymentChange: (isDeploying: boolean) => void;
 };
 
 const WorkflowDetails = ({
@@ -30,8 +32,9 @@ const WorkflowDetails = ({
   workflow,
   onUpdateWorkflow,
   onPatchWorkflow,
+  deploymentState,
+  deploymentDispatch,
   isAnyDeploying,
-  onDeploymentChange,
 }: Props) => {
   const LLM_CHUNKERS = ["chonkie slumber", "chonkie semantic"];
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
@@ -392,8 +395,9 @@ const WorkflowDetails = ({
                   <DeployConnector
                     workflow={workflow}
                     onWorkflowUpdate={onPatchWorkflow}
+                    deploymentState={deploymentState}
+                    deploymentDispatch={deploymentDispatch}
                     isAnyDeploying={isAnyDeploying}
-                    onDeploymentChange={onDeploymentChange}
                   />
                 </div>
               ) : (

@@ -31,6 +31,7 @@ import {
   exitComparisonModeAction,
   toggleWorkflowSelectionAction,
 } from "./reducers/comparisonReducer";
+import { deploymentReducer } from "./reducers/deploymentReducer";
 
 export default function App() {
   const [workflowState, workflowDispatch] = useReducer(workflowReducer, {
@@ -41,12 +42,19 @@ export default function App() {
     isComparing: false,
     selectedWorkflowIds: [],
   });
+  const [deploymentStates, deploymentDispatch] = useReducer(
+    deploymentReducer,
+    {}
+  );
   const [chunkers, setChunkers] = useState<Chunker[]>([]);
   const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(true);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
-  const [isDeploymentActive, setIsDeploymentActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isAnyDeploying = Object.values(deploymentStates).some(
+    (state) => state.isDeploying
+  );
 
   // Load workflows on mount
   useEffect(() => {
@@ -251,8 +259,13 @@ export default function App() {
               onPatchWorkflow={(patch) =>
                 handlePatchWorkflow(selectedWorkflow!.id, patch)
               }
-              isAnyDeploying={isDeploymentActive}
-              onDeploymentChange={setIsDeploymentActive}
+              deploymentState={
+                selectedWorkflow
+                  ? deploymentStates[selectedWorkflow.id]
+                  : undefined
+              }
+              deploymentDispatch={deploymentDispatch}
+              isAnyDeploying={isAnyDeploying}
             />
           )}
         </main>

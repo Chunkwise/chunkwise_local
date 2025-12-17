@@ -78,28 +78,21 @@ export const EvaluationResponseSchema = z.object({
 
 export type EvaluationResponse = z.infer<typeof EvaluationResponseSchema>;
 
+export interface DeploymentState {
+  isDeploying: boolean;
+  rdsDetails: RDSReadyPayload | null;
+  s3Bucket: string | null;
+  jobsStatus: JobsStatus | null;
+  noDocuments: boolean;
+  isComplete: boolean;
+  error: string | null;
+}
+
 export interface S3Credentials {
   access_key: string;
   secret_key: string;
   bucket_name: string;
 }
-
-export const JobsStatusSchema = z.object({
-  succeeded: z.number(),
-  failed: z.number(),
-  total: z.number(),
-});
-
-export type JobsStatus = z.infer<typeof JobsStatusSchema>;
-
-export const DeploySummarySchema = z.object({
-  database: z.string(),
-  table: z.string(),
-  documents_processed: z.number(),
-  message: z.string(),
-});
-
-export type DeploySummary = z.infer<typeof DeploySummarySchema>;
 
 export const RDSReadyPayloadSchema = z.object({
   ok: z.literal(true),
@@ -130,6 +123,14 @@ export const NoDocumentsPayloadSchema = z.object({
 
 export type NoDocumentsPayload = z.infer<typeof NoDocumentsPayloadSchema>;
 
+export const JobsStatusSchema = z.object({
+  succeeded: z.number(),
+  failed: z.number(),
+  total: z.number(),
+});
+
+export type JobsStatus = z.infer<typeof JobsStatusSchema>;
+
 export const JobsUpdatedPayloadSchema = z.object({
   ok: z.literal(true),
   stage: z.literal("jobs-updated"),
@@ -137,6 +138,15 @@ export const JobsUpdatedPayloadSchema = z.object({
 });
 
 export type JobsUpdatedPayload = z.infer<typeof JobsUpdatedPayloadSchema>;
+
+export const DeploySummarySchema = z.object({
+  database: z.string(),
+  table: z.string(),
+  documents_processed: z.number(),
+  message: z.string(),
+});
+
+export type DeploySummary = z.infer<typeof DeploySummarySchema>;
 
 export const DeployDonePayloadSchema = z.object({
   ok: z.literal(true),
@@ -158,12 +168,12 @@ export type DeployErrorPayload = z.infer<typeof DeployErrorPayloadSchema>;
 export type DeployEventType =
   | "rds-ready"
   | "s3-connected"
-  | "s3-error"
   | "no-documents"
-  | "batch-error"
   | "jobs-updated"
-  | "error"
   | "done"
+  | "s3-error"
+  | "batch-error"
+  | "error"
   | "message";
 
 export type DeployWorkflowEvent =

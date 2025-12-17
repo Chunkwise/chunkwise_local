@@ -3,14 +3,12 @@ import type { S3Credentials, DeployWorkflowEvent } from "../types";
 interface DeployWorkflowOptions {
   workflowId: string;
   credentials: S3Credentials;
-  signal?: AbortSignal;
   onEvent: (event: DeployWorkflowEvent) => void;
 }
 
 export const deployWorkflow = async ({
   workflowId,
   credentials,
-  signal,
   onEvent,
 }: DeployWorkflowOptions): Promise<void> => {
   const response = await fetch(`/api/workflows/${workflowId}/deploy`, {
@@ -23,7 +21,6 @@ export const deployWorkflow = async ({
       s3_secret_key: credentials.secret_key,
       s3_bucket: credentials.bucket_name,
     }),
-    signal,
   });
 
   if (!response.ok) {
