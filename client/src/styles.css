@@ -157,7 +157,7 @@ html,
 .header {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  padding: var(--space-5) var(--space-5);
+  padding: var(--space-4) var(--space-4);
 }
 
 .header-inner {
@@ -166,17 +166,18 @@ html,
 }
 
 .header-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: var(--font-bold);
   margin: 0;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', monospace;
 }
 
 .logo {
-  width: 40px;
-  height: 40px;
+  width: 64px;
+  height: 64px;
   flex-shrink: 0;
 }
 
@@ -399,7 +400,7 @@ html,
 
 .workflow-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
   flex-wrap: wrap;
@@ -408,8 +409,8 @@ html,
 
 .workflow-header-left {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .workflow-header-actions {
@@ -466,7 +467,8 @@ html,
 
 .workflow-item-meta {
   display: flex;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-3);
   font-size: var(--text-xs);
   color: var(--color-muted);
 }
@@ -474,7 +476,7 @@ html,
 .workflow-item-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
 .create-form {
@@ -912,30 +914,14 @@ html,
 .comparison {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-2);
 }
 
 .comparison-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.comparison-title {
-  margin: 0 0 var(--space-1) 0;
-  font-size: var(--text-3xl);
-  font-weight: var(--font-semibold);
-  display: flex;
   align-items: center;
-  gap: var(--space-2);
-}
-
-.comparison-subtitle {
-  margin: 0;
-  font-size: var(--text-base);
-  color: var(--color-muted);
+  min-height: 34px;
+  margin-bottom: var(--space-2);
 }
 
 .comparison-grid {

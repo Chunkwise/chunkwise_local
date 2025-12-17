@@ -74,13 +74,13 @@ const WorkflowList = ({
       <div className="workflow-header">
         <div className="workflow-header-left">
           <h3 className="title-md">
-            Workflows
+            Workflows{" "}
+            {isComparing && (
+              <span className="text-muted">
+                ({comparedWorkflowIds.length}/4)
+              </span>
+            )}
           </h3>
-          {isComparing && (
-            <p className="text-muted">
-              Select up to 4 ({comparedWorkflowIds.length}/4)
-            </p>
-          )}
         </div>
         <div className="workflow-header-actions">
           {!isComparing ? (
@@ -138,8 +138,8 @@ const WorkflowList = ({
             Cancel
           </button>
           {validationError && (
-            <ErrorMessage 
-              message={validationError} 
+            <ErrorMessage
+              message={validationError}
               onDismiss={() => setValidationError(null)}
             />
           )}
@@ -158,58 +158,61 @@ const WorkflowList = ({
             <span>No workflows yet. Create one to start.</span>
           </div>
         ) : null}
-        {!isLoadingWorkflows && workflows.map((workflow) => (
-          <div
-            key={workflow.id}
-            className={`workflow-item ${
-              selectedId === workflow.id && !isComparing ? "selected" : ""
-            } ${
-              isComparing && comparedWorkflowIds.includes(workflow.id)
-                ? "compared"
-                : ""
-            }`}
-            onClick={() => {
-              if (isComparing) {
-                onToggleWorkflowComparison(workflow.id);
-              } else {
-                onSelectWorkflow(workflow.id);
-              }
-            }}
-          >
-            <div className="workflow-item-left">
-              <div className="workflow-item-name">{workflow.title}</div>
-              <div className="workflow-item-meta">
-                <span className="workflow-date">
-                  {formatDate(workflow.created_at)}
-                </span>
-                <span className={`workflow-stage stage-${workflow.stage?.toLowerCase()}`}>
-                  {workflow.stage}
-                </span>
+        {!isLoadingWorkflows &&
+          workflows.map((workflow) => (
+            <div
+              key={workflow.id}
+              className={`workflow-item ${
+                selectedId === workflow.id && !isComparing ? "selected" : ""
+              } ${
+                isComparing && comparedWorkflowIds.includes(workflow.id)
+                  ? "compared"
+                  : ""
+              }`}
+              onClick={() => {
+                if (isComparing) {
+                  onToggleWorkflowComparison(workflow.id);
+                } else {
+                  onSelectWorkflow(workflow.id);
+                }
+              }}
+            >
+              <div className="workflow-item-left">
+                <div className="workflow-item-name">{workflow.title}</div>
+                <div className="workflow-item-meta">
+                  <span className="workflow-date">
+                    {formatDate(workflow.created_at)}
+                  </span>
+                  <span
+                    className={`workflow-stage stage-${workflow.stage?.toLowerCase()}`}
+                  >
+                    {workflow.stage}
+                  </span>
+                </div>
+              </div>
+              <div className="workflow-item-actions">
+                <input
+                  type="checkbox"
+                  className="checkbox"
+                  checked={comparedWorkflowIds.includes(workflow.id)}
+                  onChange={() => onToggleWorkflowComparison(workflow.id)}
+                  onClick={(event) => event.stopPropagation()}
+                  style={{ display: isComparing ? "block" : "none" }}
+                />
+                <button
+                  className="btn btn-icon btn-sm"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDeleteWorkflow(workflow.id);
+                  }}
+                  title="Delete"
+                  style={{ display: isComparing ? "none" : "flex" }}
+                >
+                  <span className="icon icon-sm">delete</span>
+                </button>
               </div>
             </div>
-            <div className="workflow-item-actions">
-              <input
-                type="checkbox"
-                className="checkbox"
-                checked={comparedWorkflowIds.includes(workflow.id)}
-                onChange={() => onToggleWorkflowComparison(workflow.id)}
-                onClick={(event) => event.stopPropagation()}
-                style={{ display: isComparing ? "block" : "none" }}
-              />
-              <button
-                className="btn btn-icon btn-sm"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onDeleteWorkflow(workflow.id);
-                }}
-                title="Delete"
-                style={{ display: isComparing ? "none" : "flex" }}
-              >
-                <span className="icon icon-sm">delete</span>
-              </button>
-            </div>
-          </div>
-        ))}
+          ))}
       </div>
     </div>
   );

@@ -68,14 +68,9 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
   return (
     <div className="comparison">
       <div className="comparison-header">
-        <div>
-          <h2 className="comparison-title">
-            Workflow Comparison
-          </h2>
-          <p className="comparison-subtitle">
-            Compare chunking strategies side by side
-          </p>
-        </div>
+          <h3 className="title-md">
+            Workflow comparison
+          </h3>
       </div>
 
       {workflows.length < 2 ? (
