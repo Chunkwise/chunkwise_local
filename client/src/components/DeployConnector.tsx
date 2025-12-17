@@ -76,6 +76,7 @@ const DeployConnector = ({
     rdsDetails,
     deploymentDispatch,
   ]);
+  
 
   const handleEvent = (event: DeployWorkflowEvent) => {
     switch (event.type) {
@@ -196,6 +197,14 @@ const DeployConnector = ({
 
         {isActive && (
           <>
+            <div className="deploy-warning mb-3">
+              <span className="icon icon-sm">warning</span>
+              <span>
+                <strong>Deployment in progress.</strong> Please do not close or
+                reload this page until deployment is complete.
+              </span>
+            </div>
+
             <DeployProgress
               rdsDetails={rdsDetails}
               s3Bucket={s3Bucket}
