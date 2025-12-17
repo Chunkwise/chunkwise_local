@@ -20,7 +20,7 @@ const ChunkerForm = ({
     <div className="section">
       <h2 className="section-header">
         <span className="icon">tune</span>
-        <span className="title-md">Chunker & Configuration</span>
+        <span className="title-md">Chunker & configuration</span>
       </h2>
       <div className="card">
         <div className="field">
@@ -31,7 +31,7 @@ const ChunkerForm = ({
             onChange={(event) => onChunkerChange(event.target.value)}
           >
             <option value="" disabled={!!workflow.chunking_strategy}>
-              -- choose chunker --
+              -- Choose chunker --
             </option>
             {chunkers.map((chunker) => (
               <option key={chunker.name} value={chunker.name}>
@@ -43,11 +43,10 @@ const ChunkerForm = ({
 
         {workflow.chunking_strategy && selectedChunkerConfig ? (
           <div className="config-area">
-            <div className="text-sm">{selectedChunkerConfig.description}</div>
-            <div className="text-muted">
-              <span className="icon icon-sm">settings</span>
-              Configure chunker options (defaults pre-selected)
+            <div className="chunker-description">
+              {selectedChunkerConfig.description}
             </div>
+            <label className="label">Configuration</label>
             {Object.keys(selectedChunkerConfig).map((key) =>
               typeof selectedChunkerConfig[key] === "string" ? null : (
                 <ConfigSlider
