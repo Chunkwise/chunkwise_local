@@ -86,6 +86,7 @@ export const deploymentReducer = (
         ...state,
         [workflowId]: {
           ...currentState,
+          isDeploying: false,
           isComplete: true,
         },
       };
@@ -95,6 +96,7 @@ export const deploymentReducer = (
         ...state,
         [workflowId]: {
           ...currentState,
+          isDeploying: false,
           error: action.payload.error,
         },
       };
