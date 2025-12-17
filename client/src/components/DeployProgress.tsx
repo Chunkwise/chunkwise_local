@@ -31,7 +31,6 @@ const DeployProgress = ({
   return (
     <div className="deploy-progress">
       <div className="deploy-steps">
-        {/* Database Step */}
         <div
           className={`deploy-step ${getStepClass(!!rdsDetails, !rdsDetails)}`}
         >
@@ -45,8 +44,6 @@ const DeployProgress = ({
             </span>
           )}
         </div>
-
-        {/* S3 Step */}
         <div
           className={`deploy-step ${getStepClass(
             !!s3Bucket,
@@ -60,7 +57,6 @@ const DeployProgress = ({
           {s3Bucket && <span className="deploy-step-detail">{s3Bucket}</span>}
         </div>
 
-        {/* Processing Step */}
         {noDocuments ? (
           <div className="deploy-step success">
             <span className="icon icon-sm deploy-step-icon success">

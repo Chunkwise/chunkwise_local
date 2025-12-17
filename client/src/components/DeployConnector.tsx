@@ -141,11 +141,11 @@ const DeployConnector = ({
         credentials,
         onEvent: handleEvent,
       });
-    } catch (err) {
+    } catch (error) {
       deploymentDispatch(
         setErrorAction(
           workflow.id,
-          (err as Error).message || "Deployment failed"
+          (error as Error).message || "Deployment failed"
         )
       );
     }

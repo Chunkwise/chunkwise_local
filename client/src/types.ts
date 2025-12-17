@@ -94,55 +94,97 @@ export interface S3Credentials {
   bucket_name: string;
 }
 
-export interface RDSReadyPayload {
-  ok: true;
-  stage: "rds-ready";
-  endpoint: string;
-  port: number;
-  database: string;
-  table_name: string;
-  secret_arn: string;
-  db_instance_identifier: string;
-}
+export const RDSReadyPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("rds-ready"),
+  endpoint: z.string(),
+  port: z.number(),
+  database: z.string(),
+  table_name: z.string(),
+  secret_arn: z.string(),
+  db_instance_identifier: z.string(),
+});
 
-export interface JobsStatus {
-  succeeded: number;
-  failed: number;
-  total: number;
-}
+export type RDSReadyPayload = z.infer<typeof RDSReadyPayloadSchema>;
 
-export type DeployWorkflowEvent =
-  | { type: "rds-ready"; data: RDSReadyPayload }
-  | {
-      type: "s3-connected";
-      data: { ok: true; stage: "s3-connected"; bucket: string };
-    }
-  | {
-      type: "no-documents";
-      data: { ok: true; stage: "no-documents"; message: string };
-    }
-  | {
-      type: "jobs-updated";
-      data: { ok: true; stage: "jobs-updated"; statuses: JobsStatus };
-    }
-  | {
-      type: "done";
-      data: {
-        ok: true;
-        stage: "done";
-        summary?: {
-          database: string;
-          table: string;
-          documents_processed: number;
-          message: string;
-        };
-      };
-    }
-  | {
-      type: "s3-error" | "batch-error" | "error";
-      data: { ok: false; stage: string; error: string; trace?: string };
-    }
-  | { type: "message"; data: unknown };
+export const JobsStatusSchema = z.object({
+  succeeded: z.number(),
+  failed: z.number(),
+  total: z.number(),
+});
+
+export type JobsStatus = z.infer<typeof JobsStatusSchema>;
+
+export const S3ConnectedPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("s3-connected"),
+  bucket: z.string(),
+});
+
+export const NoDocumentsPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("no-documents"),
+  message: z.string(),
+});
+
+export const JobsUpdatedPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("jobs-updated"),
+  statuses: JobsStatusSchema,
+});
+
+export const DoneSummarySchema = z.object({
+  database: z.string(),
+  table: z.string(),
+  documents_processed: z.number(),
+  message: z.string(),
+});
+
+export const DonePayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("done"),
+  summary: DoneSummarySchema.optional(),
+});
+
+export const ErrorPayloadSchema = z.object({
+  ok: z.literal(false),
+  stage: z.string(),
+  error: z.string(),
+  trace: z.string().optional(),
+});
+
+export const DeployWorkflowEventSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("rds-ready"),
+    data: RDSReadyPayloadSchema,
+  }),
+  z.object({
+    type: z.literal("s3-connected"),
+    data: S3ConnectedPayloadSchema,
+  }),
+  z.object({
+    type: z.literal("no-documents"),
+    data: NoDocumentsPayloadSchema,
+  }),
+  z.object({
+    type: z.literal("jobs-updated"),
+    data: JobsUpdatedPayloadSchema,
+  }),
+  z.object({
+    type: z.literal("done"),
+    data: DonePayloadSchema,
+  }),
+  z.object({
+    type: z.enum(["s3-error", "batch-error", "error"]),
+    data: ErrorPayloadSchema,
+  }),
+  z.object({
+    type: z.literal("message"),
+    data: z.unknown(),
+  }),
+]);
+
+export type DeployWorkflowEvent = z.infer<typeof DeployWorkflowEventSchema>;
 
 export const WorkflowResponseSchema = z.object({
   id: z.union([z.string(), z.number()]).transform((value) => String(value)),

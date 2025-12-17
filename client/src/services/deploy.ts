@@ -1,4 +1,8 @@
-import type { S3Credentials, DeployWorkflowEvent } from "../types";
+import {
+  DeployWorkflowEventSchema,
+  type S3Credentials,
+  type DeployWorkflowEvent,
+} from "../types";
 
 interface DeployWorkflowOptions {
   workflowId: string;
@@ -60,10 +64,12 @@ export const deployWorkflow = async ({
         }
 
         if (eventType && data) {
-          onEvent({
-            type: eventType as DeployWorkflowEvent["type"],
-            data: JSON.parse(data),
-          } as DeployWorkflowEvent);
+          const parsedData = JSON.parse(data);
+          const rawEvent = {
+            type: eventType,
+            data: parsedData,
+          };
+          onEvent(DeployWorkflowEventSchema.parse(rawEvent));
         }
       }
 
