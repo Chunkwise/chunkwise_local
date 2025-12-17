@@ -804,21 +804,6 @@ html,
   border-bottom: 1px solid var(--color-border);
 }
 
-.evaluation-title {
-  margin: 0 0 var(--space-1) 0;
-  font-size: var(--text-xl);
-  font-weight: var(--font-semibold);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.evaluation-subtitle {
-  margin: 0;
-  font-size: var(--text-base);
-  color: var(--color-muted);
-}
-
 .queries-info {
   background: #eff6ff;
   padding: var(--space-4);
@@ -876,7 +861,49 @@ html,
   font-weight: var(--font-semibold);
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
+}
+
+.metric-info {
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+  color: var(--color-muted);
+  transition: color 0.15s ease;
+  position: relative;
+}
+
+.metric-info:hover {
+  color: var(--color-primary);
+}
+
+.metric-info .icon {
+  margin-right: 0;
+  font-size: 16px;
+}
+
+.metric-info::after {
+  content: attr(title);
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-text);
+  color: white;
+  font-size: var(--text-xs);
+  font-weight: var(--font-normal);
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+  z-index: 1000;
+}
+
+.metric-info:hover::after {
+  opacity: 1;
 }
 
 .metric-value {
