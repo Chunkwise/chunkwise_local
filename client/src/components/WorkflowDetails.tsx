@@ -371,9 +371,9 @@ const WorkflowDetails = ({
                       Loading visualization...
                     </div>
                   )}
-                  {workflow.chunks_stats &&
-                    workflow.visualization_html &&
-                    !isLoadingViz && (
+                  {!isLoadingViz &&
+                    workflow.chunks_stats &&
+                    workflow.visualization_html && (
                       <>
                         <ChunkStats stats={workflow.chunks_stats} />
                         <VisualizationDisplay
