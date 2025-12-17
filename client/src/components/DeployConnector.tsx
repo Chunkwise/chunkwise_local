@@ -1,100 +1,75 @@
-import { useRef, useState, useCallback } from "react";
-import type { Workflow } from "../types";
-import type {
-  DeployWorkflowEvent,
-  S3Credentials,
-  RDSReadyPayload,
-  JobsStatus,
-  DeploySummary,
+import { useRef, useState } from "react";
+import type { 
+  Workflow, 
+  DeployWorkflowEvent, 
+  S3Credentials, 
+  RDSReadyPayload, 
+  JobsStatus, 
+  DeploySummary 
 } from "../types";
 import { deployWorkflow } from "../services/deploy";
 import S3CredentialsForm from "./S3CredentialsForm";
 import RDSConnectionDetails from "./RDSConnectionDetails";
 import DeployProgress from "./DeployProgress";
 
-type DeployStatus = "idle" | "running" | "success" | "error";
-
-interface DeployState {
-  status: DeployStatus;
-  error: string | null;
-  rdsDetails: RDSReadyPayload | null;
-  s3Bucket: string | null;
-  jobsStatus: JobsStatus | null;
-  summary: DeploySummary | null;
-  noDocuments: boolean;
-}
-
-const initialState: DeployState = {
-  status: "idle",
-  error: null,
-  rdsDetails: null,
-  s3Bucket: null,
-  jobsStatus: null,
-  summary: null,
-  noDocuments: false,
-};
-
 interface DeployConnectorProps {
   workflow: Workflow;
 }
 
 const DeployConnector = ({ workflow }: DeployConnectorProps) => {
-  const [isFormVisible, setIsFormVisible] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [state, setState] = useState<DeployState>(initialState);
+  const [showForm, setShowForm] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rdsDetails, setRdsDetails] = useState<RDSReadyPayload | null>(null);
+  const [s3Bucket, setS3Bucket] = useState<string | null>(null);
+  const [jobsStatus, setJobsStatus] = useState<JobsStatus | null>(null);
+  const [summary, setSummary] = useState<DeploySummary | null>(null);
+  const [noDocuments, setNoDocuments] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
 
   const hasChunkingStrategy = Boolean(workflow.chunking_strategy);
 
-  const handleEvent = useCallback((event: DeployWorkflowEvent) => {
+  const handleEvent = (event: DeployWorkflowEvent) => {
     switch (event.type) {
       case "rds-ready":
-        setState((prev) => ({ ...prev, rdsDetails: event.data }));
+        setRdsDetails(event.data);
         break;
       case "s3-connected":
-        setState((prev) => ({ ...prev, s3Bucket: event.data.bucket }));
+        setS3Bucket(event.data.bucket);
         break;
       case "no-documents":
-        setState((prev) => ({ ...prev, noDocuments: true }));
+        setNoDocuments(true);
         break;
       case "jobs-updated":
-        setState((prev) => ({ ...prev, jobsStatus: event.data.statuses }));
+        setJobsStatus(event.data.statuses);
         break;
       case "done":
-        setState((prev) => ({
-          ...prev,
-          status: "success",
-          summary: event.data.summary ?? null,
-        }));
+        setSummary(event.data.summary ?? null);
+        setIsComplete(true);
         break;
       case "s3-error":
       case "batch-error":
       case "error":
-        setState((prev) => ({
-          ...prev,
-          status: "error",
-          error: event.data.error,
-        }));
+        setError(event.data.error);
         break;
     }
-  }, []);
+  };
 
   const handleConnect = async (credentials: S3Credentials) => {
-    if (!workflow.chunking_strategy) {
-      setState((prev) => ({
-        ...prev,
-        error: "Select a chunker before deploying this workflow.",
-      }));
-      return;
-    }
-
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
 
-    setIsSubmitting(true);
-    setIsFormVisible(false);
-    setState({ ...initialState, status: "running" });
+    setShowForm(false);
+    setIsDeploying(true);
+    setError(null);
+    setRdsDetails(null);
+    setS3Bucket(null);
+    setJobsStatus(null);
+    setSummary(null);
+    setNoDocuments(false);
+    setIsComplete(false);
 
     try {
       await deployWorkflow({
@@ -103,36 +78,17 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
         signal: controller.signal,
         onEvent: handleEvent,
       });
-    } catch (connectionError) {
-      const errorMessage =
-        (connectionError as Error).name === "AbortError"
-          ? "Deployment was cancelled."
-          : (connectionError as Error).message ||
-            "Unable to deploy workflow. Please verify the credentials.";
-      setState((prev) => ({ ...prev, status: "error", error: errorMessage }));
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        setError((err as Error).message || "Deployment failed");
+      }
     } finally {
-      setIsSubmitting(false);
+      setIsDeploying(false);
       controllerRef.current = null;
     }
   };
 
-  const handleToggleForm = () => {
-    if (!hasChunkingStrategy) return;
-    setIsFormVisible((prev) => !prev);
-    if (state.error) {
-      setState((prev) => ({ ...prev, error: null }));
-    }
-  };
-
-  const handleCancel = () => {
-    setIsFormVisible(false);
-  };
-
-  const handleDismissError = () => {
-    setState((prev) => ({ ...prev, error: null }));
-  };
-
-  const isDeploymentActive = state.status === "running" || state.status === "success";
+  const isActive = isDeploying || isComplete;
 
   return (
     <div className="section">
@@ -142,7 +98,7 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
       </h2>
 
       <div className="card">
-        {!isDeploymentActive && (
+        {!isActive && (
           <>
             <p className="text-muted">
               <span className="icon icon-sm">storage</span>
@@ -151,12 +107,11 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
 
             <button
               className="btn btn-primary mt-3"
-              type="button"
-              onClick={handleToggleForm}
-              disabled={!hasChunkingStrategy || isSubmitting}
+              onClick={() => setShowForm(!showForm)}
+              disabled={!hasChunkingStrategy}
             >
               <span className="icon icon-sm">link</span>
-              {isSubmitting ? "Connecting..." : "Connect to Amazon S3"}
+              Connect to Amazon S3
             </button>
 
             {!hasChunkingStrategy && (
@@ -166,44 +121,38 @@ const DeployConnector = ({ workflow }: DeployConnectorProps) => {
               </p>
             )}
 
-            {isFormVisible && (
+            {showForm && (
               <S3CredentialsForm
                 onSubmit={handleConnect}
-                onCancel={handleCancel}
-                isSubmitting={isSubmitting}
+                onCancel={() => setShowForm(false)}
               />
             )}
 
-            {state.error && (
+            {error && (
               <div className="deploy-error mt-3">
-                <span className="icon icon-sm">close</span>
-                <span>{state.error}</span>
-                <button
-                  className="btn btn-icon btn-sm"
-                  onClick={handleDismissError}
-                  aria-label="Dismiss error"
-                >
-                  <span className="icon icon-sm">close</span>
-                </button>
+                <span className="icon icon-sm">error</span>
+                <span>{error}</span>
               </div>
             )}
           </>
         )}
 
-        {isDeploymentActive && (
-          <DeployProgress
-            status={state.status}
-            rdsDetails={state.rdsDetails}
-            s3Bucket={state.s3Bucket}
-            jobsStatus={state.jobsStatus}
-            summary={state.summary}
-            noDocuments={state.noDocuments}
-            error={state.error}
-          />
-        )}
+        {isActive && (
+          <>
+            <DeployProgress
+              rdsDetails={rdsDetails}
+              s3Bucket={s3Bucket}
+              jobsStatus={jobsStatus}
+              summary={summary}
+              noDocuments={noDocuments}
+              isComplete={isComplete}
+              error={error}
+            />
 
-        {state.rdsDetails && state.status === "success" && (
-          <RDSConnectionDetails details={state.rdsDetails} />
+            {rdsDetails && (
+              <RDSConnectionDetails details={rdsDetails} />
+            )}
+          </>
         )}
       </div>
     </div>

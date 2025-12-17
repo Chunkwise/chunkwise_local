@@ -1,25 +1,19 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import type { RDSReadyPayload } from "../types";
 
 interface RDSConnectionDetailsProps {
   details: RDSReadyPayload;
 }
 
-type CopyTarget = "connection" | "secret";
-
 const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
-  const [copyState, setCopyState] = useState<CopyTarget | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
   const connectionString = `postgres://${details.endpoint}:${details.port}/${details.database}`;
 
-  const copyValue = useCallback(async (value: string, target: CopyTarget) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopyState(target);
-      setTimeout(() => setCopyState(null), 2000);
-    } catch {
-      // Silent fail - user can manually copy
-    }
-  }, []);
+  const copyToClipboard = async (text: string, label: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(label);
+    setTimeout(() => setCopied(null), 2000);
+  };
 
   return (
     <div className="deploy-details-card mt-4">
@@ -33,11 +27,11 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
         <button
           className="btn btn-sm"
           type="button"
-          onClick={() => copyValue(connectionString, "connection")}
+          onClick={() => copyToClipboard(connectionString, "connection")}
           title="Copy connection string"
         >
           <span className="icon icon-sm">
-            {copyState === "connection" ? "check" : "content_copy"}
+            {copied === "connection" ? "check" : "content_copy"}
           </span>
         </button>
       </div>
@@ -66,11 +60,11 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
             <button
               className="btn btn-sm btn-icon"
               type="button"
-              onClick={() => copyValue(details.secret_arn, "secret")}
+              onClick={() => copyToClipboard(details.secret_arn, "secret")}
               title="Copy secret ARN"
             >
               <span className="icon icon-sm">
-                {copyState === "secret" ? "check" : "content_copy"}
+                {copied === "secret" ? "check" : "content_copy"}
               </span>
             </button>
           </dd>

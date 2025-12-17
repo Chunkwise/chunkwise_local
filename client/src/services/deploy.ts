@@ -1,7 +1,4 @@
-import type {
-  S3Credentials,
-  DeployWorkflowEvent,
-} from "../types";
+import type { S3Credentials, DeployWorkflowEvent } from "../types";
 
 interface DeployWorkflowOptions {
   workflowId: string;
@@ -9,49 +6,6 @@ interface DeployWorkflowOptions {
   signal?: AbortSignal;
   onEvent: (event: DeployWorkflowEvent) => void;
 }
-
-const parseSseChunk = (
-  chunk: string
-): { event: string; data: unknown } | null => {
-  const lines = chunk.split(/\r?\n/);
-  let eventName = "message";
-  const dataLines: string[] = [];
-
-  for (const line of lines) {
-    if (line.startsWith("event:")) {
-      eventName = line.slice(6).trim();
-    } else if (line.startsWith("data:")) {
-      dataLines.push(line.slice(5).trim());
-    }
-  }
-
-  if (dataLines.length === 0) {
-    return null;
-  }
-
-  const dataPayload = dataLines.join("\n");
-  try {
-    return { event: eventName, data: JSON.parse(dataPayload) };
-  } catch {
-    return { event: eventName, data: dataPayload };
-  }
-};
-
-const mapEvent = (eventName: string): DeployWorkflowEvent["type"] => {
-  switch (eventName) {
-    case "rds-ready":
-    case "s3-connected":
-    case "s3-error":
-    case "no-documents":
-    case "batch-error":
-    case "jobs-updated":
-    case "error":
-    case "done":
-      return eventName;
-    default:
-      return "message";
-  }
-};
 
 export const deployWorkflow = async ({
   workflowId,
@@ -77,44 +31,46 @@ export const deployWorkflow = async ({
   }
 
   if (!response.body) {
-    throw new Error("Deployment response stream is not available");
+    throw new Error("Response stream not available");
   }
 
   const reader = response.body.getReader();
-  const decoder = new TextDecoder("utf-8");
+  const decoder = new TextDecoder();
   let buffer = "";
 
   while (true) {
     const { value, done } = await reader.read();
-    if (done) {
-      break;
-    }
+    if (done) break;
+
     buffer += decoder.decode(value, { stream: true });
 
     let boundary = buffer.indexOf("\n\n");
     while (boundary !== -1) {
-      const chunk = buffer.slice(0, boundary);
+      const chunk = buffer.slice(0, boundary).trim();
       buffer = buffer.slice(boundary + 2);
-      const parsed = parseSseChunk(chunk);
-      if (parsed) {
-        onEvent({
-          type: mapEvent(parsed.event),
-          data: parsed.data,
-        } as DeployWorkflowEvent);
+
+      if (chunk) {
+        const lines = chunk.split("\n");
+        let eventType = "";
+        let data = "";
+
+        for (const line of lines) {
+          if (line.startsWith("event:")) {
+            eventType = line.slice(6).trim();
+          } else if (line.startsWith("data:")) {
+            data = line.slice(5).trim();
+          }
+        }
+
+        if (eventType && data) {
+          onEvent({
+            type: eventType as DeployWorkflowEvent["type"],
+            data: JSON.parse(data),
+          } as DeployWorkflowEvent);
+        }
       }
+
       boundary = buffer.indexOf("\n\n");
-    }
-  }
-
-  buffer += decoder.decode();
-
-  if (buffer.trim().length > 0) {
-    const parsed = parseSseChunk(buffer);
-    if (parsed) {
-      onEvent({
-        type: mapEvent(parsed.event),
-        data: parsed.data,
-      } as DeployWorkflowEvent);
     }
   }
 };

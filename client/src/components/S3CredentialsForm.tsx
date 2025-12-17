@@ -4,36 +4,22 @@ import type { S3Credentials } from "../types";
 interface S3CredentialsFormProps {
   onSubmit: (credentials: S3Credentials) => void;
   onCancel: () => void;
-  isSubmitting: boolean;
 }
 
-const initialCredentials: S3Credentials = {
-  access_key: "",
-  secret_key: "",
-  bucket_name: "",
-};
+const S3CredentialsForm = ({ onSubmit, onCancel }: S3CredentialsFormProps) => {
+  const [credentials, setCredentials] = useState<S3Credentials>({
+    access_key: "",
+    secret_key: "",
+    bucket_name: "",
+  });
 
-const S3CredentialsForm = ({
-  onSubmit,
-  onCancel,
-  isSubmitting,
-}: S3CredentialsFormProps) => {
-  const [formState, setFormState] = useState<S3Credentials>(initialCredentials);
-
-  const handleChange = (key: keyof S3Credentials) => (
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
-    setFormState((prev) => ({ ...prev, [key]: event.target.value }));
+  const handleChange = (field: keyof S3Credentials) => (e: ChangeEvent<HTMLInputElement>) => {
+    setCredentials((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    onSubmit(formState);
-  };
-
-  const handleCancel = () => {
-    setFormState(initialCredentials);
-    onCancel();
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onSubmit(credentials);
   };
 
   return (
@@ -48,10 +34,8 @@ const S3CredentialsForm = ({
           id="access-key"
           type="password"
           required
-          autoComplete="new-password"
-          value={formState.access_key}
+          value={credentials.access_key}
           onChange={handleChange("access_key")}
-          disabled={isSubmitting}
         />
       </div>
 
@@ -65,10 +49,8 @@ const S3CredentialsForm = ({
           id="secret-key"
           type="password"
           required
-          autoComplete="new-password"
-          value={formState.secret_key}
+          value={credentials.secret_key}
           onChange={handleChange("secret_key")}
-          disabled={isSubmitting}
         />
       </div>
 
@@ -82,31 +64,18 @@ const S3CredentialsForm = ({
           id="bucket-name"
           type="text"
           required
-          autoComplete="off"
-          value={formState.bucket_name}
+          value={credentials.bucket_name}
           onChange={handleChange("bucket_name")}
-          disabled={isSubmitting}
         />
       </div>
 
       <div className="section-footer">
-        <button
-          className="btn"
-          type="button"
-          onClick={handleCancel}
-          disabled={isSubmitting}
-        >
+        <button className="btn" type="button" onClick={onCancel}>
           Cancel
         </button>
-        <button
-          className="btn btn-primary"
-          type="submit"
-          disabled={isSubmitting}
-        >
-          <span className={`icon icon-sm ${isSubmitting ? "spinner" : ""}`}>
-            {isSubmitting ? "sync" : "link"}
-          </span>
-          {isSubmitting ? "Connecting..." : "Connect"}
+        <button className="btn btn-primary" type="submit">
+          <span className="icon icon-sm">link</span>
+          Connect
         </button>
       </div>
     </form>

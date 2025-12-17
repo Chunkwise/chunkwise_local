@@ -1,106 +1,64 @@
 import type { RDSReadyPayload, JobsStatus, DeploySummary } from "../types";
 
 interface DeployProgressProps {
-  status: "idle" | "running" | "success" | "error";
   rdsDetails: RDSReadyPayload | null;
   s3Bucket: string | null;
   jobsStatus: JobsStatus | null;
   summary: DeploySummary | null;
   noDocuments: boolean;
+  isComplete: boolean;
   error: string | null;
 }
 
-interface StepProps {
-  label: string;
-  detail?: string;
-  status: "pending" | "running" | "success" | "error";
-}
-
-const StepItem = ({ label, detail, status }: StepProps) => {
-  const getIcon = () => {
-    switch (status) {
-      case "success":
-        return <span className="icon icon-sm deploy-step-icon success">check_circle</span>;
-      case "error":
-        return <span className="icon icon-sm deploy-step-icon error">cancel</span>;
-      case "running":
-        return <span className="icon icon-sm deploy-step-icon running spinner">sync</span>;
-      default:
-        return <span className="icon icon-sm deploy-step-icon pending">radio_button_unchecked</span>;
-    }
-  };
-
-  return (
-    <div className={`deploy-step ${status}`}>
-      {getIcon()}
-      <span className="deploy-step-label">{label}</span>
-      {detail && <span className="deploy-step-detail">{detail}</span>}
-    </div>
-  );
-};
-
 const DeployProgress = ({
-  status,
   rdsDetails,
   s3Bucket,
   jobsStatus,
   summary,
   noDocuments,
+  isComplete,
   error,
 }: DeployProgressProps) => {
-  const getStepStatus = (
-    completed: boolean,
-    hasError: boolean
-  ): StepProps["status"] => {
-    if (hasError) return "error";
-    if (completed) return "success";
-    if (status === "running") return "running";
-    return "pending";
-  };
-
-  const isRdsComplete = rdsDetails !== null;
-  const isS3Complete = s3Bucket !== null;
-  const isJobsComplete = status === "success" || noDocuments;
-  const hasError = status === "error";
-
-  // Determine which step has the error
-  const rdsError = hasError && !isRdsComplete;
-  const s3Error = hasError && isRdsComplete && !isS3Complete;
-  const jobsError = hasError && isRdsComplete && isS3Complete && !isJobsComplete;
-
   return (
     <div className="deploy-progress">
       <div className="deploy-steps">
-        <StepItem
-          label="Database ready"
-          detail={isRdsComplete ? rdsDetails.db_instance_identifier : undefined}
-          status={getStepStatus(isRdsComplete, rdsError)}
-        />
+        <div className={`deploy-step ${rdsDetails ? "success" : "running"}`}>
+          <span className={`icon icon-sm deploy-step-icon ${rdsDetails ? "success" : "running spinner"}`}>
+            {rdsDetails ? "check_circle" : "sync"}
+          </span>
+          <span className="deploy-step-label">Database ready</span>
+          {rdsDetails && (
+            <span className="deploy-step-detail">{rdsDetails.db_instance_identifier}</span>
+          )}
+        </div>
 
-        <StepItem
-          label="S3 bucket verified"
-          detail={isS3Complete ? s3Bucket : undefined}
-          status={getStepStatus(isS3Complete, s3Error)}
-        />
+        <div className={`deploy-step ${s3Bucket ? "success" : rdsDetails ? "running" : "pending"}`}>
+          <span className={`icon icon-sm deploy-step-icon ${s3Bucket ? "success" : rdsDetails ? "running spinner" : "pending"}`}>
+            {s3Bucket ? "check_circle" : rdsDetails ? "sync" : "radio_button_unchecked"}
+          </span>
+          <span className="deploy-step-label">S3 bucket verified</span>
+          {s3Bucket && <span className="deploy-step-detail">{s3Bucket}</span>}
+        </div>
 
         {noDocuments ? (
-          <StepItem
-            label="No documents found"
-            detail="No .txt or .md files in bucket"
-            status="success"
-          />
+          <div className="deploy-step success">
+            <span className="icon icon-sm deploy-step-icon success">check_circle</span>
+            <span className="deploy-step-label">No documents found</span>
+            <span className="deploy-step-detail">No .txt or .md files in bucket</span>
+          </div>
         ) : (
-          <StepItem
-            label="Processing documents"
-            detail={
-              jobsStatus
-                ? `${jobsStatus.succeeded}/${jobsStatus.total} complete${
-                    jobsStatus.failed > 0 ? `, ${jobsStatus.failed} failed` : ""
-                  }`
-                : undefined
-            }
-            status={getStepStatus(isJobsComplete, jobsError)}
-          />
+          <div className={`deploy-step ${isComplete ? "success" : s3Bucket ? "running" : "pending"}`}>
+            <span className={`icon icon-sm deploy-step-icon ${isComplete ? "success" : s3Bucket ? "running spinner" : "pending"}`}>
+              {isComplete ? "check_circle" : s3Bucket ? "sync" : "radio_button_unchecked"}
+            </span>
+            <span className="deploy-step-label">Processing documents</span>
+            {jobsStatus && (
+              <span className="deploy-step-detail">
+                {jobsStatus.succeeded}/{jobsStatus.total} complete
+                {jobsStatus.failed > 0 && `, ${jobsStatus.failed} failed`}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
@@ -111,18 +69,16 @@ const DeployProgress = ({
         </div>
       )}
 
-      {status === "success" && summary && (
+      {isComplete && summary && (
         <div className="deploy-complete mt-3">
           <span className="icon icon-sm">check_circle</span>
           <span>
-            Deployed {summary.documents_processed} document
-            {summary.documents_processed !== 1 ? "s" : ""} to{" "}
-            <strong>{summary.table}</strong>
+            Deployed {summary.documents_processed} document{summary.documents_processed !== 1 ? "s" : ""} to <strong>{summary.table}</strong>
           </span>
         </div>
       )}
 
-      {status === "success" && noDocuments && (
+      {isComplete && noDocuments && (
         <div className="deploy-complete mt-3">
           <span className="icon icon-sm">info</span>
           <span>Deployment complete. Add documents to your S3 bucket to process them.</span>
