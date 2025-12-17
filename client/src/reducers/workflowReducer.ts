@@ -20,6 +20,9 @@ export type Action =
   | { type: "DELETE_WORKFLOW"; payload: string };
 
 export const computeWorkflowStage = (workflow: Workflow): Stage => {
+  if (workflow.deploy_table_name) {
+    return "Deployed";
+  }
   if (workflow.evaluation_metrics) {
     return "Evaluated";
   }

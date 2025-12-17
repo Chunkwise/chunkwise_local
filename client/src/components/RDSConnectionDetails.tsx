@@ -19,18 +19,6 @@ const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
   --query SecretString \\
   --output text`;
 
-  const psqlCommand = `PGPASSWORD=$(aws secretsmanager get-secret-value \\
-  --secret-id ${details.secret_arn} \\
-  --query SecretString \\
-  --output text | jq -r .password) \\
-psql -h ${details.endpoint} \\
-  -p ${details.port} \\
-  -U $(aws secretsmanager get-secret-value \\
-  --secret-id ${details.secret_arn} \\
-  --query SecretString \\
-  --output text | jq -r .username) \\
-  -d ${details.database}`;
-
   return (
     <div className="deploy-details-card mt-4">
       <h3 className="deploy-details-title">
@@ -84,23 +72,6 @@ psql -h ${details.endpoint} \\
           >
             <span className="icon icon-sm">
               {copied === "aws" ? "check" : "content_copy"}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      <div className="deploy-detail-section mt-3">
-        <label className="deploy-detail-label">Connect with psql</label>
-        <div className="deploy-connection">
-          <code className="deploy-connection-string deploy-command">{psqlCommand}</code>
-          <button
-            className="btn btn-sm"
-            type="button"
-            onClick={() => copyToClipboard(psqlCommand, "psql")}
-            title="Copy psql command"
-          >
-            <span className="icon icon-sm">
-              {copied === "psql" ? "check" : "content_copy"}
             </span>
           </button>
         </div>
