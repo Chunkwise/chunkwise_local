@@ -291,8 +291,8 @@ const WorkflowDetails = ({
       const queriesInfoMessage = evaluationResponse.queries_generated
         ? `Evaluation complete! New queries were generated (${
             evaluationResponse.num_queries ?? 0
-          } queries)`
-        : "Evaluation complete! Existing queries were used";
+          } queries.)`
+        : "Evaluation complete! Existing queries were used.";
       setEvaluationInfoMessage(queriesInfoMessage);
       setSwitchToEvaluation(true);
     } catch (error: unknown) {
