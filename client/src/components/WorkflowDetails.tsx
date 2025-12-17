@@ -344,12 +344,12 @@ const WorkflowDetails = ({
               {isEvaluating ? (
                 <>
                   <span className="icon spinner">sync</span>
-                  Running Evaluation...
+                  Running evaluation...
                 </>
               ) : (
                 <>
                   <span className="icon">bolt</span>
-                  Run Evaluation
+                  Run evaluation
                 </>
               )}
             </button>

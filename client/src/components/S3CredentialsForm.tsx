@@ -19,9 +19,9 @@ const S3CredentialsForm = ({ onSubmit, onCancel }: S3CredentialsFormProps) => {
   };
 
   const fields = [
-    { key: "access_key", label: "Access Key", icon: "key", type: "password" },
-    { key: "secret_key", label: "Secret Key", icon: "lock", type: "password" },
-    { key: "bucket_name", label: "Bucket Name", icon: "folder", type: "text" },
+    { key: "access_key", label: "Access key", icon: "key", type: "password" },
+    { key: "secret_key", label: "Secret key", icon: "lock", type: "password" },
+    { key: "bucket_name", label: "Bucket name", icon: "folder", type: "text" },
   ] as const;
 
   return (

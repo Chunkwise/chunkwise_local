@@ -172,7 +172,8 @@ html,
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', monospace;
+  font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Consolas",
+    monospace;
 }
 
 .logo {
@@ -375,7 +376,10 @@ html,
   font-size: var(--text-base);
   font-weight: var(--font-medium);
   color: var(--color-text);
-  min-width: 140px;
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .field {
@@ -585,7 +589,7 @@ html,
   display: flex;
   gap: var(--space-2);
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .slider-container {
@@ -1421,10 +1425,10 @@ html,
 
 .icon-sm {
   font-size: 16px;
-  margin-right: var(--space-1);
+  margin-right: var(--space-2);
 }
 
 .icon-lg {
   font-size: 24px;
-  margin-right: var(--space-2);
+  margin-right: var(--space-3);
 }

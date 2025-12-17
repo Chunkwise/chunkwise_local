@@ -186,15 +186,15 @@ const DeployConnector = ({
     }
   };
 
+  // Handler for redeploying workflow
   const handleRedeploy = () => {
     setShowForm(true);
   };
 
-  // Helpers for deployment states
+  // Render state for initial deployment
   const renderInitialState = () => (
     <>
       <p className="text-muted">
-        <span className="icon icon-sm">storage</span>
         Connect your Amazon S3 bucket to deploy chunked documents to your vector
         database.
       </p>
@@ -231,6 +231,7 @@ const DeployConnector = ({
     </>
   );
 
+  // Render state for deploying workflow
   const renderDeployingState = () => (
     <>
       <div className="deploy-warning mb-3">
@@ -279,6 +280,7 @@ const DeployConnector = ({
     </>
   );
 
+  // Render state for deployed workflow
   const renderDeployedState = () => (
     <>
       <DeployStatusBadge icon="check_circle" text="Workflow Deployed" />

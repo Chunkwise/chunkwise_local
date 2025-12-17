@@ -70,7 +70,6 @@ const ConfigSlider = ({
   return (
     <div className="config-row">
       <label className="label">
-        <span className="icon icon-sm">tune</span>
         {optionKey}
       </label>
       <div className="slider-container">
@@ -86,7 +85,6 @@ const ConfigSlider = ({
         <span className="slider-value">{clampedValue}</span>
       </div>
       <small className="hint">
-        <span className="icon icon-sm">straighten</span>
         min {bounds.min} - max {bounds.max}
       </small>
     </div>
