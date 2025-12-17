@@ -5,6 +5,8 @@ interface TabViewProps {
   workflowId?: string;
   hasEvaluation: boolean;
   switchToEvaluation?: boolean;
+  switchToVisualization?: boolean;
+  isDeployDisabled?: boolean;
   children: {
     visualization: React.ReactNode;
     evaluation: React.ReactNode;
@@ -16,6 +18,8 @@ const TabView = ({
   workflowId,
   hasEvaluation,
   switchToEvaluation = false,
+  switchToVisualization = false,
+  isDeployDisabled = false,
   children,
 }: TabViewProps) => {
   const [activeTab, setActiveTab] = useState<Tab>("visualization");
@@ -32,6 +36,13 @@ const TabView = ({
     }
   }, [switchToEvaluation]);
 
+  // Switch to visualization
+  useEffect(() => {
+    if (switchToVisualization) {
+      setActiveTab("visualization");
+    }
+  }, [switchToVisualization]);
+
   return (
     <div className="tabs">
       <div className="tab-nav">
@@ -42,21 +53,54 @@ const TabView = ({
           <span className="icon icon-sm">bar_chart</span>
           Visualization
         </button>
-        <button
-          className={`tab-btn ${activeTab === "evaluation" ? "active" : ""}`}
-          onClick={() => setActiveTab("evaluation")}
-          disabled={!hasEvaluation}
-        >
-          <span className="icon icon-sm">analytics</span>
-          Evaluation
-        </button>
-        <button
-          className={`tab-btn ${activeTab === "deploy" ? "active" : ""}`}
-          onClick={() => setActiveTab("deploy")}
-        >
-          <span className="icon icon-sm">cloud_upload</span>
-          Deploy
-        </button>
+        {!hasEvaluation ? (
+          <div
+            title="Run evaluation to see performance metrics"
+            style={{ display: "inline-block" }}
+          >
+            <button
+              className={`tab-btn ${
+                activeTab === "evaluation" ? "active" : ""
+              }`}
+              disabled={true}
+              style={{ pointerEvents: "none" }}
+            >
+              <span className="icon icon-sm">analytics</span>
+              Evaluation
+            </button>
+          </div>
+        ) : (
+          <button
+            className={`tab-btn ${activeTab === "evaluation" ? "active" : ""}`}
+            onClick={() => setActiveTab("evaluation")}
+          >
+            <span className="icon icon-sm">analytics</span>
+            Evaluation
+          </button>
+        )}
+        {isDeployDisabled ? (
+          <div
+            title="Slumber Chunker is too expensive to deploy"
+            style={{ display: "inline-block" }}
+          >
+            <button
+              className={`tab-btn ${activeTab === "deploy" ? "active" : ""}`}
+              disabled={true}
+              style={{ pointerEvents: "none" }}
+            >
+              <span className="icon icon-sm">cloud_upload</span>
+              Deploy
+            </button>
+          </div>
+        ) : (
+          <button
+            className={`tab-btn ${activeTab === "deploy" ? "active" : ""}`}
+            onClick={() => setActiveTab("deploy")}
+          >
+            <span className="icon icon-sm">cloud_upload</span>
+            Deploy
+          </button>
+        )}
       </div>
       <div className="tab-content">
         {activeTab === "visualization"

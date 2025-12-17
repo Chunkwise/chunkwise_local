@@ -45,9 +45,11 @@ const WorkflowDetails = ({
   const [isLoadingViz, setIsLoadingViz] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [switchToEvaluation, setSwitchToEvaluation] = useState(false);
+  const [switchToVisualization, setSwitchToVisualization] = useState(false);
   const [evaluationInfoMessage, setEvaluationInfoMessage] = useState<
     string | null
   >(null);
+  const isSlumberChunker = workflow?.chunking_strategy?.chunker_type === "slumber";
   const [error, setError] = useState<string | null>(null);
 
   // Helper to get current chunker name
@@ -124,6 +126,7 @@ const WorkflowDetails = ({
   // Handler for file change
   async function handleFileChange(fileTitle: string | undefined) {
     setError(null);
+    setSwitchToVisualization(true);
     if (fileTitle && workflow?.chunking_strategy) {
       if (!confirmLLMChunkerUsage(getCurrentChunkerName())) {
         return;
@@ -191,6 +194,7 @@ const WorkflowDetails = ({
     }
 
     setError(null);
+    setSwitchToVisualization(true);
     setIsLoadingViz(true);
 
     const previousChunkingStrategy = workflow?.chunking_strategy;
@@ -233,6 +237,7 @@ const WorkflowDetails = ({
     }
 
     setError(null);
+    setSwitchToVisualization(true);
     setIsLoadingViz(true);
 
     const updated = {
@@ -349,6 +354,8 @@ const WorkflowDetails = ({
             workflowId={workflow.id}
             hasEvaluation={!!workflow.evaluation_metrics}
             switchToEvaluation={switchToEvaluation}
+            switchToVisualization={switchToVisualization}
+            isDeployDisabled={isSlumberChunker}
           >
             {{
               visualization: (
