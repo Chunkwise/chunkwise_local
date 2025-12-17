@@ -304,6 +304,7 @@ const WorkflowDetails = ({
       }
     } finally {
       setIsEvaluating(false);
+      setTimeout(() => setSwitchToEvaluation(false), 0);
     }
   }
 
