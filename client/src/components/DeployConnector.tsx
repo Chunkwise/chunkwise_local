@@ -29,6 +29,59 @@ interface DeployConnectorProps {
   isAnyDeploying: boolean;
 }
 
+// Sub-components
+interface DeployMessageProps {
+  icon: string;
+  message: string;
+  type?: "info" | "warning" | "error";
+}
+
+const DeployMessage = ({
+  icon,
+  message,
+  type = "info",
+}: DeployMessageProps) => (
+  <p className={`text-muted mt-2 ${type === "error" ? "deploy-error" : ""}`}>
+    <span className="icon icon-sm">{icon}</span>
+    <span>{message}</span>
+  </p>
+);
+
+interface DeployButtonProps {
+  onClick: () => void;
+  disabled: boolean;
+  icon: string;
+  label: string;
+}
+
+const DeployButton = ({
+  onClick,
+  disabled,
+  icon,
+  label,
+}: DeployButtonProps) => (
+  <button
+    className="btn btn-primary mt-3"
+    onClick={onClick}
+    disabled={disabled}
+  >
+    <span className="icon icon-sm">{icon}</span>
+    {label}
+  </button>
+);
+
+interface DeployStatusBadgeProps {
+  icon: string;
+  text: string;
+}
+
+const DeployStatusBadge = ({ icon, text }: DeployStatusBadgeProps) => (
+  <div className="deploy-status-badge">
+    <span className="icon icon-sm">{icon}</span>
+    <span>{text}</span>
+  </div>
+);
+
 const DeployConnector = ({
   workflow,
   onWorkflowUpdate,
@@ -51,7 +104,8 @@ const DeployConnector = ({
     error = null,
   } = deploymentState || {};
 
-  // Load existing RDS details if workflow is already deployed
+  const canDeploy = hasChunkingStrategy && !isAnyDeploying;
+
   useEffect(() => {
     if (isDeployed && storedArn && !rdsDetails) {
       deploymentDispatch(
@@ -76,6 +130,28 @@ const DeployConnector = ({
     deploymentDispatch,
   ]);
 
+  // Handler for starting deployment
+  const handleConnect = async (credentials: S3Credentials) => {
+    setShowForm(false);
+    deploymentDispatch(startDeploymentAction(workflow.id));
+
+    try {
+      await deployWorkflow({
+        workflowId: workflow.id,
+        credentials,
+        onEvent: handleEvent,
+      });
+    } catch (err) {
+      deploymentDispatch(
+        setErrorAction(
+          workflow.id,
+          (err as Error).message || "Deployment failed"
+        )
+      );
+    }
+  };
+
+  // Handler for deployment events
   const handleEvent = (event: DeployWorkflowEvent) => {
     switch (event.type) {
       case "rds-ready":
@@ -110,32 +186,140 @@ const DeployConnector = ({
     }
   };
 
-  const handleConnect = async (credentials: S3Credentials) => {
-    setShowForm(false);
-    deploymentDispatch(startDeploymentAction(workflow.id));
-
-    try {
-      await deployWorkflow({
-        workflowId: workflow.id,
-        credentials,
-        onEvent: handleEvent,
-      });
-    } catch (err) {
-      deploymentDispatch(
-        setErrorAction(
-          workflow.id,
-          (err as Error).message || "Deployment failed"
-        )
-      );
-    }
-  };
-
   const handleRedeploy = () => {
     setShowForm(true);
   };
 
-  const isActive = isDeploying;
-  const canDeploy = hasChunkingStrategy && !isAnyDeploying;
+  // Helpers for deployment states
+  const renderInitialState = () => (
+    <>
+      <p className="text-muted">
+        <span className="icon icon-sm">storage</span>
+        Connect your Amazon S3 bucket to deploy chunked documents to your vector
+        database.
+      </p>
+
+      <DeployButton
+        onClick={() => setShowForm(!showForm)}
+        disabled={!canDeploy}
+        icon="link"
+        label="Connect to Amazon S3"
+      />
+
+      {!hasChunkingStrategy && (
+        <DeployMessage
+          icon="warning"
+          message="Configure a chunker before setting up deployment."
+        />
+      )}
+
+      {isAnyDeploying && hasChunkingStrategy && (
+        <DeployMessage
+          icon="info"
+          message="Another workflow is currently being deployed."
+        />
+      )}
+
+      {showForm && (
+        <S3CredentialsForm
+          onSubmit={handleConnect}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {error && <DeployMessage icon="error" message={error} type="error" />}
+    </>
+  );
+
+  const renderDeployingState = () => (
+    <>
+      <div className="deploy-warning mb-3">
+        <span className="icon icon-sm">warning</span>
+        <span>
+          <strong>Deployment in progress.</strong> Please do not close or reload
+          this page until deployment is complete.
+        </span>
+      </div>
+
+      <DeployProgress
+        rdsDetails={rdsDetails}
+        s3Bucket={s3Bucket}
+        jobsStatus={jobsStatus}
+        noDocuments={noDocuments}
+        isComplete={isComplete}
+        error={error}
+      />
+
+      {rdsDetails && <RDSConnectionDetails details={rdsDetails} />}
+
+      {isComplete && (
+        <>
+          <DeployButton
+            onClick={handleRedeploy}
+            disabled={!canDeploy}
+            icon="refresh"
+            label="Redeploy Workflow"
+          />
+
+          {isAnyDeploying && (
+            <DeployMessage
+              icon="info"
+              message="Another workflow is currently being deployed."
+            />
+          )}
+
+          {showForm && (
+            <S3CredentialsForm
+              onSubmit={handleConnect}
+              onCancel={() => setShowForm(false)}
+            />
+          )}
+        </>
+      )}
+    </>
+  );
+
+  const renderDeployedState = () => (
+    <>
+      <DeployStatusBadge icon="check_circle" text="Workflow Deployed" />
+
+      {rdsDetails && <RDSConnectionDetails details={rdsDetails} />}
+
+      <DeployButton
+        onClick={handleRedeploy}
+        disabled={!canDeploy}
+        icon="refresh"
+        label="Redeploy Workflow"
+      />
+
+      {isAnyDeploying && (
+        <DeployMessage
+          icon="info"
+          message="Another workflow is currently being deployed."
+        />
+      )}
+
+      {showForm && (
+        <S3CredentialsForm
+          onSubmit={handleConnect}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {error && <DeployMessage icon="error" message={error} type="error" />}
+    </>
+  );
+
+  // Determine the state to render
+  const renderContent = () => {
+    if (isDeploying) {
+      return renderDeployingState();
+    }
+    if (isDeployed && rdsDetails) {
+      return renderDeployedState();
+    }
+    return renderInitialState();
+  };
 
   return (
     <div className="section">
@@ -144,144 +328,7 @@ const DeployConnector = ({
         <span className="title-md">Deploy</span>
       </h2>
 
-      <div className="card">
-        {!isActive && !isDeployed && (
-          <>
-            <p className="text-muted">
-              <span className="icon icon-sm">storage</span>
-              Connect your Amazon S3 bucket to deploy chunked documents to your
-              vector database.
-            </p>
-
-            <button
-              className="btn btn-primary mt-3"
-              onClick={() => setShowForm(!showForm)}
-              disabled={!canDeploy}
-            >
-              <span className="icon icon-sm">link</span>
-              Connect to Amazon S3
-            </button>
-
-            {!hasChunkingStrategy && (
-              <p className="text-muted mt-2">
-                <span className="icon icon-sm">warning</span>
-                Configure a chunker before setting up deployment.
-              </p>
-            )}
-
-            {isAnyDeploying && hasChunkingStrategy && (
-              <p className="text-muted mt-2">
-                <span className="icon icon-sm">info</span>
-                Another workflow is currently being deployed.
-              </p>
-            )}
-
-            {showForm && (
-              <S3CredentialsForm
-                onSubmit={handleConnect}
-                onCancel={() => setShowForm(false)}
-              />
-            )}
-
-            {error && (
-              <div className="deploy-error mt-3">
-                <span className="icon icon-sm">error</span>
-                <span>{error}</span>
-              </div>
-            )}
-          </>
-        )}
-
-        {isActive && (
-          <>
-            <div className="deploy-warning mb-3">
-              <span className="icon icon-sm">warning</span>
-              <span>
-                <strong>Deployment in progress.</strong> Please do not close or
-                reload this page until deployment is complete.
-              </span>
-            </div>
-
-            <DeployProgress
-              rdsDetails={rdsDetails}
-              s3Bucket={s3Bucket}
-              jobsStatus={jobsStatus}
-              noDocuments={noDocuments}
-              isComplete={isComplete}
-              error={error}
-            />
-
-            {rdsDetails && <RDSConnectionDetails details={rdsDetails} />}
-
-            {isComplete && (
-              <>
-                <button
-                  className="btn btn-primary mt-3"
-                  onClick={handleRedeploy}
-                  disabled={!canDeploy}
-                >
-                  <span className="icon icon-sm">refresh</span>
-                  Redeploy Workflow
-                </button>
-
-                {isAnyDeploying && (
-                  <p className="text-muted mt-2">
-                    <span className="icon icon-sm">info</span>
-                    Another workflow is currently being deployed.
-                  </p>
-                )}
-
-                {showForm && (
-                  <S3CredentialsForm
-                    onSubmit={handleConnect}
-                    onCancel={() => setShowForm(false)}
-                  />
-                )}
-              </>
-            )}
-          </>
-        )}
-
-        {isDeployed && !isActive && rdsDetails && (
-          <>
-            <div className="deploy-status-badge">
-              <span className="icon icon-sm">check_circle</span>
-              <span>Workflow Deployed</span>
-            </div>
-            <RDSConnectionDetails details={rdsDetails} />
-
-            <button
-              className="btn btn-primary mt-3"
-              onClick={handleRedeploy}
-              disabled={!canDeploy}
-            >
-              <span className="icon icon-sm">refresh</span>
-              Redeploy Workflow
-            </button>
-
-            {isAnyDeploying && (
-              <p className="text-muted mt-2">
-                <span className="icon icon-sm">info</span>
-                Another workflow is currently being deployed.
-              </p>
-            )}
-
-            {showForm && (
-              <S3CredentialsForm
-                onSubmit={handleConnect}
-                onCancel={() => setShowForm(false)}
-              />
-            )}
-
-            {error && (
-              <div className="deploy-error mt-3">
-                <span className="icon icon-sm">error</span>
-                <span>{error}</span>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      <div className="card">{renderContent()}</div>
     </div>
   );
 };
