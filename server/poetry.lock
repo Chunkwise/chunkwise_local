@@ -330,13 +330,13 @@ develop = false
 pydantic = ">=2.12.3,<3.0.0"
 
 [package.extras]
-chunkers = ["chonkie[openai] (>=1.4.1,<2.0.0)", "langchain-text-splitters (>=1.0.0,<2.0.0)"]
+chunkers = ["chonkie[openai,semantic] (>=1.4.1,<2.0.0)", "langchain-text-splitters (>=1.0.0,<2.0.0)"]
 
 [package.source]
 type = "git"
 url = "https://github.com/Chunkwise/chunkwise_core.git"
 reference = "HEAD"
-resolved_reference = "31300dd953c6bca8347fd916779a53113bbd4a9f"
+resolved_reference = "174806191a11cbd75b8345ffbf756424e9ffa710"
 
 [[package]]
 name = "click"

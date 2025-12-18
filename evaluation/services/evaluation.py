@@ -12,7 +12,7 @@ from chunkwise_core import (
     EvaluationResponse,
     EvaluationMetrics,
 )
-from chunkwise_core.utils import create_chunker
+from chunkwise_core.chunkers import create_chunker
 from .s3_utils import get_document_s3_key, download_file_temp, exists
 from .queries import resolve_queries
 
@@ -109,7 +109,7 @@ def run_evaluations(
         evaluation: Initialized BaseEvaluation instance with queries and document corpus
         chunking_configs: List of chunker configurations to evaluate
         embedding_func: Embedding function to use for vector similarity calculations
-        
+
     Returns:
         Tuple of (chunker_names, results)
     """

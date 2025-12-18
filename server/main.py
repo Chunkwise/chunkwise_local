@@ -9,6 +9,7 @@ import re
 import json
 import logging
 import hashlib
+import json
 import asyncio
 import time
 import uuid
@@ -57,6 +58,7 @@ from config import (
     VECTOR_DB_NAME,
     VECTOR_DB_SECRET_NAME,
     EMBEDDING_DIM,
+    MAX_BATCH_JOBS,
 )
 from fastapi import FastAPI, APIRouter, Body, HTTPException
 from fastapi.responses import StreamingResponse
@@ -546,18 +548,22 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             )
             return
 
-        # List documents in S3 bucket and submit Batch jobs
+        # Fetch documents in S3 bucket and submit Batch jobs
+        all_documents = []
+        max_jobs = MAX_BATCH_JOBS or 4
+
         try:
             paginator = s3_client.get_paginator("list_objects_v2")
-            keys = []
 
             # Find all .txt and .md files
             for page in paginator.paginate(Bucket=bucket):
                 for obj in page.get("Contents", []):
                     key = obj["Key"]
+                    size = obj["Size"]
                     if key.endswith(".txt") or key.endswith(".md"):
-                        keys.append(key)
-            if not keys:
+                        all_documents.append({"key": key, "size": size})
+
+            if not all_documents:
                 yield sse_event(
                     {
                         "ok": True,
@@ -569,13 +575,47 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                 yield sse_event({"ok": True, "stage": "done"}, event="done")
                 return
 
+            # Distribute documents to jobs
+            job_bins = [{"keys": [], "total_size": 0} for _ in range(max_jobs)]
+
+            # Sort files by size descending (largest first).
+            all_documents.sort(key=lambda x: x["size"], reverse=True)
+
+            for doc in all_documents:
+                # Find the worker with the lowest current total size
+                lightest_bin = min(job_bins, key=lambda b: b["total_size"])
+                lightest_bin["keys"].append(doc["key"])
+                lightest_bin["total_size"] += doc["size"]
+
+            # Filter out empty bins (in case there are fewer than 4 files)
+            job_batches = [b["keys"] for b in job_bins if b["keys"]]
+
             # Submit AWS Batch jobs for each document
             batch_client = boto3.client("batch")
             job_ids = []
+            total_jobs = len(job_batches)
 
-            for doc_key in keys:
+            for batch_keys in job_batches:
                 # Create safe job name from document key hash
-                safe_name = hashlib.sha1(doc_key.encode()).hexdigest()[:10]
+                safe_name = hashlib.sha1(batch_keys[0].encode()).hexdigest()[:10]
+
+                # List of file names may be too long for an environment variable, so upload to S3 (Manifest)
+                manifest_payload = json.dumps(batch_keys)
+                manifest_key = f"manifests/job-{workflow_id}-{safe_name}.json"
+
+                try:
+                    s3_client.put_object(
+                        Bucket=bucket,
+                        Key=manifest_key,
+                        Body=manifest_payload,
+                        ContentType="application/json",
+                    )
+                except Exception as e:
+                    yield sse_event(
+                        {"ok": False, "stage": "batch-error", "error": str(e)},
+                        event="error",
+                    )
+                    return
 
                 response = batch_client.submit_job(
                     jobName=f"chunkwise-{safe_name}",
@@ -584,7 +624,10 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                     containerOverrides={
                         "environment": [
                             # Document and S3 info
-                            {"name": "DOCUMENT_KEY", "value": doc_key},
+                            {
+                                "name": "BATCH_MANIFEST_KEY",
+                                "value": manifest_key,
+                            },
                             {"name": "BUCKET_NAME", "value": bucket},
                             {"name": "AWS_ACCESS_KEY_ID", "value": s3_access_key},
                             {
@@ -600,7 +643,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                             {"name": "VECTOR_DB_TABLE", "value": table_name},
                             # Chunking configuration
                             {
-                                "name": "CHUNKER_CONFIG",
+                                "name": "CHUNKER_CONFIG_JSON",
                                 "value": chunker_config.model_dump_json(),
                             },
                         ]
@@ -613,6 +656,14 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                     )
                     return
                 job_ids.append(response["jobId"])
+                yield sse_event(
+                    {
+                        "ok": True,
+                        "stage": "jobs-updated",
+                        "statuses": {"succeeded": 0, "failed": 0, "total": total_jobs},
+                    },
+                    event="jobs-updated",
+                )
 
             # Poll AWS Batch for job statuses every 10 seconds until all jobs are completed
             jobs_status = {"succeeded": 0, "failed": 0, "total": len(job_ids)}

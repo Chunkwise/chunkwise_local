@@ -54,6 +54,7 @@ class LoadBalancerStack(Stack):
             load_balancer_name="chunkwise-alb",
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
             security_group=self.alb_security_group,
+            idle_timeout=Duration.seconds(300),
         )
 
         # Create target group for server service

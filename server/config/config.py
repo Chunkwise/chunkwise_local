@@ -26,3 +26,6 @@ BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
 # Embedding Configuration
 EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "1536"))
+
+# Batch jobs
+MAX_BATCH_JOBS = int(float(os.getenv("MAX_BATCH_JOBS")))

@@ -1,12 +1,14 @@
 """
 Services for the processing service
-get_db_connection, add_vectors, get_s3_document_text
+get_db_connection, add_vectors, get_s3_documents
 """
 
+import json
 import boto3
 import psycopg2
 from psycopg2 import OperationalError
-from config import host, database, user, password, table, document_key, bucket
+from config import host, database, user, password, table, manifest_key, bucket
+from chunkwise_core import normalize_document
 
 
 def get_db_connection() -> None:
@@ -26,7 +28,7 @@ def get_db_connection() -> None:
         raise e
 
 
-def add_vectors(chunk_embedding_pairs) -> None:
+def add_vectors(chunk_embedding_pairs, document_key: str) -> None:
     """
     Add chunks, embedding vectors, and data into PostgreSQL vector database
     """
@@ -50,28 +52,27 @@ def add_vectors(chunk_embedding_pairs) -> None:
         raise e
 
 
-def normalize_document(content: str) -> str:
-    """Normalize smart quotes and dashes in the document to standard ASCII characters."""
-    content = content.replace("\u2018", "'")  #  → '
-    content = content.replace("\u2019", "'")  # ’ → '
-    content = content.replace("\u201c", '"')  # ” → "
-    content = content.replace("\u201d", '"')  # " → "
-    content = content.replace("\u2013", "-")  # – → -
-    content = content.replace("\u2014", "-")  # — → -
-    return content
-
-
-def get_s3_document_text(local: bool = False) -> str:
+def get_s3_documents():
     """
-    Local testing: reads a local file and returns normalized text
-    AWS deployment: reads a document from a S3 bucket and returns normalized text
+    Reads documents from a S3 bucket
+    Returns a list of dicts containing the S3 document key and normalized text
     """
-    if local:
-        with open(document_key, "r", encoding="utf-8") as f:
-            text = f.read()
-    else:
-        s3 = boto3.client("s3")
-        obj = s3.get_object(Bucket=bucket, Key=document_key)
+    s3 = boto3.client("s3")
+
+    # Download the manifest file and get document keys
+    response = s3.get_object(Bucket=bucket, Key=manifest_key)
+    file_content = response["Body"].read().decode("utf-8")
+    doc_keys = json.loads(file_content)
+
+    documents = []
+    for key in doc_keys:
+        obj = s3.get_object(Bucket=bucket, Key=key)
         text = obj["Body"].read().decode("utf-8")
-    normalized_text = normalize_document(text)
-    return normalized_text
+        normalized_text = normalize_document(text)
+        documents.append(
+            {
+                "key": key,
+                "text": normalized_text,
+            }
+        )
+    return documents
