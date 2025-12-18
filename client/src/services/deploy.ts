@@ -12,6 +12,7 @@ type EphemeralKeyResponse = {
   expires_in: number;
 };
 
+// Fetches public key and token for encrypting credentials
 async function getEphemeralKey(): Promise<EphemeralKeyResponse> {
   const response = await axios.post<EphemeralKeyResponse>(
     "/api/ephemeral-key",
@@ -27,6 +28,7 @@ interface DeployWorkflowOptions {
   onEvent: (event: DeployWorkflowEvent) => void;
 }
 
+// Deploys a workflow and streams deployment events
 export const deployWorkflow = async ({
   workflowId,
   credentials,
