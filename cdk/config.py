@@ -13,7 +13,7 @@ ENVIRONMENT = "production"  # Options: "production" | "development"
 # Docker Image URIs (hardcoded pre-built images)
 # Replace these with your actual ECR image URIs
 DOCKER_IMAGES = {
-    "server": "public.ecr.aws/x7l1y0z0/chunkwise-server:latest",
+    "server": "821449936238.dkr.ecr.us-east-1.amazonaws.com/chunkwise:latest",
     "chunking": "public.ecr.aws/x7l1y0z0/chunkwise-chunking:latest",
     "evaluation": "public.ecr.aws/x7l1y0z0/chunkwise-evaluation:latest",
     "processing": "public.ecr.aws/x7l1y0z0/chunkwise-processing:latest",

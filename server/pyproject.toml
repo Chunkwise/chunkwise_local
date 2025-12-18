@@ -17,6 +17,7 @@ boto3 = ">=1.40.68,<2.0.0"
 psycopg2 = "^2.9.11"
 fuzzywuzzy = "^0.18.0"
 python-levenshtein = "^0.27.3"
+cryptography = "^46.0.3"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

@@ -6,9 +6,16 @@ services and it will eventually manage the database(s) and document storage.
 import os
 import traceback
 import re
+import json
 import logging
 import hashlib
 import asyncio
+import time
+import uuid
+import threading
+import boto3
+from typing import Dict, Tuple
+from base64 import b64decode
 from server_types import (
     VisualizeResponse,
     EvaluationResponse,
@@ -54,11 +61,28 @@ from config import (
 from fastapi import FastAPI, APIRouter, Body, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-import boto3
 from botocore.exceptions import ClientError, NoCredentialsError, EndpointConnectionError
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import hashes, serialization
 
 app = FastAPI()
 router = APIRouter()
+
+_EPHEMERAL_KEYS: Dict[str, Tuple[bytes, float]] = {}
+_LOCK = threading.Lock()
+TTL_SECONDS = 60
+
+def _cleanup_loop():
+    while True:
+        now = time.time()
+        with _LOCK:
+            expired = [k for k, (_, exp) in _EPHEMERAL_KEYS.items() if exp < now]
+            for k in expired:
+                del _EPHEMERAL_KEYS[k]
+        time.sleep(5)
+
+
+threading.Thread(target=_cleanup_loop, daemon=True).start()
 
 # Configure logging
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -306,6 +330,45 @@ async def remove_workflow(workflow_id: int):
         raise HTTPException(status_code=400, detail="Invalid workflow id")
 
 
+@router.post("/ephemeral-key")
+def create_ephemeral_key():
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+    )
+    public_key = private_key.public_key()
+
+    public_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+
+    token = str(uuid.uuid4())
+    expiry = time.time() + TTL_SECONDS
+
+    with _LOCK:
+        _EPHEMERAL_KEYS[token] = (private_pem, expiry)
+
+    return {
+        "token": token,
+        "public_key_pem": public_pem.decode(),
+        "expires_in": TTL_SECONDS,
+    }
+
+
+def pop_private_key(token: str) -> bytes:
+    with _LOCK:
+        entry = _EPHEMERAL_KEYS.pop(token, None)
+    if not entry:
+        raise HTTPException(status_code=400, detail="Invalid or expired crypto token")
+    return entry[0]
+
+
 @router.post("/workflows/{workflow_id}/deploy")
 @handle_endpoint_exceptions
 async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
@@ -384,13 +447,47 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             "db_instance_identifier": prod_cfg.db_instance_identifier,
         }
         yield sse_event(rds_payload, event="rds-ready")
+        
+        # Decrypt S3 credentials
+        try:
+            private_pem = pop_private_key(req.crypto_token)
+            private_key = serialization.load_pem_private_key(
+                private_pem,
+                password=None,
+            )
+            ciphertext = b64decode(req.encrypted_credentials_b64)
+            plaintext = private_key.decrypt(
+                ciphertext,
+                padding.OAEP(
+                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                    algorithm=hashes.SHA256(),
+                    label=None,
+                ),
+            )
+            creds = json.loads(plaintext.decode())
+            s3_access_key = creds["s3_access_key"]
+            s3_secret_key = creds["s3_secret_key"]
+        except Exception as e:
+            yield sse_event(
+                {
+                    "ok": False,
+                    "stage": "crypto",
+                    "error": "Failed to decrypt S3 credentials",
+                },
+                event="error",
+            )
+            return
+        finally:
+            for var in ["plaintext", "ciphertext", "private_key", "private_pem", "creds"]:
+                if var in locals():
+                    del locals()[var]
 
         # Connect to S3 using provided credentials
         try:
             s3_client = boto3.client(
                 "s3",
-                aws_access_key_id=req.s3_access_key,
-                aws_secret_access_key=req.s3_secret_key,
+                aws_access_key_id=s3_access_key,
+                aws_secret_access_key=s3_secret_key,
             )
             bucket = req.s3_bucket
 
@@ -473,10 +570,10 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
                             # Document and S3 info
                             {"name": "DOCUMENT_KEY", "value": doc_key},
                             {"name": "BUCKET_NAME", "value": bucket},
-                            {"name": "AWS_ACCESS_KEY_ID", "value": req.s3_access_key},
+                            {"name": "AWS_ACCESS_KEY_ID", "value": s3_access_key},
                             {
                                 "name": "AWS_SECRET_ACCESS_KEY",
-                                "value": req.s3_secret_key,
+                                "value": s3_secret_key,
                             },
                             # Vector database connection info
                             {"name": "VECTOR_DB_HOST", "value": prod_cfg.host},

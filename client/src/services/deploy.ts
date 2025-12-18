@@ -1,9 +1,25 @@
 import axios from "axios";
+import { encryptCredentials } from "../utils/encrypt";
 import {
   DeployWorkflowEventSchema,
   type S3Credentials,
   type DeployWorkflowEvent,
 } from "../types";
+
+type EphemeralKeyResponse = {
+  token: string;
+  public_key_pem: string;
+  expires_in: number;
+};
+
+async function getEphemeralKey(): Promise<EphemeralKeyResponse> {
+  const response = await axios.post<EphemeralKeyResponse>(
+    "/api/ephemeral-key",
+    {},
+    { timeout: 5000 }
+  );
+  return response.data;
+}
 
 interface DeployWorkflowOptions {
   workflowId: string;
@@ -16,11 +32,21 @@ export const deployWorkflow = async ({
   credentials,
   onEvent,
 }: DeployWorkflowOptions): Promise<void> => {
+  // Fetch ephemeral key
+  const { token, public_key_pem } = await getEphemeralKey();
+
+  // Encrypt credentials
+  const encrypted = await encryptCredentials(
+    public_key_pem,
+    credentials.access_key,
+    credentials.secret_key
+  );
+
   const response = await axios.post(
     `/api/workflows/${workflowId}/deploy`,
     {
-      s3_access_key: credentials.access_key,
-      s3_secret_key: credentials.secret_key,
+      crypto_token: token,
+      encrypted_credentials_b64: encrypted,
       s3_bucket: credentials.bucket_name,
     },
     {
@@ -31,6 +57,10 @@ export const deployWorkflow = async ({
       adapter: "fetch",
     }
   );
+
+  // Immediate client-side cleanup
+  credentials.access_key = "";
+  credentials.secret_key = "";
 
   if (!response.data) {
     throw new Error("Response stream not available");
