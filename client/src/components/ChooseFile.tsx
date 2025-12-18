@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Workflow } from "../types";
 import { uploadFile } from "../services/documents";
+import ErrorMessage from "./ErrorMessage";
 
 interface ChooseFileProps {
   workflow: Workflow;
@@ -10,6 +11,7 @@ interface ChooseFileProps {
 }
 
 const UPLOAD_OPTION_VALUE = "__upload__";
+const MAX_FILE_SIZE_KB = 100;
 
 const ChooseFile = ({
   workflow,
@@ -31,9 +33,16 @@ const ChooseFile = ({
     return filename.endsWith(".txt") ? filename.slice(0, -4) : filename;
   };
 
+  // Handler for file upload
   const handleFileUpload = async (file: File | null) => {
     if (!file) return;
     setError(null);
+
+    if (file.size > MAX_FILE_SIZE_KB * 1024) {
+      setError(`File size exceeds ${MAX_FILE_SIZE_KB}KB limit`);
+      return;
+    }
+
     setIsUploadingFile(true);
 
     try {
@@ -50,6 +59,7 @@ const ChooseFile = ({
     }
   };
 
+  // Handler for file change
   const handleSelectChange = (value: string) => {
     if (value === "") {
       onFileChange(undefined);
@@ -61,12 +71,15 @@ const ChooseFile = ({
   };
 
   return (
-    <div className="details-row">
-      <h2 className="section-title">File</h2>
-      <div className="box">
+    <div className="section">
+      <h2 className="section-header">
+        <span className="icon">description</span>
+        <span className="title-md">File</span>
+      </h2>
+      <div className="card">
         <div className="file-controls">
           <select
-            className="file-select"
+            className="select"
             value={workflow.document_title || ""}
             onChange={(event) => handleSelectChange(event.target.value)}
             disabled={isLoadingFiles || isUploadingFile}
@@ -93,27 +106,39 @@ const ChooseFile = ({
           />
         </div>
 
-        {error && <div className="error">{error}</div>}
-
-        {isLoadingFiles && (
-          <div className="muted">Loading available files...</div>
+        {error && (
+          <ErrorMessage message={error} onDismiss={() => setError(null)} />
         )}
 
-        {isUploadingFile && <div className="muted">Uploading...</div>}
+        {isLoadingFiles && (
+          <div className="text-muted flex items-center gap-2 mt-2">
+            <span className="icon spinner">sync</span>
+            Loading available files...
+          </div>
+        )}
+
+        {isUploadingFile && (
+          <div className="text-muted flex items-center gap-2 mt-2">
+            <span className="icon spinner">sync</span>
+            Uploading...
+          </div>
+        )}
 
         {workflow.document_title ? (
           <div className="file-preview">
-            <div className="file-name">Selected: {workflow.document_title}</div>
+            <span className="file-name">{workflow.document_title}</span>
             <button
-              className="btn btn-sm"
+              className="btn btn-icon btn-sm"
               onClick={() => onFileChange(undefined)}
               title="Remove selection"
             >
-              x
+              <span className="icon icon-sm">close</span>
             </button>
           </div>
         ) : (
-          <div className="muted">No document selected</div>
+          <div className="text-muted mt-2">
+            No document selected
+          </div>
         )}
       </div>
     </div>

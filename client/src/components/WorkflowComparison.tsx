@@ -11,16 +11,18 @@ const CHUNK_METRIC_KEYS: Record<
 > = {
   total_chunks: "Total chunks",
   avg_chars: "Average characters",
-  smallest_chunk_chars: "Smallest chunk characters",
-  largest_chunk_chars: "Largest chunk characters",
+  smallest_chunk_chars: "Smallest chunk",
+  largest_chunk_chars: "Largest chunk",
 };
 
 const EVALUATION_METRIC_KEYS: Record<keyof EvaluationMetrics, string> = {
-  precision_mean: "Precision mean",
-  recall_mean: "Recall mean",
-  iou_mean: "IoU mean",
-  precision_omega_mean: "Precision omega mean",
+  precision_mean: "Precision",
+  recall_mean: "Recall",
+  iou_mean: "IoU",
+  precision_omega_mean: "Precision Omega",
 };
+
+const PROGRESS_BAR_COLOR = "#2563eb";
 
 type Props = {
   chunkers: Chunker[];
@@ -63,27 +65,18 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
     return configPairs.join(", ");
   };
 
-  const getRatingColor = (value: number): string => {
-    const percentage = value * 100;
-    if (percentage >= 80) return "#48bb78"; // green
-    if (percentage >= 60) return "#f6ad55"; // orange
-    return "#fc8181"; // red
-  };
-
   return (
-    <div className="comparison-view">
+    <div className="comparison">
       <div className="comparison-header">
-        <div>
-          <h2 className="comparison-title">Workflow Comparison</h2>
-          <p className="comparison-subtitle">
-            Compare chunking strategies side by side
-          </p>
-        </div>
+          <h3 className="title-md">
+            Workflow comparison
+          </h3>
       </div>
 
       {workflows.length < 2 ? (
-        <div className="comparison-placeholder">
-          Select at least 2 workflows to compare
+        <div className="placeholder">
+          <span className="icon icon-lg">compare</span>
+          <span>Select at least 2 workflows to compare</span>
         </div>
       ) : (
         <div className="comparison-grid">
@@ -98,10 +91,10 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                   <div>
                     <h3 className="comparison-card-title">{workflow.title}</h3>
                     <div className="comparison-card-meta">
-                      <span className="comparison-badge">
+                      <span className="badge">
                         {getChunkerName(workflow.chunking_strategy)}
                       </span>
-                      <span className="comparison-stage-badge">
+                      <span className={`workflow-stage stage-${workflow.stage?.toLowerCase()}`}>
                         {workflow.stage}
                       </span>
                     </div>
@@ -110,10 +103,12 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
 
                 <div className="comparison-card-body">
                   <div className="comparison-section">
-                    <h4 className="comparison-section-title">Configuration</h4>
+                    <h4 className="comparison-section-title">
+                      Configuration
+                    </h4>
                     {workflow.chunking_strategy ? (
                       <div className="comparison-config">
-                        <pre className="comparison-config-code">
+                        <pre className="comparison-code">
                           <code>{configSummary}</code>
                         </pre>
                       </div>
@@ -143,12 +138,12 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                               return (
                                 <div
                                   key={String(key)}
-                                  className="comparison-metric-row"
+                                  className="comparison-row"
                                 >
-                                  <span className="comparison-metric-label">
+                                  <span className="comparison-row-label">
                                     {CHUNK_METRIC_KEYS[key]}
                                   </span>
-                                  <span className="comparison-metric-value">
+                                  <span className="comparison-row-value">
                                     {Number(statsTyped[key]).toFixed(0)}
                                   </span>
                                 </div>
@@ -168,10 +163,9 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                     </h4>
                     {workflow.evaluation_metrics ? (
                       (() => {
-                        const metrics =
-                          workflow.evaluation_metrics as EvaluationMetrics;
+                        const metrics = workflow.evaluation_metrics;
                         return (
-                          <div className="comparison-evaluation">
+                          <div className="comparison-eval">
                             {(
                               Object.keys(EVALUATION_METRIC_KEYS) as Array<
                                 keyof EvaluationMetrics
@@ -193,12 +187,12 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                                       {Number(value).toFixed(3)}
                                     </span>
                                   </div>
-                                  <div className="comparison-progress-bar">
+                                  <div className="comparison-progress">
                                     <div
                                       className="comparison-progress-fill"
                                       style={{
                                         width: `${width}%`,
-                                        backgroundColor: getRatingColor(value),
+                                        backgroundColor: PROGRESS_BAR_COLOR,
                                       }}
                                     />
                                   </div>

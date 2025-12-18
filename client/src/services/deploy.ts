@@ -1,176 +1,112 @@
-export interface S3Credentials {
-  access_key: string;
-  secret_key: string;
-  bucket_name: string;
-}
+import axios from "axios";
+import { encryptCredentials } from "../utils/encrypt";
+import {
+  DeployWorkflowEventSchema,
+  type S3Credentials,
+  type DeployWorkflowEvent,
+} from "../types";
 
-export interface RDSReadyPayload {
-  ok: boolean;
-  stage: "rds-ready";
-  endpoint: string;
-  port: number;
-  database: string;
-  table_name: string;
-  secret_arn: string;
-  db_instance_identifier: string;
-  notes?: string;
-}
+type EphemeralKeyResponse = {
+  token: string;
+  public_key_pem: string;
+  expires_in: number;
+};
 
-export interface S3ConnectedPayload {
-  ok: boolean;
-  stage: "s3-connected";
-  bucket: string;
+// Fetches public key and token for encrypting credentials
+async function getEphemeralKey(): Promise<EphemeralKeyResponse> {
+  const response = await axios.post<EphemeralKeyResponse>(
+    "/api/ephemeral-key",
+    {},
+    { timeout: 5000 }
+  );
+  return response.data;
 }
-
-export interface DeployErrorPayload {
-  ok: false;
-  stage: string;
-  error: string;
-  trace?: string;
-}
-
-export interface DeployDonePayload {
-  ok: true;
-  stage: "done";
-}
-
-export interface JobsUpdatedPayload {
-  ok: true;
-  stage: "jobs-updated";
-  statuses: {
-    succeeded: number;
-    failed: number;
-    total: number;
-  };
-}
-
-export type DeployWorkflowEvent =
-  | { type: "rds-ready"; data: RDSReadyPayload }
-  | { type: "s3-connected"; data: S3ConnectedPayload }
-  | { type: "s3-error"; data: DeployErrorPayload }
-  | { type: "batch-error"; data: DeployErrorPayload }
-  | { type: "error"; data: DeployErrorPayload }
-  | { type: "done"; data: DeployDonePayload }
-  | { type: "jobs-updated"; data: JobsUpdatedPayload }
-  | { type: "message"; data: unknown };
 
 interface DeployWorkflowOptions {
   workflowId: string;
   credentials: S3Credentials;
-  signal?: AbortSignal;
   onEvent: (event: DeployWorkflowEvent) => void;
 }
 
-const parseSseChunk = (
-  chunk: string
-): { event: string; data: unknown } | null => {
-  const lines = chunk.split(/\r?\n/);
-  let eventName = "message";
-  const dataLines: string[] = [];
-
-  for (const line of lines) {
-    if (line.startsWith("event:")) {
-      eventName = line.slice(6).trim();
-    } else if (line.startsWith("data:")) {
-      dataLines.push(line.slice(5).trim());
-    }
-  }
-
-  if (dataLines.length === 0) {
-    return null;
-  }
-
-  const dataPayload = dataLines.join("\n");
-  try {
-    return { event: eventName, data: JSON.parse(dataPayload) };
-  } catch {
-    return { event: eventName, data: dataPayload };
-  }
-};
-
-const mapEvent = (eventName: string): DeployWorkflowEvent["type"] => {
-  switch (eventName) {
-    case "rds-ready":
-      return "rds-ready";
-    case "s3-connected":
-      return "s3-connected";
-    case "s3-error":
-      return "s3-error";
-    case "batch-error":
-      return "batch-error";
-    case "jobs-updated":
-      return "jobs-updated";
-    case "error":
-      return "error";
-    case "done":
-      return "done";
-    default:
-      return "message";
-  }
-};
-
+// Deploys a workflow and streams deployment events
 export const deployWorkflow = async ({
   workflowId,
   credentials,
-  signal,
   onEvent,
 }: DeployWorkflowOptions): Promise<void> => {
-  const response = await fetch(`/api/workflows/${workflowId}/deploy`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      s3_access_key: credentials.access_key,
-      s3_secret_key: credentials.secret_key,
+  // Fetch ephemeral key
+  const { token, public_key_pem } = await getEphemeralKey();
+
+  // Encrypt credentials
+  const encrypted = await encryptCredentials(
+    public_key_pem,
+    credentials.access_key,
+    credentials.secret_key
+  );
+
+  const response = await axios.post(
+    `/api/workflows/${workflowId}/deploy`,
+    {
+      crypto_token: token,
+      encrypted_credentials_b64: encrypted,
       s3_bucket: credentials.bucket_name,
-    }),
-    signal,
-  });
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      responseType: "stream",
+      adapter: "fetch",
+    }
+  );
 
-  if (!response.ok) {
-    throw new Error(`Deployment failed with status ${response.status}`);
+  // Immediate client-side cleanup
+  credentials.access_key = "";
+  credentials.secret_key = "";
+
+  if (!response.data) {
+    throw new Error("Response stream not available");
   }
 
-  if (!response.body) {
-    throw new Error("Deployment response stream is not available");
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder("utf-8");
+  const reader = response.data.getReader();
+  const decoder = new TextDecoder();
   let buffer = "";
 
   while (true) {
     const { value, done } = await reader.read();
-    if (done) {
-      break;
-    }
+    if (done) break;
+
     buffer += decoder.decode(value, { stream: true });
 
     let boundary = buffer.indexOf("\n\n");
     while (boundary !== -1) {
-      const chunk = buffer.slice(0, boundary);
+      const chunk = buffer.slice(0, boundary).trim();
       buffer = buffer.slice(boundary + 2);
-      const parsed = parseSseChunk(chunk);
-      if (parsed) {
-        onEvent({
-          type: mapEvent(parsed.event),
-          data: parsed.data,
-        } as DeployWorkflowEvent);
+
+      if (chunk) {
+        const lines = chunk.split("\n");
+        let eventType = "";
+        let data = "";
+
+        for (const line of lines) {
+          if (line.startsWith("event:")) {
+            eventType = line.slice(6).trim();
+          } else if (line.startsWith("data:")) {
+            data = line.slice(5).trim();
+          }
+        }
+
+        if (eventType && data) {
+          const parsedData = JSON.parse(data);
+          const rawEvent = {
+            type: eventType,
+            data: parsedData,
+          };
+          onEvent(DeployWorkflowEventSchema.parse(rawEvent));
+        }
       }
+
       boundary = buffer.indexOf("\n\n");
-    }
-  }
-
-  buffer += decoder.decode();
-
-  if (buffer.trim().length > 0) {
-    const parsed = parseSseChunk(buffer);
-    if (parsed) {
-      onEvent({
-        type: mapEvent(parsed.event),
-        data: parsed.data,
-      } as DeployWorkflowEvent);
     }
   }
 };

@@ -1,255 +1,340 @@
-import { useEffect, useRef, useState } from "react";
-import type { Workflow } from "../types";
-import {
-  deployWorkflow,
-  type DeployWorkflowEvent,
-  type S3Credentials,
-  type RDSReadyPayload,
-  type S3ConnectedPayload,
-} from "../services/deploy";
+import { useState, useEffect } from "react";
 import S3CredentialsForm from "./S3CredentialsForm";
 import RDSConnectionDetails from "./RDSConnectionDetails";
+import DeployProgress from "./DeployProgress";
+import { deployWorkflow } from "../services/deploy";
+import { getRdsSecretArn, setRdsSecretArn } from "../utils/storage";
+import type {
+  Workflow,
+  DeployWorkflowEvent,
+  S3Credentials,
+  DeploymentState,
+} from "../types";
+import type { DeploymentAction } from "../reducers/deploymentReducer";
+import {
+  startDeploymentAction,
+  setRdsDetailsAction,
+  setS3BucketAction,
+  setNoDocumentsAction,
+  setJobsStatusAction,
+  setCompleteAction,
+  setErrorAction,
+} from "../reducers/deploymentReducer";
 
 interface DeployConnectorProps {
   workflow: Workflow;
+  onWorkflowUpdate: (updates: Partial<Workflow>) => void;
+  deploymentState?: DeploymentState;
+  deploymentDispatch: React.Dispatch<DeploymentAction>;
+  isAnyDeploying: boolean;
 }
 
-const DeployConnector = ({ workflow }: DeployConnectorProps) => {
-  const [isFormVisible, setIsFormVisible] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [events, setEvents] = useState<DeployWorkflowEvent[]>([]);
-  const [rdsDetails, setRdsDetails] = useState<RDSReadyPayload | null>(null);
-  const [s3Details, setS3Details] = useState<S3ConnectedPayload | null>(null);
-  const [status, setStatus] = useState<
-    "idle" | "running" | "success" | "error"
-  >("idle");
-  const controllerRef = useRef<AbortController | null>(null);
+// Sub-components
+interface DeployMessageProps {
+  icon: string;
+  message: string;
+  type?: "info" | "warning" | "error";
+}
 
+const DeployMessage = ({
+  icon,
+  message,
+  type = "info",
+}: DeployMessageProps) => (
+  <div className={`deploy-message deploy-message-${type}`}>
+    <div className="section-header">
+      <span className="icon">{icon}</span>
+      <span className="title-sm">{message}</span>
+    </div>
+  </div>
+);
+
+interface DeployButtonProps {
+  onClick: () => void;
+  disabled: boolean;
+  icon: string;
+  label: string;
+}
+
+const DeployButton = ({
+  onClick,
+  disabled,
+  icon,
+  label,
+}: DeployButtonProps) => (
+  <button
+    className="btn btn-primary mt-3"
+    onClick={onClick}
+    disabled={disabled}
+  >
+    <span className="icon icon-sm">{icon}</span>
+    {label}
+  </button>
+);
+
+interface DeployStatusBadgeProps {
+  icon: string;
+  text: string;
+}
+
+const DeployStatusBadge = ({ icon, text }: DeployStatusBadgeProps) => (
+  <div className="deploy-status-badge">
+    <div className="section-header">
+      <span className="icon">{icon}</span>
+      <span className="title-sm">{text}</span>
+    </div>
+  </div>
+);
+
+const DeployConnector = ({
+  workflow,
+  onWorkflowUpdate,
+  deploymentState,
+  deploymentDispatch,
+  isAnyDeploying,
+}: DeployConnectorProps) => {
+  const [showForm, setShowForm] = useState(false);
   const hasChunkingStrategy = Boolean(workflow.chunking_strategy);
+  const isDeployed = Boolean(workflow.deploy_table_name);
+  const storedArn = getRdsSecretArn();
+
+  const {
+    isDeploying = false,
+    rdsDetails = null,
+    s3Bucket = null,
+    jobsStatus = null,
+    noDocuments = false,
+    isComplete = false,
+    error = null,
+  } = deploymentState || {};
+
+  const canDeploy = hasChunkingStrategy && !isAnyDeploying;
 
   useEffect(() => {
-    return () => {
-      controllerRef.current?.abort();
-    };
-  }, []);
-
-  const appendEvent = (event: DeployWorkflowEvent) => {
-    setEvents((previous) => {
-      if (event.type === "jobs-updated") {
-        return [...previous.filter(event => event.type !== "jobs-updated"), event];
-      }
-      return [...previous, event];
-    });
-
-    switch (event.type) {
-      case "rds-ready":
-        setRdsDetails(event.data);
-        break;
-      case "s3-connected":
-        setS3Details(event.data);
-        break;
-      case "s3-error":
-      case "error":
-        setError(event.data.error);
-        setStatus("error");
-        break;
-      case "done":
-        setStatus("success");
-        break;
-      default:
-        break;
+    if (isDeployed && storedArn && !rdsDetails) {
+      deploymentDispatch(
+        setRdsDetailsAction(workflow.id, {
+          ok: true,
+          stage: "rds-ready",
+          endpoint: "",
+          port: 5432,
+          database: "",
+          table_name: workflow.deploy_table_name!,
+          secret_arn: storedArn,
+          db_instance_identifier: "",
+        })
+      );
     }
-  };
+  }, [
+    isDeployed,
+    storedArn,
+    workflow.deploy_table_name,
+    workflow.id,
+    rdsDetails,
+    deploymentDispatch,
+  ]);
 
-  const handleToggleForm = () => {
-    if (!hasChunkingStrategy) return;
-    setIsFormVisible((previous) => !previous);
-    setError(null);
-  };
-
-  const handleCancel = () => {
-    setIsFormVisible(false);
-    setError(null);
-  };
-
+  // Handler for starting deployment
   const handleConnect = async (credentials: S3Credentials) => {
-    if (!workflow.chunking_strategy) {
-      setError("Select a chunker before deploying this workflow.");
-      return;
-    }
-
-    controllerRef.current?.abort();
-    const controller = new AbortController();
-    controllerRef.current = controller;
-
-    setIsSubmitting(true);
-    setError(null);
-    setEvents([]);
-    setRdsDetails(null);
-    setS3Details(null);
-    setIsFormVisible(false);
-    setStatus("running");
+    setShowForm(false);
+    deploymentDispatch(startDeploymentAction(workflow.id));
 
     try {
       await deployWorkflow({
         workflowId: workflow.id,
         credentials,
-        signal: controller.signal,
-        onEvent: appendEvent,
+        onEvent: handleEvent,
       });
-    } catch (connectionError) {
-      if ((connectionError as Error).name === "AbortError") {
-        setError("Deployment was cancelled.");
-      } else {
-        setError(
-          (connectionError as Error).message ||
-            "Unable to deploy workflow. Please verify the credentials."
+    } catch (error) {
+      deploymentDispatch(
+        setErrorAction(
+          workflow.id,
+          (error as Error).message || "Deployment failed"
+        )
+      );
+    }
+  };
+
+  // Handler for deployment events
+  const handleEvent = (event: DeployWorkflowEvent) => {
+    switch (event.type) {
+      case "rds-ready":
+        deploymentDispatch(setRdsDetailsAction(workflow.id, event.data));
+        setRdsSecretArn(event.data.secret_arn);
+        break;
+      case "s3-connected":
+        deploymentDispatch(setS3BucketAction(workflow.id, event.data.bucket));
+        break;
+      case "no-documents":
+        deploymentDispatch(setNoDocumentsAction(workflow.id));
+        break;
+      case "jobs-updated":
+        deploymentDispatch(
+          setJobsStatusAction(workflow.id, event.data.statuses)
         );
-        console.error("Failed to deploy workflow", connectionError);
-      }
-      setStatus("error");
-    } finally {
-      setIsSubmitting(false);
-      controllerRef.current = null;
-    }
-  };
-
-  const describeEventTitle = (event: DeployWorkflowEvent): string => {
-    switch (event.type) {
-      case "rds-ready":
-        return "RDS ready";
-      case "s3-connected":
-        return "S3 connected";
-      case "s3-error":
-        return "S3 error";
-      case "batch-error":
-        return "Batch error";
-      case "jobs-updated":
-        return "Jobs Status";
-      case "error":
-        return "Deployment error";
+        break;
       case "done":
-        return "Done";
-      default:
-        return "Update";
-    }
-  };
-
-  const describeEventDetails = (event: DeployWorkflowEvent): string => {
-    switch (event.type) {
-      case "rds-ready":
-        return `Instance ${event.data.db_instance_identifier}`;
-      case "s3-connected":
-        return `Verified bucket ${event.data.bucket}`;
-      case "jobs-updated":
-        return `${event.data.statuses.succeeded} succeeded and ${event.data.statuses.failed} failed out of ${event.data.statuses.total} total jobs.`
-      case "batch-error":
+        deploymentDispatch(setCompleteAction(workflow.id));
+        if (event.data.summary?.table) {
+          onWorkflowUpdate({
+            deploy_table_name: event.data.summary.table,
+            stage: "Deployed",
+          });
+        }
+        break;
       case "s3-error":
+      case "batch-error":
       case "error":
-        return `${event.data.stage}: ${event.data.error}`;
-      case "done":
-        return "Deployment pipeline is ready to use.";
-      default:
-        return typeof event.data === "string"
-          ? event.data
-          : "Deployment update received.";
+        deploymentDispatch(setErrorAction(workflow.id, event.data.error));
+        break;
     }
   };
 
-  const statusCopy = {
-    idle: "Provide AWS credentials to deploy this workflow.",
-    running: "Connecting to RDS and S3...",
-    success: "Deployment completed successfully.",
-    error: "Deployment could not be completed.",
-  } as const;
+  // Handler for redeploying workflow
+  const handleRedeploy = () => {
+    setShowForm(true);
+  };
+
+  // Render state for initial deployment
+  const renderInitialState = () => (
+    <>
+      {!hasChunkingStrategy && (
+        <DeployMessage
+          icon="warning"
+          message="Configure a chunker before setting up deployment."
+        />
+      )}
+
+      {isAnyDeploying && hasChunkingStrategy && (
+        <DeployMessage
+          icon="info"
+          message="Another workflow is currently being deployed."
+        />
+      )}
+
+      {error && <DeployMessage icon="error" message={error} type="error" />}
+
+      <p className="text-muted">
+        Connect your Amazon S3 bucket to deploy chunked documents to your vector
+        database.
+      </p>
+
+      <DeployButton
+        onClick={() => setShowForm(!showForm)}
+        disabled={!canDeploy}
+        icon="link"
+        label="Connect to Amazon S3"
+      />
+
+      {showForm && (
+        <S3CredentialsForm
+          onSubmit={handleConnect}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+    </>
+  );
+
+  // Render state for deploying workflow
+  const renderDeployingState = () => (
+    <>
+      <div className="deploy-warning mb-3">
+        <div className="section-header">
+          <span className="icon">warning</span>
+          <span className="title-sm">
+            Deployment in progress - Please do not close or reload this page.
+          </span>
+        </div>
+      </div>
+
+      <DeployProgress
+        rdsDetails={rdsDetails}
+        s3Bucket={s3Bucket}
+        jobsStatus={jobsStatus}
+        noDocuments={noDocuments}
+        isComplete={isComplete}
+        error={error}
+      />
+
+      {rdsDetails && <RDSConnectionDetails details={rdsDetails} />}
+
+      {isComplete && (
+        <>
+          {isAnyDeploying && (
+            <DeployMessage
+              icon="info"
+              message="Another workflow is currently being deployed."
+            />
+          )}
+
+          <DeployButton
+            onClick={handleRedeploy}
+            disabled={!canDeploy}
+            icon="refresh"
+            label="Redeploy workflow"
+          />
+
+          {showForm && (
+            <S3CredentialsForm
+              onSubmit={handleConnect}
+              onCancel={() => setShowForm(false)}
+            />
+          )}
+        </>
+      )}
+    </>
+  );
+
+  // Render state for deployed workflow
+  const renderDeployedState = () => (
+    <>
+      <DeployStatusBadge icon="check_circle" text="Workflow deployed" />
+
+      {isAnyDeploying && (
+        <DeployMessage
+          icon="info"
+          message="Another workflow is currently being deployed."
+        />
+      )}
+
+      {rdsDetails && <RDSConnectionDetails details={rdsDetails} />}
+
+      <DeployButton
+        onClick={handleRedeploy}
+        disabled={!canDeploy}
+        icon="refresh"
+        label="Redeploy workflow"
+      />
+
+      {showForm && (
+        <S3CredentialsForm
+          onSubmit={handleConnect}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {error && <DeployMessage icon="error" message={error} type="error" />}
+    </>
+  );
+
+  // Determine the state to render
+  const renderContent = () => {
+    if (isDeploying) {
+      return renderDeployingState();
+    }
+    if (isDeployed) {
+      return renderDeployedState();
+    }
+    return renderInitialState();
+  };
 
   return (
-    <div className="details-row">
-      <h2 className="section-title">Deploy</h2>
-      <div className="box">
-        <div className="muted">
-          Connect your Amazon S3 bucket to import and deploy chunked data.
-        </div>
+    <div className="section">
+      <h2 className="section-header">
+        <span className="title-md">Deploy</span>
+      </h2>
 
-        <div className="muted" style={{ margin: "8px 0" }}>
-          {statusCopy[status]}
-        </div>
-
-        <button
-          className="btn btn-primary"
-          type="button"
-          onClick={handleToggleForm}
-          disabled={!hasChunkingStrategy || isSubmitting}
-        >
-          Connect to Amazon S3
-        </button>
-
-        {!hasChunkingStrategy && (
-          <div className="muted">
-            Configure a chunker before setting up deployment.
-          </div>
-        )}
-
-        {isFormVisible && (
-          <S3CredentialsForm
-            onSubmit={handleConnect}
-            onCancel={handleCancel}
-            isSubmitting={isSubmitting}
-          />
-        )}
-
-        {error && <div className="error">{error}</div>}
-
-        {s3Details && (
-          <div className="deployment-summary" style={{ marginTop: "16px" }}>
-            <div className="muted">
-              Verified bucket <strong>{s3Details.bucket}</strong>
-            </div>
-          </div>
-        )}
-
-        {rdsDetails && (
-          <div style={{ marginTop: "16px" }}>
-            <RDSConnectionDetails details={rdsDetails} />
-          </div>
-        )}
-
-        {events.length > 0 && (
-          <div style={{ marginTop: "16px" }}>
-            <div className="muted" style={{ marginBottom: "8px" }}>
-              Live deployment log
-            </div>
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-              }}
-            >
-              {events.map((event, index) => (
-                <li
-                  key={`${event.type}-${index}`}
-                  style={{
-                    border: "1px solid var(--border)",
-                    borderRadius: "6px",
-                    padding: "8px 12px",
-                    background: "#f9fafb",
-                  }}
-                >
-                  <div style={{ fontWeight: 600 }}>
-                    {describeEventTitle(event)}
-                  </div>
-                  <div className="muted">{describeEventDetails(event)}</div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+      <div className="card">{renderContent()}</div>
     </div>
   );
 };

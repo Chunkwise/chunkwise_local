@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-export const StageSchema = z.enum(["Draft", "Configured", "Evaluated"]);
+export type Stage = "Draft" | "Configured" | "Evaluated" | "Deployed";
 
-export type Stage = z.infer<typeof StageSchema>;
+export type Tab = "visualization" | "evaluation" | "deploy";
 
 export interface File {
   document_title: string;
@@ -65,6 +65,127 @@ export const EvaluationMetricsSchema = z.object({
 
 export type EvaluationMetrics = z.infer<typeof EvaluationMetricsSchema>;
 
+export const EvaluationResponseSchema = z.object({
+  embedding_model: z.string(),
+  corpus_id: z.string(),
+  document_s3_key: z.string(),
+  queries_s3_key: z.string(),
+  queries_generated: z.boolean(),
+  num_queries: z.number().nullable().optional(),
+  chunkers_evaluated: z.array(z.string()),
+  results: z.array(EvaluationMetricsSchema),
+});
+
+export type EvaluationResponse = z.infer<typeof EvaluationResponseSchema>;
+
+export interface DeploymentState {
+  isDeploying: boolean;
+  rdsDetails: RDSReadyPayload | null;
+  s3Bucket: string | null;
+  jobsStatus: JobsStatus | null;
+  noDocuments: boolean;
+  isComplete: boolean;
+  error: string | null;
+}
+
+export interface S3Credentials {
+  access_key: string;
+  secret_key: string;
+  bucket_name: string;
+}
+
+export const RDSReadyPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("rds-ready"),
+  endpoint: z.string(),
+  port: z.number(),
+  database: z.string(),
+  table_name: z.string(),
+  secret_arn: z.string(),
+  db_instance_identifier: z.string(),
+});
+
+export type RDSReadyPayload = z.infer<typeof RDSReadyPayloadSchema>;
+
+export const JobsStatusSchema = z.object({
+  succeeded: z.number(),
+  failed: z.number(),
+  total: z.number(),
+});
+
+export type JobsStatus = z.infer<typeof JobsStatusSchema>;
+
+export const S3ConnectedPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("s3-connected"),
+  bucket: z.string(),
+});
+
+export const NoDocumentsPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("no-documents"),
+  message: z.string(),
+});
+
+export const JobsUpdatedPayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("jobs-updated"),
+  statuses: JobsStatusSchema,
+});
+
+export const DoneSummarySchema = z.object({
+  database: z.string(),
+  table: z.string(),
+  documents_processed: z.number(),
+  message: z.string(),
+});
+
+export const DonePayloadSchema = z.object({
+  ok: z.literal(true),
+  stage: z.literal("done"),
+  summary: DoneSummarySchema.optional(),
+});
+
+export const ErrorPayloadSchema = z.object({
+  ok: z.literal(false),
+  stage: z.string(),
+  error: z.string(),
+  trace: z.string().optional(),
+});
+
+export const DeployWorkflowEventSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("rds-ready"),
+    data: RDSReadyPayloadSchema,
+  }),
+  z.object({
+    type: z.literal("s3-connected"),
+    data: S3ConnectedPayloadSchema,
+  }),
+  z.object({
+    type: z.literal("no-documents"),
+    data: NoDocumentsPayloadSchema,
+  }),
+  z.object({
+    type: z.literal("jobs-updated"),
+    data: JobsUpdatedPayloadSchema,
+  }),
+  z.object({
+    type: z.literal("done"),
+    data: DonePayloadSchema,
+  }),
+  z.object({
+    type: z.enum(["s3-error", "batch-error", "error"]),
+    data: ErrorPayloadSchema,
+  }),
+  z.object({
+    type: z.literal("message"),
+    data: z.unknown(),
+  }),
+]);
+
+export type DeployWorkflowEvent = z.infer<typeof DeployWorkflowEventSchema>;
+
 export const WorkflowResponseSchema = z.object({
   id: z.union([z.string(), z.number()]).transform((value) => String(value)),
   title: z.string(),
@@ -81,6 +202,7 @@ export const WorkflowResponseSchema = z.object({
   evaluation_metrics: z
     .union([EvaluationMetricsSchema, z.string(), z.null()])
     .optional(),
+  deploy_table_name: z.string().optional().nullable(),
 });
 
 export interface Workflow {
@@ -93,4 +215,5 @@ export interface Workflow {
   chunks_stats?: ChunkStatistics;
   visualization_html?: string | null;
   evaluation_metrics?: EvaluationMetrics;
+  deploy_table_name?: string | null;
 }

@@ -4,10 +4,32 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Material+Symbols+Outlined&display=block"
+      rel="stylesheet"
+    />
+    <style>
+      html {
+        visibility: hidden;
+      }
+      html.fonts-loaded {
+        visibility: visible;
+      }
+    </style>
     <title>Chunkwise</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      document.fonts.ready.then(() => {
+        document.documentElement.classList.add("fonts-loaded");
+      });
+      setTimeout(() => {
+        document.documentElement.classList.add("fonts-loaded");
+      }, 1000);
+    </script>
   </body>
 </html>

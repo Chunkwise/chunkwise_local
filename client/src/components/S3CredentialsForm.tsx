@@ -1,112 +1,57 @@
-import { useState, type FormEvent, type ChangeEvent } from "react";
-import { type S3Credentials } from "../services/deploy";
+import { useState, type FormEvent } from "react";
+import type { S3Credentials } from "../types";
 
 interface S3CredentialsFormProps {
   onSubmit: (credentials: S3Credentials) => void;
   onCancel: () => void;
-  isSubmitting: boolean;
 }
 
-const initialCredentials: S3Credentials = {
-  access_key: "",
-  secret_key: "",
-  bucket_name: "",
-};
+const S3CredentialsForm = ({ onSubmit, onCancel }: S3CredentialsFormProps) => {
+  const [credentials, setCredentials] = useState<S3Credentials>({
+    access_key: "",
+    secret_key: "",
+    bucket_name: "",
+  });
 
-const S3CredentialsForm = ({
-  onSubmit,
-  onCancel,
-  isSubmitting,
-}: S3CredentialsFormProps) => {
-  const [formState, setFormState] = useState<S3Credentials>(initialCredentials);
-
-  const handleChange = (
-    key: keyof S3Credentials,
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
-    const { value } = event.target;
-    setFormState((previous) => ({
-      ...previous,
-      [key]: value,
-    }));
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onSubmit(credentials);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    onSubmit(formState);
-    setFormState(initialCredentials);
-  };
-
-  const handleCancel = () => {
-    setFormState(initialCredentials);
-    onCancel();
-  };
+  const fields = [
+    { key: "access_key", label: "Access key", icon: "key", type: "password" },
+    { key: "secret_key", label: "Secret key", icon: "lock", type: "password" },
+    { key: "bucket_name", label: "Bucket name", icon: "folder", type: "text" },
+  ] as const;
 
   return (
     <form className="deploy-form" onSubmit={handleSubmit}>
-      <div className="field">
-        <label className="label" htmlFor="access-key">
-          Access Key
-        </label>
-        <input
-          className="input"
-          id="access-key"
-          type="password"
-          required
-          autoComplete="new-password"
-          value={formState.access_key}
-          onChange={(event) => handleChange("access_key", event)}
-          disabled={isSubmitting}
-        />
-      </div>
-
-      <div className="field">
-        <label className="label" htmlFor="secret-key">
-          Secret Key
-        </label>
-        <input
-          className="input"
-          id="secret-key"
-          type="password"
-          required
-          autoComplete="new-password"
-          value={formState.secret_key}
-          onChange={(event) => handleChange("secret_key", event)}
-          disabled={isSubmitting}
-        />
-      </div>
-
-      <div className="field">
-        <label className="label" htmlFor="bucket-name">
-          Bucket Name
-        </label>
-        <input
-          className="input"
-          id="bucket-name"
-          type="text"
-          required
-          autoComplete="off"
-          value={formState.bucket_name}
-          onChange={(event) => handleChange("bucket_name", event)}
-          disabled={isSubmitting}
-        />
-      </div>
+      {fields.map(({ key, label, icon, type }) => (
+        <div className="field" key={key}>
+          <label className="label" htmlFor={key}>
+            <span className="icon icon-sm">{icon}</span>
+            {label}
+          </label>
+          <input
+            className="input"
+            id={key}
+            type={type}
+            required
+            value={credentials[key]}
+            onChange={(e) =>
+              setCredentials((prev) => ({ ...prev, [key]: e.target.value }))
+            }
+          />
+        </div>
+      ))}
 
       <div className="section-footer">
-        <button
-          className="btn"
-          type="button"
-          onClick={handleCancel}
-          disabled={isSubmitting}
-        >
+        <button className="btn" type="button" onClick={onCancel}>
           Cancel
         </button>
-        <button
-          className="btn btn-primary"
-          type="submit"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Connecting..." : "Connect"}
+        <button className="btn btn-primary" type="submit">
+          <span className="icon icon-sm">link</span>
+          Connect
         </button>
       </div>
     </form>

@@ -47,6 +47,6 @@ class DeployRequest(BaseModel):
     Request to deploy a workflow.
     """
 
-    s3_access_key: str
-    s3_secret_key: str
+    crypto_token: str
+    encrypted_credentials_b64: str
     s3_bucket: str

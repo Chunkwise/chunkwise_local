@@ -6,6 +6,7 @@ import Header from "./components/Header";
 import WorkflowList from "./components/WorkflowList";
 import WorkflowDetails from "./components/WorkflowDetails";
 import WorkflowComparison from "./components/WorkflowComparison";
+import ErrorMessage from "./components/ErrorMessage";
 import { getChunkers } from "./services/chunkers";
 import { getFiles } from "./services/documents";
 import {
@@ -30,6 +31,7 @@ import {
   exitComparisonModeAction,
   toggleWorkflowSelectionAction,
 } from "./reducers/comparisonReducer";
+import { deploymentReducer } from "./reducers/deploymentReducer";
 
 export default function App() {
   const [workflowState, workflowDispatch] = useReducer(workflowReducer, {
@@ -40,19 +42,34 @@ export default function App() {
     isComparing: false,
     selectedWorkflowIds: [],
   });
+  const [deploymentStates, deploymentDispatch] = useReducer(
+    deploymentReducer,
+    {}
+  );
   const [chunkers, setChunkers] = useState<Chunker[]>([]);
+  const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(true);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const isAnyDeploying = Object.values(deploymentStates).some(
+    (state) => state.isDeploying
+  );
+
   // Load workflows on mount
   useEffect(() => {
+    setIsLoadingWorkflows(true);
     getWorkflows()
       .then((workflows) => {
         const workflowsWithStage = workflows.map((workflow) => ({
           ...workflow,
           stage: computeWorkflowStage(workflow),
         }));
+        workflowsWithStage.sort(
+          (first, second) =>
+            new Date(second.created_at).getTime() -
+            new Date(first.created_at).getTime()
+        );
         workflowDispatch(setWorkflowsAction(workflowsWithStage));
       })
       .catch((error: unknown) => {
@@ -62,6 +79,9 @@ export default function App() {
         } else {
           setError("Failed to load workflows from the server");
         }
+      })
+      .finally(() => {
+        setIsLoadingWorkflows(false);
       });
   }, []);
 
@@ -111,14 +131,25 @@ export default function App() {
 
   // Handlers for workflow actions
   const handleCreateWorkflow = async (name: string) => {
+    const tempId = `temp-${Date.now()}`;
+    const optimisticWorkflow: Workflow = {
+      id: tempId,
+      title: name,
+      created_at: new Date().toISOString(),
+      stage: "Draft",
+    };
+    workflowDispatch(createWorkflowAction(optimisticWorkflow));
+
     try {
       const newWorkflow = await createWorkflowAPI(name);
       const workflowWithStage = {
         ...newWorkflow,
         stage: computeWorkflowStage(newWorkflow),
       };
+      workflowDispatch(deleteWorkflowAction(tempId));
       workflowDispatch(createWorkflowAction(workflowWithStage));
     } catch (error: unknown) {
+      workflowDispatch(deleteWorkflowAction(tempId));
       console.error("Failed to create workflow:", error);
       if (error instanceof ZodError) {
         setError(
@@ -159,10 +190,13 @@ export default function App() {
   };
 
   const handleDeleteWorkflow = async (id: string) => {
+    const previousState = workflowState.workflows;
+    workflowDispatch(deleteWorkflowAction(id));
+
     try {
       await deleteWorkflowAPI(id);
-      workflowDispatch(deleteWorkflowAction(id));
     } catch (error: unknown) {
+      workflowDispatch(setWorkflowsAction(previousState));
       console.error("Failed to delete workflow:", error);
       setError("Failed to delete workflow");
     }
@@ -182,25 +216,21 @@ export default function App() {
   };
 
   return (
-    <div className="app-root">
+    <div className="app">
       <Header />
 
       {error && (
-        <div className="error-banner">
-          <span>{error}</span>
-          <button
-            className="error-close"
-            onClick={() => setError(null)}
-            aria-label="Dismiss error"
-          >
-            x
-          </button>
-        </div>
+        <ErrorMessage
+          message={error}
+          variant="banner"
+          onDismiss={() => setError(null)}
+        />
       )}
 
-      <div className="main-layout">
+      <div className="layout">
         <aside className="sidebar">
           <WorkflowList
+            isLoadingWorkflows={isLoadingWorkflows}
             workflows={workflowState.workflows}
             selectedId={workflowState.selectedWorkflowId}
             isComparing={comparisonState.isComparing}
@@ -214,7 +244,7 @@ export default function App() {
           />
         </aside>
 
-        <main className="main-content">
+        <main className="content">
           {comparisonState.isComparing ? (
             <WorkflowComparison
               chunkers={chunkers}
@@ -232,6 +262,13 @@ export default function App() {
               onPatchWorkflow={(patch) =>
                 handlePatchWorkflow(selectedWorkflow!.id, patch)
               }
+              deploymentState={
+                selectedWorkflow
+                  ? deploymentStates[selectedWorkflow.id]
+                  : undefined
+              }
+              deploymentDispatch={deploymentDispatch}
+              isAnyDeploying={isAnyDeploying}
             />
           )}
         </main>

@@ -1,128 +1,71 @@
 import { useState } from "react";
-import type { RDSReadyPayload } from "../services/deploy";
+import type { RDSReadyPayload } from "../types";
 
 interface RDSConnectionDetailsProps {
   details: RDSReadyPayload;
 }
 
-type CopyTarget = "connection" | "secret";
-
 const RDSConnectionDetails = ({ details }: RDSConnectionDetailsProps) => {
-  const [copyState, setCopyState] = useState<CopyTarget | "error" | null>(null);
-  const connectionString = `postgres://${details.endpoint}:${details.port}/${details.database}`;
+  const [copied, setCopied] = useState<string | null>(null);
 
-  const copyValue = async (value: string, target: CopyTarget) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopyState(target);
-      setTimeout(() => setCopyState(null), 2000);
-    } catch (error) {
-      console.error("Failed to copy deployment detail", error);
-      setCopyState("error");
-      setTimeout(() => setCopyState(null), 2000);
-    }
+  const copyToClipboard = async (text: string, label: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(label);
+    setTimeout(() => setCopied(null), 2000);
   };
 
-  return (
-    <div className="deployment-summary" aria-live="polite">
-      <div className="muted">
-        RDS instance is online.
-      </div>
-      <div className="muted" style={{ marginTop: "8px" }}>
-        Use the connection string below for psql-compatible clients:
-      </div>
-      <div
-        className="file-preview"
-        style={{
-          marginTop: "12px",
-          alignItems: "stretch",
-          gap: "12px",
-          flexWrap: "wrap",
-        }}
-      >
-        <div
-          style={{
-            flex: "1 1 260px",
-            padding: "8px 10px",
-            border: "1px solid var(--border)",
-            borderRadius: "6px",
-            background: "#f9fafb",
-            fontFamily: "monospace",
-            wordBreak: "break-all",
-          }}
+  const awsCommand = `aws secretsmanager get-secret-value \\
+  --secret-id ${details.secret_arn} \\
+  --query SecretString \\
+  --output text`;
+
+  const DetailRow = ({
+    label,
+    value,
+    copyId,
+  }: {
+    label: string;
+    value: string;
+    copyId: string;
+  }) => (
+    <div className="deploy-detail-section">
+      <label className="deploy-detail-label">{label}</label>
+      <div className="deploy-connection">
+        <code
+          className={`deploy-connection-string${
+            copyId === "aws" ? " deploy-command" : ""
+          }`}
         >
-          {connectionString}
-        </div>
+          {value}
+        </code>
         <button
           className="btn btn-sm"
           type="button"
-          onClick={() => copyValue(connectionString, "connection")}
+          onClick={() => copyToClipboard(value, copyId)}
+          title={`Copy ${label.toLowerCase()}`}
         >
-          Copy connection
+          <span className="icon icon-sm">
+            {copied === copyId ? "check" : "content_copy"}
+          </span>
         </button>
       </div>
+    </div>
+  );
 
-      <dl
-        style={{
-          display: "grid",
-          gridTemplateColumns: "150px 1fr",
-          gap: "8px 12px",
-          marginTop: "16px",
-        }}
-      >
-        <dt className="muted">Endpoint</dt>
-        <dd style={{ margin: 0 }}>{details.endpoint}</dd>
+  return (
+    <div className="deploy-details-card mt-4">
+      <h3 className="section-header">
+        <span className="icon">storage</span>
+        <span className="title-sm">Database details</span>
+      </h3>
 
-        <dt className="muted">Port</dt>
-        <dd style={{ margin: 0 }}>{details.port}</dd>
-
-        <dt className="muted">Database</dt>
-        <dd style={{ margin: 0 }}>{details.database}</dd>
-
-        <dt className="muted">Table</dt>
-        <dd style={{ margin: 0 }}>{details.table_name}</dd>
-
-        <dt className="muted">Secret ARN</dt>
-        <dd style={{ margin: 0 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              flexWrap: "wrap",
-            }}
-          >
-            <span style={{ wordBreak: "break-all" }}>
-              {details.secret_arn}
-            </span>
-            <button
-              className="btn btn-xs"
-              type="button"
-              onClick={() => copyValue(details.secret_arn, "secret")}
-            >
-              Copy
-            </button>
-          </div>
-        </dd>
-      </dl>
-
-      {details.notes && (
-        <div className="muted" style={{ marginTop: "12px" }}>
-          {details.notes}
-        </div>
-      )}
-
-      {copyState === "error" && (
-        <div className="error" style={{ marginTop: "12px" }}>
-          Could not copy automatically. Please copy the value manually.
-        </div>
-      )}
-      {copyState && copyState !== "error" && (
-        <div className="muted" style={{ color: "#2b6cb0", marginTop: "8px" }}>
-          Copied{" "}
-          {copyState === "connection" ? "connection string" : "secret ARN"}
-        </div>
-      )}
+      <DetailRow label="Table name" value={details.table_name} copyId="table" />
+      <DetailRow label="Secret ARN" value={details.secret_arn} copyId="arn" />
+      <DetailRow
+        label="Get database credentials"
+        value={awsCommand}
+        copyId="aws"
+      />
     </div>
   );
 };
