@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
   DeployWorkflowEventSchema,
   type S3Credentials,
@@ -15,27 +16,27 @@ export const deployWorkflow = async ({
   credentials,
   onEvent,
 }: DeployWorkflowOptions): Promise<void> => {
-  const response = await fetch(`/api/workflows/${workflowId}/deploy`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  const response = await axios.post(
+    `/api/workflows/${workflowId}/deploy`,
+    {
       s3_access_key: credentials.access_key,
       s3_secret_key: credentials.secret_key,
       s3_bucket: credentials.bucket_name,
-    }),
-  });
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      responseType: "stream",
+      adapter: "fetch",
+    }
+  );
 
-  if (!response.ok) {
-    throw new Error(`Deployment failed with status ${response.status}`);
-  }
-
-  if (!response.body) {
+  if (!response.data) {
     throw new Error("Response stream not available");
   }
 
-  const reader = response.body.getReader();
+  const reader = response.data.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
 
