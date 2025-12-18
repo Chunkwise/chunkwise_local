@@ -1,6 +1,6 @@
 """
 This is the backend server which acts as a gateway for the client to access
-services and it will eventually manage the database(s) and document storage.
+services and it also manages the database(s) and document storage.
 """
 
 import os
@@ -68,10 +68,13 @@ from cryptography.hazmat.primitives import hashes, serialization
 app = FastAPI()
 router = APIRouter()
 
+# In-memory store for ephemeral keys
 _EPHEMERAL_KEYS: Dict[str, Tuple[bytes, float]] = {}
 _LOCK = threading.Lock()
 TTL_SECONDS = 60
 
+
+# Thread to clean up expired ephemeral keys
 def _cleanup_loop():
     while True:
         now = time.time()
@@ -82,6 +85,7 @@ def _cleanup_loop():
         time.sleep(5)
 
 
+# Start cleanup thread
 threading.Thread(target=_cleanup_loop, daemon=True).start()
 
 # Configure logging
@@ -332,6 +336,10 @@ async def remove_workflow(workflow_id: int):
 
 @router.post("/ephemeral-key")
 def create_ephemeral_key():
+    """
+    Creates an ephemeral RSA key pair for encrypting sensitive data.
+    The public key is returned to the client along with a token.
+    """
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
@@ -361,6 +369,7 @@ def create_ephemeral_key():
     }
 
 
+# Helper to pop and return private key for a given token
 def pop_private_key(token: str) -> bytes:
     with _LOCK:
         entry = _EPHEMERAL_KEYS.pop(token, None)
@@ -377,9 +386,10 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
 
     This endpoint:
     1. Creates a table in the production database for this workflow
-    2. Verifies access to user's S3 bucket
-    3. Submits AWS Batch jobs to process each document
-    4. Streams progress via Server-Sent Events (SSE)
+    2. Decrypts user's S3 credentials
+    3. Verifies access to user's S3 bucket
+    4. Submits AWS Batch jobs to process each document
+    5. Streams progress via Server-Sent Events (SSE)
 
     Events: rds-ready, s3-connected, jobs-submitted, done
     """
@@ -418,7 +428,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             )
             return
 
-        # --- Create pgvector table for this workflow ---
+        # Create pgvector table for this workflow
         try:
             with get_db_connection(prod_cfg) as conn:
                 table_name = ensure_pgvector_and_table(
@@ -447,7 +457,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             "db_instance_identifier": prod_cfg.db_instance_identifier,
         }
         yield sse_event(rds_payload, event="rds-ready")
-        
+
         # Decrypt S3 credentials
         try:
             private_pem = pop_private_key(req.crypto_token)
@@ -478,7 +488,13 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             )
             return
         finally:
-            for var in ["plaintext", "ciphertext", "private_key", "private_pem", "creds"]:
+            for var in [
+                "plaintext",
+                "ciphertext",
+                "private_key",
+                "private_pem",
+                "creds",
+            ]:
                 if var in locals():
                     del locals()[var]
 
