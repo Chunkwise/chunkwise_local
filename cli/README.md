@@ -1,6 +1,6 @@
 # COMMAND LINE INTERFACE
 
-## How to use:
+## How to use
 
 This folder contains the command line interface provided by a
 library called Typer. To use it, first run `poetry install`.
