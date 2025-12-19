@@ -235,7 +235,6 @@ async def upload_document(
     await upload_s3_file(document_title)
     delete_file(f"documents/{document_title}.txt")
 
-    # Return the name of the file
     return {"detail": f"Successfully uploaded {document_title}"}
 
 
@@ -249,7 +248,6 @@ async def get_documents() -> list[str]:
     # Get the list of resources from a bucket
     file_names = await get_s3_file_names()
 
-    # Return the name of the file
     if file_names is None:
         return []
     return file_names
@@ -266,8 +264,6 @@ async def delete_document(document_title: str) -> dict:
         raise HTTPException(status_code=400, detail="Invalid document title")
 
     await delete_s3_file(document_title)
-
-    # Return the name of the file
     return {"detail": "deleted"}
 
 
@@ -578,7 +574,7 @@ async def deploy_workflow_db_sse(workflow_id: int, req: DeployRequest):
             # Distribute documents to jobs
             job_bins = [{"keys": [], "total_size": 0} for _ in range(max_jobs)]
 
-            # Sort files by size descending (largest first).
+            # Sort files by size descending (largest first)
             all_documents.sort(key=lambda x: x["size"], reverse=True)
 
             for doc in all_documents:
