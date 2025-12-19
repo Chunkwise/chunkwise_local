@@ -69,7 +69,7 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
     <div className="comparison">
       <div className="comparison-header">
           <h3 className="title-md">
-            Workflow comparison
+            Workflow Comparison
           </h3>
       </div>
 

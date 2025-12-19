@@ -20,7 +20,7 @@ const ChunkerForm = ({
     <div className="section">
       <h2 className="section-header">
         <span className="icon">tune</span>
-        <span className="title-md">Chunker & configuration</span>
+        <span className="title-md">Chunker & Configuration</span>
       </h2>
       <div className="card">
         <div className="field">
