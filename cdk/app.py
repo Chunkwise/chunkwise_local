@@ -28,7 +28,7 @@ else:
     OPTIONS_JSON = None
 
 
-# Get environment variables or use defaults, for the reason use the one passed in as context
+# Get environment variables or use defaults
 env = cdk.Environment(
     account=os.getenv("CDK_DEFAULT_ACCOUNT"),
     region=(OPTIONS_JSON and OPTIONS_JSON.get("region"))

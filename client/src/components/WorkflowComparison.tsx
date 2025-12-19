@@ -68,9 +68,7 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
   return (
     <div className="comparison">
       <div className="comparison-header">
-          <h3 className="title-md">
-            Workflow comparison
-          </h3>
+        <h3 className="title-md">Workflow Comparison</h3>
       </div>
 
       {workflows.length < 2 ? (
@@ -94,7 +92,9 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
                       <span className="badge">
                         {getChunkerName(workflow.chunking_strategy)}
                       </span>
-                      <span className={`workflow-stage stage-${workflow.stage?.toLowerCase()}`}>
+                      <span
+                        className={`workflow-stage stage-${workflow.stage?.toLowerCase()}`}
+                      >
                         {workflow.stage}
                       </span>
                     </div>
@@ -103,9 +103,7 @@ const WorkflowComparison = ({ workflows, chunkers }: Props) => {
 
                 <div className="comparison-card-body">
                   <div className="comparison-section">
-                    <h4 className="comparison-section-title">
-                      Configuration
-                    </h4>
+                    <h4 className="comparison-section-title">Configuration</h4>
                     {workflow.chunking_strategy ? (
                       <div className="comparison-config">
                         <pre className="comparison-code">

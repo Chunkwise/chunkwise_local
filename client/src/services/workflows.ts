@@ -1,8 +1,5 @@
 import axios from "axios";
-import {
-  WorkflowResponseSchema,
-  type Workflow,
-} from "../types";
+import { WorkflowResponseSchema, type Workflow } from "../types";
 
 const workflowListSchema = WorkflowResponseSchema.array();
 

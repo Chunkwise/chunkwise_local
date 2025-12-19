@@ -69,9 +69,7 @@ const ConfigSlider = ({
 
   return (
     <div className="config-row">
-      <label className="label">
-        {optionKey}
-      </label>
+      <label className="label">{optionKey}</label>
       <div className="slider-container">
         <input
           type="range"

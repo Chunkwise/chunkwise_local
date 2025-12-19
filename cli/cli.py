@@ -48,7 +48,7 @@ def display_logo():
 
     console.print(f"[#00BCF7]{logo_text}")
 
-    with open("chunkwise_monospace.txt", encoding="utf-8") as name_file:
+    with open("name.txt", encoding="utf-8") as name_file:
         text = name_file.read()
 
     console.print(f"[white]{text}")
@@ -318,8 +318,8 @@ def deploy():
     openai_api_key = ""
     while not validate_key(openai_api_key):
         openai_api_key = Prompt.ask(
-            "[#00BCF7]OpenAI API Key", password=True
-        )  # Could make password True to hide while typing
+            "[#00BCF7]OpenAI API key", password=True
+        )
         openai_api_key = openai_api_key.strip()
         print()
 
@@ -355,7 +355,6 @@ def deploy():
     region = region.lower()
 
     if env == "production":
-        # Add production mode warning
         console.print(
             "[yellow]⚠️  Production mode: Databases and S3 will be RETAINED on stack deletion."
         )
@@ -413,7 +412,6 @@ def destroy(
     """
 
     if env == "production":
-        # Add production mode warning
         console.print(
             "[yellow]⚠️  Production mode: The following resources will be RETAINED:"
         )
@@ -639,8 +637,7 @@ def client_run(
     ] = None,
 ):
     """
-    Calls the client build then client start commands
-    in squence.
+    Calls the client build then client start commands in squence.
     """
     client_build(region)
     client_start()

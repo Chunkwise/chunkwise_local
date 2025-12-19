@@ -68,29 +68,29 @@ const Evaluation = ({
         </h2>
 
         <div className="metrics-list">
-        {METRIC_CONFIG.map(({ key, name, description }) => (
-          <div key={key} className="metric-item">
-            <div className="metric-header">
-              <span className="metric-name">
-                {name}
-                <span className="metric-info" title={description}>
-                  <span className="icon icon-sm">info</span>
+          {METRIC_CONFIG.map(({ key, name, description }) => (
+            <div key={key} className="metric-item">
+              <div className="metric-header">
+                <span className="metric-name">
+                  {name}
+                  <span className="metric-info" title={description}>
+                    <span className="icon icon-sm">info</span>
+                  </span>
                 </span>
-              </span>
-              <span className="metric-value">{metrics[key].toFixed(3)}</span>
+                <span className="metric-value">{metrics[key].toFixed(3)}</span>
+              </div>
+              <div className="progress-bar">
+                <div
+                  className="progress-fill"
+                  style={{
+                    width: `${metrics[key] * 100}%`,
+                    backgroundColor: PROGRESS_BAR_COLOR,
+                  }}
+                />
+              </div>
             </div>
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${metrics[key] * 100}%`,
-                  backgroundColor: PROGRESS_BAR_COLOR,
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
       </div>
     </div>
   );
