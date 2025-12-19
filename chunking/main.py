@@ -1,4 +1,4 @@
-"""Chunking Service"""
+"""Chunking service"""
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Body
