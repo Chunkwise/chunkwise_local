@@ -136,9 +136,7 @@ const ChooseFile = ({
             </button>
           </div>
         ) : (
-          <div className="text-muted mt-2">
-            No document selected
-          </div>
+          <div className="text-muted mt-2">No document selected</div>
         )}
       </div>
     </div>
