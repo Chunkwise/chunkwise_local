@@ -1,17 +1,14 @@
 """
 Configuration file for Chunkwise CDK deployment
-Update these values according to your environment
 """
 
 from aws_cdk import RemovalPolicy
 
-# Envrionment Configuration
+# Environment Configuration
 # Set to "production" for data retention, "development" for auto-cleanup
 ENVIRONMENT = "production"  # Options: "production" | "development"
 
-
 # Docker Image URIs (hardcoded pre-built images)
-# Replace these with your actual ECR image URIs
 DOCKER_IMAGES = {
     "server": "public.ecr.aws/x7l1y0z0/chunkwise-server:latest",
     "chunking": "public.ecr.aws/x7l1y0z0/chunkwise-chunking:latest",
@@ -25,6 +22,7 @@ VPC_CONFIG = {
     "max_azs": 2,
     "nat_gateways": 1,  # One to save cost
 }
+
 
 # ECS Configuration
 ECS_CONFIG = {
@@ -61,7 +59,7 @@ RDS_CONFIG = {
     "publicly_accessible": False,  # Keep evaluation DB private
 }
 
-# Vector RDS Configuration (Production/Deployment Database)
+# Vector RDS Configuration (Deployment Database)
 VECTOR_RDS_CONFIG = {
     "instance_type": "t4g.micro",  # Same as evaluation DB
     "database_name": "chunkwise_production",
@@ -80,11 +78,11 @@ BATCH_CONFIG = {
     "max_vcpus": 4,  # Maximum vCPUs for compute environment
     "job_cpu": 1,  # 1 vCPU per job
     "job_memory": 8192,  # 8 GB per job
-    "assign_public_ip": True,  # Use public IP to save NAT Gateway costs
+    "assign_public_ip": True,  # Using public IP to save NAT Gateway costs
 }
 
 # S3 Configuration
-S3_CONFIG = {"bucket_name_prefix": "chunkwise"}  # Will append account ID
+S3_CONFIG = {"bucket_name_prefix": "chunkwise"}
 
 # Cloud Map Configuration
 CLOUD_MAP_CONFIG = {
@@ -95,7 +93,6 @@ CLOUD_MAP_CONFIG = {
 # Environment Variables
 # These are set dynamically by the stacks and injected into ECS task definitions
 # Listed for documentation purposes only
-
 """
 ENVIRONMENT_VARIABLES = {
     # Evaluation Database (set by DatabaseStack)
@@ -129,7 +126,6 @@ ENVIRONMENT_VARIABLES = {
     "MAX_BATCH_JOBS": BATCH_CONFIG["max_vcpus"] / BATCH_CONFIG["job_cpu"]
 }
 """
-
 
 # Helper Functions
 def is_production() -> bool:
