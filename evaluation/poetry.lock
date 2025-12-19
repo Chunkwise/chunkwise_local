@@ -528,7 +528,7 @@ tqdm = "*"
 
 [package.source]
 type = "git"
-url = "https://github.com/Chunkwise/chunking_evaluation_refactored.git"
+url = "https://github.com/Chunkwise/evaluation_framework.git"
 reference = "HEAD"
 resolved_reference = "5010597caa8c9cf165bd54044f4d1c370cab24cd"
 

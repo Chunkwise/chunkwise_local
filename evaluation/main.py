@@ -1,6 +1,4 @@
-"""
-FastAPI application for chunking evaluation.
-"""
+"""Evaluation service"""
 
 import os
 import logging
@@ -19,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Chunkwise Evaluation API", version="1.0.0")
 
-# Initialize embedding function - for MVP uses OpenAI embedding model by default
+# Initialize embedding function
 EMBEDDING_API_KEY = os.getenv("OPENAI_API_KEY")
 if not EMBEDDING_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable is required")
