@@ -29,7 +29,7 @@ def retry_with_backoff(func, retries=12, initial_delay=2, backoff_factor=2):
                     print("Max retries reached. Failing.")
                     raise
 
-                # Add jitter to prevent 'thundering herd' since we are running multiple instances
+                # Jitter to prevent 'thundering herd' since multiple instances are running
                 delay += random.uniform(0, 1)
                 print(f"Rate limited. Retrying in {delay:.2f} seconds...")
                 time.sleep(delay)
