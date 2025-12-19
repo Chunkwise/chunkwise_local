@@ -530,7 +530,7 @@ tqdm = "*"
 type = "git"
 url = "https://github.com/Chunkwise/evaluation_framework.git"
 reference = "HEAD"
-resolved_reference = "5010597caa8c9cf165bd54044f4d1c370cab24cd"
+resolved_reference = "c79541dce6ff92a8368b90bf3a17774e46ba42f4"
 
 [[package]]
 name = "chunkwise-core"
@@ -554,7 +554,7 @@ chunkers = ["chonkie[openai,semantic] (>=1.4.1,<2.0.0)", "langchain-text-splitte
 type = "git"
 url = "https://github.com/Chunkwise/chunkwise_core.git"
 reference = "HEAD"
-resolved_reference = "174806191a11cbd75b8345ffbf756424e9ffa710"
+resolved_reference = "9283d3797248a9a5cc18675566a3648ff5fe34f5"
 
 [[package]]
 name = "click"
