@@ -81,10 +81,10 @@ Pass `--region` if deployed to a non-default region.
 
 **Additional Commands:**
 
-| Command | Description |
-|---------|-------------|
+| Command                                           | Description                                                       |
+| ------------------------------------------------- | ----------------------------------------------------------------- |
 | `typer cli.py run client-build [--region=REGION]` | Builds the React client only. ALB DNS is retrieved automatically. |
-| `typer cli.py run client-start` | Starts a previously built client using Vite. Stop with `Ctrl+C`. |
+| `typer cli.py run client-start`                   | Starts a previously built client using Vite. Stop with `Ctrl+C`.  |
 
 ### Destroying Chunkwise
 
@@ -241,44 +241,45 @@ aws secretsmanager delete-secret \
 
 1. Destroy application stacks (safe, no data loss):
 
-    ```bash
-    # Destroy ECS stack first
-    cdk destroy ChunkwiseEcsStack
+   ```bash
+   # Destroy ECS stack first
+   cdk destroy ChunkwiseEcsStack
 
-    # Destroy Load Balancer and Batch stacks
-    cdk destroy ChunkwiseLoadBalancerStack
-    cdk destroy ChunkwiseBatchStack
-    ```
+   # Destroy Load Balancer and Batch stacks
+   cdk destroy ChunkwiseLoadBalancerStack
+   cdk destroy ChunkwiseBatchStack
+   ```
 
 2. Back up data if needed. Export any data from RDS or S3 before proceeding.
 
 3. Manually delete retained data resources via AWS Console:
+
    - Disable deletion protection on both RDS instances
    - Delete both RDS instances (evaluation + production)
-   - Empty and delete the S3 bucket (chunkwise-*)
+   - Empty and delete the S3 bucket (chunkwise-\*)
 
 4. Delete secrets:
 
-    ```bash
-    aws secretsmanager delete-secret \
-        --secret-id chunkwise/db-credentials \
-        --force-delete-without-recovery
+   ```bash
+   aws secretsmanager delete-secret \
+       --secret-id chunkwise/db-credentials \
+       --force-delete-without-recovery
 
-    aws secretsmanager delete-secret \
-        --secret-id chunkwise/production-db-credentials \
-        --force-delete-without-recovery
+   aws secretsmanager delete-secret \
+       --secret-id chunkwise/production-db-credentials \
+       --force-delete-without-recovery
 
-    aws secretsmanager delete-secret \
-        --secret-id chunkwise/openai-api-key \
-        --force-delete-without-recovery
-    ```
+   aws secretsmanager delete-secret \
+       --secret-id chunkwise/openai-api-key \
+       --force-delete-without-recovery
+   ```
 
 5. Destroy foundation stacks:
 
-    ```bash
-    cdk destroy ChunkwiseDataStack
-    cdk destroy ChunkwiseNetworkStack
-    ```
+   ```bash
+   cdk destroy ChunkwiseDataStack
+   cdk destroy ChunkwiseNetworkStack
+   ```
 
 ## File Structure
 
