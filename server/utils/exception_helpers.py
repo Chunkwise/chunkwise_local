@@ -46,6 +46,9 @@ def handle_endpoint_exceptions(func):
                     status_code=503, detail="Unable to reach upstream service"
                 ) from e
 
+        except HTTPException as exc:
+            raise exc
+
         except Exception as exc:
             logging.exception("Unhandled exception in endpoint")
             raise HTTPException(
