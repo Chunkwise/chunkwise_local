@@ -37,9 +37,7 @@ The deployment creates:
 
 ### RAG data ingestion pipeline
 
-- **AWS Batch**: On-demand document processing for production deployments, which uses
-- **Fargate compute environment** to process documents in parallel:
-  Normalizes, chunks, and embeds documents into vector database
+- **AWS Batch**: On-demand document processing for production deployments, which uses Fargate compute environment to process documents in parallel. It normalizes, chunks, and embeds documents into vector database.
 - **RDS PostgreSQL with pgvector**: Vector database that stores chunked documents and embeddings for deployed workflows using a specific chunking strategy
 - **CloudWatch**: Centralized logging for monitoring all services
 - **Secrets Manager**: Stores database credentials and API key for all services
