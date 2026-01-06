@@ -25,13 +25,30 @@ console = Console()
 CDK_DIR = Path(__file__).resolve().parent.parent / "cdk"
 CLIENT_DIR = Path(__file__).resolve().parent.parent / "client"
 
-# Load cdk/config.py dynamically
-CDK_CONFIG_PATH = Path(__file__).resolve().parent.parent / "cdk" / "config.py"
-spec = importlib.util.spec_from_file_location("cdk_config", CDK_CONFIG_PATH)
-cdk_config = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(cdk_config)
 
-env = cdk_config.ENVIRONMENT.lower()  # "production" or "development"
+# Load cdk/config.py dynamically (lazily)
+def load_cdk_config():
+    """
+    Import cdk/config.py lazily. If CDK-specific packages (like aws_cdk)
+    are missing, install the CDK dependencies and retry the import once.
+    """
+    CDK_CONFIG_PATH = Path(__file__).resolve().parent.parent / "cdk" / "config.py"
+    spec = importlib.util.spec_from_file_location("cdk_config", CDK_CONFIG_PATH)
+    cdk_config = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(cdk_config)
+    except Exception as exc:
+        # If import failed due to missing CDK packages, try installing them once
+        msg = str(exc).lower()
+        if isinstance(exc, ImportError) or "aws_cdk" in msg or "cdk" in msg:
+            console.print("[yellow]📦 Missing CDK dependencies; installing them now...")
+            ensure_cdk_dependencies()
+            # Retry import after installing deps
+            spec.loader.exec_module(cdk_config)
+        else:
+            raise
+
+    return cdk_config
 
 
 def validate_key(key):
@@ -317,9 +334,7 @@ def deploy():
 
     openai_api_key = ""
     while not validate_key(openai_api_key):
-        openai_api_key = Prompt.ask(
-            "[#00BCF7]OpenAI API key", password=True
-        )
+        openai_api_key = Prompt.ask("[#00BCF7]OpenAI API key", password=True)
         openai_api_key = openai_api_key.strip()
         print()
 
@@ -353,6 +368,10 @@ def deploy():
     print()
 
     region = region.lower()
+
+    # Load CDK config lazily and ensure CDK dependencies are available before checking environment
+    cdk_config = load_cdk_config()
+    env = cdk_config.ENVIRONMENT.lower()
 
     if env == "production":
         console.print(
