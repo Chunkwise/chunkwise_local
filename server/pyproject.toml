@@ -19,6 +19,9 @@ fuzzywuzzy = "^0.18.0"
 python-levenshtein = "^0.27.3"
 cryptography = "^46.0.3"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0.2"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
